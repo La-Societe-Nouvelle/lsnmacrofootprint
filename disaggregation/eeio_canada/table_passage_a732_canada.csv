@@ -1,0 +1,744 @@
+"code_ape_a732";"label_ape_a732";"code_eeio_canada";"label_eeio_canada";"flag_mapping_a732";"accuracy_mapping_a732"
+"01.11Z";"Culture de céréales (à l'exception du riz), de légumineuses et de graines oléagineuses";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.12Z";"Culture du riz";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.13Z";"Culture de légumes, de melons, de racines et de tubercules";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.14Z";"Culture de la canne à sucre";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.15Z";"Culture du tabac";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.16Z";"Culture de plantes à fibres";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.19Z";"Autres cultures non permanentes";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.21Z";"Culture de la vigne";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.22Z";"Culture de fruits tropicaux et subtropicaux";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.23Z";"Culture d'agrumes";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.24Z";"Culture de fruits à pépins et à noyau";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.25Z";"Culture d'autres fruits d'arbres ou d'arbustes et de fruits à coque";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.26Z";"Culture de fruits oléagineux";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.27Z";"Culture de plantes à boissons";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.28Z";"Culture de plantes à épices, aromatiques, médicinales et pharmaceutiques";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.29Z";"Autres cultures permanentes";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.30Z";"Reproduction de plantes";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.41Z";"Élevage de vaches laitières";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.42Z";"Élevage d'autres bovins et de buffles";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.43Z";"Élevage de chevaux et d'autres équidés";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.44Z";"Élevage de chameaux et d'autres camélidés";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.45Z";"Élevage d'ovins et de caprins";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.46Z";"Élevage de porcins";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.47Z";"Élevage de volailles";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.49Z";"Élevage d'autres animaux";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.50Z";"Culture et élevage associés";"BS11B00";"Crop and animal production (except cannabis)";"";3
+"01.61Z";"Activités de soutien aux cultures";"BS11500";"Support activities for agriculture and forestry";"";3
+"01.62Z";"Activités de soutien à la production animale";"BS11500";"Support activities for agriculture and forestry";"";3
+"01.63Z";"Traitement primaire des récoltes";"BS11500";"Support activities for agriculture and forestry";"";3
+"01.64Z";"Traitement des semences";"BS11500";"Support activities for agriculture and forestry";"";3
+"01.70Z";"Chasse, piégeage et services annexes";"BS11400";"Fishing, hunting and trapping";"";3
+"02.10Z";"Sylviculture et autres activités forestières";"BS11300";"Forestry and logging";"";3
+"02.20Z";"Exploitation forestière";"BS11300";"Forestry and logging";"";3
+"02.30Z";"Récolte de produits forestiers non ligneux poussant à l'état sauvage";"BS11300";"Forestry and logging";"";3
+"02.40Z";"Services de soutien à l'exploitation forestière";"BS11500";"Support activities for agriculture and forestry";"";3
+"03.11Z";"Pêche en mer";"BS11400";"Fishing, hunting and trapping";"";3
+"03.12Z";"Pêche en eau douce";"BS11400";"Fishing, hunting and trapping";"";3
+"03.21Z";"Aquaculture en mer";"BS11400";"Fishing, hunting and trapping";"";3
+"03.22Z";"Aquaculture en eau douce";"BS11400";"Fishing, hunting and trapping";"";3
+"05.10Z";"Extraction de houille";"BS21210";"Coal mining";"";2
+"05.20Z";"Extraction de lignite";"BS21210";"Coal mining";"";2
+"06.10Z";"Extraction de pétrole brut";"BS21100";"Oil and gas extraction";"";2
+"06.20Z";"Extraction de gaz naturel";"BS21100";"Oil and gas extraction";"";2
+"07.10Z";"Extraction de minerais de fer";"BS21220";"Metal ore mining";"";2
+"07.21Z";"Extraction de minerais d'uranium et de thorium";"BS21220";"Metal ore mining";"";2
+"07.29Z";"Extraction d'autres minerais de métaux non ferreux";"BS21230";"Non-metallic mineral mining and quarrying";"";2
+"08.11Z";"Extraction de pierres ornementales et de construction, de calcaire industriel, de gypse, de craie et d'ardoise";"BS21230";"Non-metallic mineral mining and quarrying";"";2
+"08.12Z";"Exploitation de gravières et sablières, extraction d’argiles et de kaolin";"BS21230";"Non-metallic mineral mining and quarrying";"";2
+"08.91Z";"Extraction des minéraux chimiques et d'engrais minéraux";"BS21230";"Non-metallic mineral mining and quarrying";"";2
+"08.92Z";"Extraction de tourbe";"BS21210";"Coal mining";"";2
+"08.93Z";"Production de sel";"BS21230";"Non-metallic mineral mining and quarrying";"";3
+"08.99Z";"Autres activités extractives n.c.a.";"BS21230";"Non-metallic mineral mining and quarrying";"";3
+"09.10Z";"Activités de soutien à l'extraction d'hydrocarbures";"BS21300";"Support activities for mining and oil and gas extraction";"";2
+"09.90Z";"Activités de soutien aux autres industries extractives";"BS21300";"Support activities for mining and oil and gas extraction";"";2
+"10.11Z";"Transformation et conservation de la viande de boucherie";"BS31160";"Meat product manufacturing";"";2
+"10.12Z";"Transformation et conservation de la viande de volaille";"BS31160";"Meat product manufacturing";"";2
+"10.13A";"Préparation industrielle de produits à base de viande";"BS31160";"Meat product manufacturing";"";2
+"10.13B";"Charcuterie";"BS31160";"Meat product manufacturing";"";2
+"10.20Z";"Transformation et conservation de poisson, de crustacés et de mollusques";"BS31170";"Seafood product preparation and packaging";"";1
+"10.31Z";"Transformation et conservation de pommes de terre";"BS31140";"Fruit and vegetable preserving and specialty food manufacturing";"";2
+"10.32Z";"Préparation de jus de fruits et légumes";"BS31140";"Fruit and vegetable preserving and specialty food manufacturing";"";2
+"10.39A";"Autre transformation et conservation de légumes";"BS31140";"Fruit and vegetable preserving and specialty food manufacturing";"";2
+"10.39B";"Transformation et conservation de fruits";"BS31140";"Fruit and vegetable preserving and specialty food manufacturing";"";2
+"10.41A";"Fabrication d'huiles et graisses brutes";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.41B";"Fabrication d'huiles et graisses raffinées";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.42Z";"Fabrication de margarine et graisses comestibles similaires";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.51A";"Fabrication de lait liquide et de produits frais";"BS31150";"Dairy product manufacturing";"";2
+"10.51B";"Fabrication de beurre";"BS31150";"Dairy product manufacturing";"";2
+"10.51C";"Fabrication de fromage";"BS31150";"Dairy product manufacturing";"";2
+"10.51D";"Fabrication d'autres produits laitiers";"BS31150";"Dairy product manufacturing";"";2
+"10.52Z";"Fabrication de glaces et sorbets";"BS31150";"Dairy product manufacturing";"";2
+"10.61A";"Meunerie";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.61B";"Autres activités du travail des grains";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.62Z";"Fabrication de produits amylacés";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.71A";"Fabrication industrielle de pain et de pâtisserie fraîche";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.71B";"Cuisson de produits de boulangerie";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.71C";"Boulangerie et boulangerie-pâtisserie";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.71D";"Pâtisserie";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.72Z";"Fabrication de biscuits, biscottes et pâtisseries de conservation";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.73Z";"Fabrication de pâtes alimentaires";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.81Z";"Fabrication de sucre";"BS31130";"Sugar and confectionery product manufacturing";"";3
+"10.82Z";"Fabrication de cacao, chocolat et de produits de confiserie";"BS31130";"Sugar and confectionery product manufacturing";"";3
+"10.83Z";"Transformation du thé et du café";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.84Z";"Fabrication de condiments et assaisonnements";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.85Z";"Fabrication de plats préparés";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.86Z";"Fabrication d'aliments homogénéisés et diététiques";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.89Z";"Fabrication d'autres produits alimentaires n.c.a.";"BS311A0";"Miscellaneous food manufacturing";"";3
+"10.91Z";"Fabrication d'aliments pour animaux de ferme";"BS31110";"Animal food manufacturing";"";2
+"10.92Z";"Fabrication d'aliments pour animaux de compagnie";"BS31110";"Animal food manufacturing";"";2
+"11.01Z";"Production de boissons alcooliques distillées";"BS3121A";"Wineries and distilleries";"";2
+"11.02A";"Fabrication de vins effervescents";"BS3121A";"Wineries and distilleries";"";2
+"11.02B";"Vinification";"BS3121A";"Wineries and distilleries";"";2
+"11.03Z";"Fabrication de cidre et de vins de fruits";"BS3121A";"Wineries and distilleries";"";2
+"11.04Z";"Production d'autres boissons fermentées non distillées";"BS3121A";"Wineries and distilleries";"";2
+"11.05Z";"Fabrication de bière";"BS31212";"Breweries";"";1
+"11.06Z";"Fabrication de malt";"BS311A0";"Miscellaneous food manufacturing";"";3
+"11.07A";"Industrie des eaux de table";"BS31211";"Soft drink and ice manufacturing";"";2
+"11.07B";"Production de boissons rafraîchissantes";"BS31211";"Soft drink and ice manufacturing";"";2
+"12.00Z";"Fabrication de produits à base de tabac";"BS312A0";"Tobacco and cannabis product manufacturing";"";2
+"13.10Z";"Préparation de fibres textiles et filature";"BS31A00";"Textile and textile product mills";"";3
+"13.20Z";"Tissage";"BS31A00";"Textile and textile product mills";"";3
+"13.30Z";"Ennoblissement textile";"BS31A00";"Textile and textile product mills";"";3
+"13.91Z";"Fabrication d'étoffes à mailles";"BS31A00";"Textile and textile product mills";"";3
+"13.92Z";"Fabrication d'articles textiles, sauf habillement";"BS31A00";"Textile and textile product mills";"";3
+"13.93Z";"Fabrication de tapis et moquettes";"BS31A00";"Textile and textile product mills";"";3
+"13.94Z";"Fabrication de ficelles, cordes et filets";"BS31A00";"Textile and textile product mills";"";3
+"13.95Z";"Fabrication de non-tissés, sauf habillement";"BS31A00";"Textile and textile product mills";"";3
+"13.96Z";"Fabrication d'autres textiles techniques et industriels";"BS31A00";"Textile and textile product mills";"";3
+"13.99Z";"Fabrication d'autres textiles n.c.a.";"BS31A00";"Textile and textile product mills";"";3
+"14.11Z";"Fabrication de vêtements en cuir";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"14.12Z";"Fabrication de vêtements de travail";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"14.13Z";"Fabrication de vêtements de dessus";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"14.14Z";"Fabrication de vêtements de dessous";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"14.19Z";"Fabrication d'autres vêtements et accessoires";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"14.20Z";"Fabrication d'articles en fourrure";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"14.31Z";"Fabrication d'articles chaussants à mailles";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"14.39Z";"Fabrication d'autres articles à mailles";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"15.11Z";"Apprêt et tannage des cuirs, préparation et teinture des fourrures";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"15.12Z";"Fabrication d'articles de voyage, de maroquinerie et de sellerie";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"15.20Z";"Fabrication de chaussures";"BS31B00";"Clothing and leather and allied product manufacturing";"";3
+"16.10A";"Sciage et rabotage du bois, hors imprégnation";"BS32100";"Wood product manufacturing";"";3
+"16.10B";"Imprégnation du bois";"BS32100";"Wood product manufacturing";"";3
+"16.21Z";"Fabrication de placage et de panneaux de bois";"BS32100";"Wood product manufacturing";"";3
+"16.22Z";"Fabrication de parquets assemblés";"BS32100";"Wood product manufacturing";"";3
+"16.23Z";"Fabrication de charpentes et d'autres menuiseries";"BS32100";"Wood product manufacturing";"";3
+"16.24Z";"Fabrication d'emballages en bois";"BS32100";"Wood product manufacturing";"";3
+"16.29Z";"Fabrication d'objets divers en bois, fabrication d'objets en liège, vannerie et sparterie";"BS32100";"Wood product manufacturing";"";3
+"17.11Z";"Fabrication de pâte à papier";"BS32210";"Pulp, paper and paperboard mills";"";2
+"17.12Z";"Fabrication de papier et de carton";"BS32210";"Pulp, paper and paperboard mills";"";2
+"17.21A";"Fabrication de carton ondulé";"BS32220";"Converted paper product manufacturing";"";3
+"17.21B";"Fabrication de cartonnages";"BS32220";"Converted paper product manufacturing";"";3
+"17.21C";"Fabrication d'emballages en papier";"BS32220";"Converted paper product manufacturing";"";3
+"17.22Z";"Fabrication d'articles en papier à usage sanitaire ou domestique";"BS32220";"Converted paper product manufacturing";"";3
+"17.23Z";"Fabrication d'articles de papeterie";"BS32220";"Converted paper product manufacturing";"";3
+"17.24Z";"Fabrication de papiers peints";"BS32220";"Converted paper product manufacturing";"";3
+"17.29Z";"Fabrication d'autres articles en papier ou en carton";"BS32220";"Converted paper product manufacturing";"";3
+"18.11Z";"Imprimerie de journaux";"BS32300";"Printing and related support activities";"";3
+"18.12Z";"Autre imprimerie (labeur)";"BS32300";"Printing and related support activities";"";3
+"18.13Z";"Activités de pré-presse";"BS32300";"Printing and related support activities";"";3
+"18.14Z";"Reliure et activités connexes";"BS32300";"Printing and related support activities";"";3
+"18.20Z";"Reproduction d'enregistrements";"BS33400";"Computer and electronic product manufacturing";"";3
+"19.10Z";"Cokéfaction";"BS32400";"Petroleum and coal product manufacturing";"";4
+"19.20Z";"Raffinage du pétrole";"BS32400";"Petroleum and coal product manufacturing";"";4
+"20.11Z";"Fabrication de gaz industriels";"BS32510";"Basic chemical manufacturing";"";3
+"20.12Z";"Fabrication de colorants et de pigments";"BS32510";"Basic chemical manufacturing";"";3
+"20.13A";"Enrichissement et  retraitement de matières nucléaires";"BS32510";"Basic chemical manufacturing";"";3
+"20.13B";"Fabrication d'autres produits chimiques inorganiques de base n.c.a.";"BS32510";"Basic chemical manufacturing";"";3
+"20.14Z";"Fabrication d'autres produits chimiques organiques de base";"BS32510";"Basic chemical manufacturing";"";3
+"20.15Z";"Fabrication de produits azotés et d'engrais";"BS32530";"Pesticide, fertilizer and other agricultural chemical manufacturing";"";1
+"20.16Z";"Fabrication de matières plastiques de base";"BS32610";"Plastic product manufacturing";"";3
+"20.17Z";"Fabrication de caoutchouc synthétique";"BS32620";"Rubber product manufacturing";"";2
+"20.20Z";"Fabrication de pesticides et d’autres produits agrochimiques";"BS32530";"Pesticide, fertilizer and other agricultural chemical manufacturing";"";1
+"20.30Z";"Fabrication de peintures, vernis, encres et mastics";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"20.41Z";"Fabrication de savons, détergents et produits d'entretien";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"20.42Z";"Fabrication de parfums et de produits pour la toilette";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"20.51Z";"Fabrication de produits explosifs";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"20.52Z";"Fabrication de colles";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"20.53Z";"Fabrication d'huiles essentielles";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"20.59Z";"Fabrication d'autres produits chimiques n.c.a.";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"20.60Z";"Fabrication de fibres artificielles ou synthétiques";"BS325C0";"Miscellaneous chemical product manufacturing";"";3
+"21.10Z";"Fabrication de produits pharmaceutiques de base";"BS32540";"Pharmaceutical and medicine manufacturing";"";2
+"21.20Z";"Fabrication de préparations pharmaceutiques";"BS32540";"Pharmaceutical and medicine manufacturing";"";2
+"22.11Z";"Fabrication et rechapage de pneumatiques";"BS32620";"Rubber product manufacturing";"";2
+"22.19Z";"Fabrication d'autres articles en caoutchouc";"BS32620";"Rubber product manufacturing";"";2
+"22.21Z";"Fabrication de plaques, feuilles, tubes et profilés en matières plastiques";"BS32610";"Plastic product manufacturing";"";3
+"22.22Z";"Fabrication d'emballages en matières plastiques";"BS32610";"Plastic product manufacturing";"";3
+"22.23Z";"Fabrication d'éléments en matières plastiques pour la construction";"BS32610";"Plastic product manufacturing";"";3
+"22.29A";"Fabrication de pièces techniques à base de matières plastiques";"BS32610";"Plastic product manufacturing";"";3
+"22.29B";"Fabrication de produits de consommation courante en matières plastiques";"BS32610";"Plastic product manufacturing";"";3
+"23.11Z";"Fabrication de verre plat";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.12Z";"Façonnage et transformation du verre plat";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.13Z";"Fabrication de verre creux";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.14Z";"Fabrication de fibres de verre";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.19Z";"Fabrication et façonnage d'autres articles en verre, y compris verre technique";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.20Z";"Fabrication de produits réfractaires";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.31Z";"Fabrication de carreaux en céramique";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.32Z";"Fabrication de briques, tuiles et produits de construction, en terre cuite";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.41Z";"Fabrication d'articles céramiques à usage domestique ou ornemental";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.42Z";"Fabrication d'appareils sanitaires en céramique";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.43Z";"Fabrication d'isolateurs et pièces isolantes en céramique";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.44Z";"Fabrication d'autres produits céramiques à usage technique";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.49Z";"Fabrication d'autres produits céramiques";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.51Z";"Fabrication de ciment";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.52Z";"Fabrication de chaux et plâtre";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.61Z";"Fabrication d'éléments en béton pour la construction";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.62Z";"Fabrication d'éléments en plâtre pour la construction";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.63Z";"Fabrication de béton prêt à l'emploi";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.64Z";"Fabrication de mortiers et bétons secs";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.65Z";"Fabrication d'ouvrages en fibre-ciment";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.69Z";"Fabrication d'autres ouvrages en béton, en ciment ou en plâtre";"BS32730";"Cement and concrete product manufacturing";"";3
+"23.70Z";"Taille, façonnage et finissage de pierres";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.91Z";"Fabrication de produits abrasifs";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"23.99Z";"Fabrication d'autres produits minéraux non métalliques n.c.a.";"BS327A0";"Non-metallic mineral product manufacturing (except cement and concrete products)";"";3
+"24.10Z";"Sidérurgie";"BS33100";"Primary metal manufacturing";"";4
+"24.20Z";"Fabrication de tubes, tuyaux, profilés creux et accessoires correspondants en acier";"BS33100";"Primary metal manufacturing";"";4
+"24.31Z";"Étirage à froid de barres";"BS33100";"Primary metal manufacturing";"";4
+"24.32Z";"Laminage à froid de feuillards";"BS33100";"Primary metal manufacturing";"";4
+"24.33Z";"Profilage à froid par formage ou pliage";"BS33100";"Primary metal manufacturing";"";4
+"24.34Z";"Tréfilage à froid";"BS33100";"Primary metal manufacturing";"";4
+"24.41Z";"Production de métaux précieux";"BS33100";"Primary metal manufacturing";"";4
+"24.42Z";"Métallurgie de l'aluminium";"BS33100";"Primary metal manufacturing";"";4
+"24.43Z";"Métallurgie du plomb, du zinc ou de l'étain";"BS33100";"Primary metal manufacturing";"";4
+"24.44Z";"Métallurgie du cuivre";"BS33100";"Primary metal manufacturing";"";4
+"24.45Z";"Métallurgie des autres métaux non ferreux";"BS33100";"Primary metal manufacturing";"";4
+"24.46Z";"Élaboration et transformation de matières nucléaires";"BS33100";"Primary metal manufacturing";"";4
+"24.51Z";"Fonderie de fonte";"BS33100";"Primary metal manufacturing";"";4
+"24.52Z";"Fonderie d'acier";"BS33100";"Primary metal manufacturing";"";4
+"24.53Z";"Fonderie de métaux légers";"BS33100";"Primary metal manufacturing";"";4
+"24.54Z";"Fonderie d'autres métaux non ferreux";"BS33100";"Primary metal manufacturing";"";4
+"25.11Z";"Fabrication de structures métalliques et de parties de structures";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.12Z";"Fabrication de portes et fenêtres en métal";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.21Z";"Fabrication de radiateurs et de chaudières pour le chauffage central";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.29Z";"Fabrication d'autres réservoirs, citernes et conteneurs métalliques";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.30Z";"Fabrication de générateurs de vapeur, à l'exception des chaudières pour le chauffage central";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.40Z";"Fabrication d'armes et de munitions";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.50A";"Forge, estampage, matriçage, métallurgie des poudres";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.50B";"Découpage, emboutissage";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.61Z";"Traitement et revêtement des métaux";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.62A";"Décolletage";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.62B";"Mécanique industrielle";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.71Z";"Fabrication de coutellerie";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.72Z";"Fabrication de serrures et de ferrures";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.73A";"Fabrication de moules et modèles";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.73B";"Fabrication d'autres outillages";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.91Z";"Fabrication de fûts et emballages métalliques similaires";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.92Z";"Fabrication d'emballages métalliques légers";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.93Z";"Fabrication d'articles en fils métalliques, de chaînes et de ressorts";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.94Z";"Fabrication de vis et de boulons";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.99A";"Fabrication d'articles métalliques ménagers";"BS33200";"Fabricated metal product manufacturing";"";4
+"25.99B";"Fabrication d'autres articles métalliques";"BS33200";"Fabricated metal product manufacturing";"";4
+"26.11Z";"Fabrication de composants électroniques";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.12Z";"Fabrication de cartes électroniques assemblées";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.20Z";"Fabrication d'ordinateurs et d'équipements périphériques";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.30Z";"Fabrication d'équipements de communication";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.40Z";"Fabrication de produits électroniques grand public";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.51A";"Fabrication d'équipements d'aide à la navigation";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.51B";"Fabrication d'instrumentation scientifique et technique";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.52Z";"Horlogerie";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.60Z";"Fabrication d'équipements d'irradiation médicale, d'équipements électromédicaux et électrothérapeutiques";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.70Z";"Fabrication de matériels optique et photographique";"BS33400";"Computer and electronic product manufacturing";"";4
+"26.80Z";"Fabrication de supports magnétiques et optiques";"BS33400";"Computer and electronic product manufacturing";"";4
+"27.11Z";"Fabrication de moteurs, génératrices et transformateurs électriques";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.12Z";"Fabrication de matériel de distribution et de commande électrique";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.20Z";"Fabrication de piles et d'accumulateurs électriques";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.31Z";"Fabrication de câbles de fibres optiques";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.32Z";"Fabrication d'autres fils et câbles électroniques ou électriques";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.33Z";"Fabrication de matériel d'installation électrique";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.40Z";"Fabrication d'appareils d'éclairage électrique";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.51Z";"Fabrication d'appareils électroménagers";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.52Z";"Fabrication d'appareils ménagers non électriques";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"27.90Z";"Fabrication d'autres matériels électriques";"BS33500";"Electrical equipment, appliance and component manufacturing";"";4
+"28.11Z";"Fabrication de moteurs et turbines, à l'exception des moteurs d’avions et de véhicules";"BS33300";"Machinery manufacturing";"";4
+"28.12Z";"Fabrication d'équipements hydrauliques et pneumatiques";"BS33300";"Machinery manufacturing";"";4
+"28.13Z";"Fabrication d'autres pompes et compresseurs";"BS33300";"Machinery manufacturing";"";4
+"28.14Z";"Fabrication d'autres articles de robinetterie";"BS33300";"Machinery manufacturing";"";4
+"28.15Z";"Fabrication d'engrenages et d'organes mécaniques de transmission";"BS33300";"Machinery manufacturing";"";4
+"28.21Z";"Fabrication de fours et brûleurs";"BS33300";"Machinery manufacturing";"";4
+"28.22Z";"Fabrication de matériel de levage et de manutention";"BS33300";"Machinery manufacturing";"";4
+"28.23Z";"Fabrication de machines et d'équipements de bureau (à l'exception des ordinateurs et équipements périphériques)";"BS33300";"Machinery manufacturing";"";4
+"28.24Z";"Fabrication d'outillage portatif à moteur incorporé";"BS33300";"Machinery manufacturing";"";4
+"28.25Z";"Fabrication d'équipements aérauliques et frigorifiques industriels";"BS33300";"Machinery manufacturing";"";4
+"28.29A";"Fabrication d'équipements d'emballage, de conditionnement et de pesage";"BS33300";"Machinery manufacturing";"";4
+"28.29B";"Fabrication d'autres machines d'usage général";"BS33300";"Machinery manufacturing";"";4
+"28.30Z";"Fabrication de machines agricoles et forestières";"BS33300";"Machinery manufacturing";"";4
+"28.41Z";"Fabrication de machines-outils pour le travail des métaux";"BS33300";"Machinery manufacturing";"";4
+"28.49Z";"Fabrication d'autres machines-outils";"BS33300";"Machinery manufacturing";"";4
+"28.91Z";"Fabrication de machines pour la métallurgie";"BS33300";"Machinery manufacturing";"";4
+"28.92Z";"Fabrication de machines pour l'extraction ou la construction";"BS33300";"Machinery manufacturing";"";4
+"28.93Z";"Fabrication de machines pour l'industrie agro-alimentaire";"BS33300";"Machinery manufacturing";"";4
+"28.94Z";"Fabrication de machines pour les industries textiles";"BS33300";"Machinery manufacturing";"";4
+"28.95Z";"Fabrication de machines pour les industries du papier et du carton";"BS33300";"Machinery manufacturing";"";4
+"28.96Z";"Fabrication de machines pour le travail du caoutchouc ou des plastiques";"BS33300";"Machinery manufacturing";"";4
+"28.99A";"Fabrication de machines d'imprimerie";"BS33300";"Machinery manufacturing";"";4
+"28.99B";"Fabrication d'autres machines spécialisées";"BS33300";"Machinery manufacturing";"";4
+"29.10Z";"Construction de véhicules automobiles";"BS33610";"Motor vehicle manufacturing";"";1
+"29.20Z";"Fabrication de carrosseries et remorques";"BS33620";"Motor vehicle body and trailer manufacturing";"";1
+"29.31Z";"Fabrication d'équipements électriques et électroniques automobiles";"BS33630";"Motor vehicle parts manufacturing";"";2
+"29.32Z";"Fabrication d'autres équipements automobiles";"BS33630";"Motor vehicle parts manufacturing";"";2
+"30.11Z";"Construction de navires et de structures flottantes";"BS33660";"Ship and boat building";"";2
+"30.12Z";"Construction de bateaux de plaisance";"BS33660";"Ship and boat building";"";2
+"30.20Z";"Construction de locomotives et d'autre matériel ferroviaire roulant";"BS33650";"Railroad rolling stock manufacturing";"";1
+"30.30Z";"Construction aéronautique et spatiale";"BS33640";"Aerospace product and parts manufacturing";"";1
+"30.40Z";"Construction de véhicules militaires de combat";"BS33690";"Other transportation equipment manufacturing";"";3
+"30.91Z";"Fabrication de motocycles";"BS33690";"Other transportation equipment manufacturing";"";3
+"30.92Z";"Fabrication de bicyclettes et de véhicules pour invalides";"BS33690";"Other transportation equipment manufacturing";"";3
+"30.99Z";"Fabrication d’autres équipements de transport n.c.a.";"BS33690";"Other transportation equipment manufacturing";"";3
+"31.01Z";"Fabrication de meubles de bureau et de magasin";"BS33700";"Furniture and related product manufacturing";"";3
+"31.02Z";"Fabrication de meubles de cuisine";"BS33700";"Furniture and related product manufacturing";"";3
+"31.03Z";"Fabrication de matelas";"BS33700";"Furniture and related product manufacturing";"";3
+"31.09A";"Fabrication de sièges d'ameublement d'intérieur";"BS33700";"Furniture and related product manufacturing";"";3
+"31.09B";"Fabrication d’autres meubles et industries connexes de l’ameublement";"BS33700";"Furniture and related product manufacturing";"";3
+"32.11Z";"Frappe de monnaie";"BS33900";"Miscellaneous manufacturing";"";3
+"32.12Z";"Fabrication d’articles de joaillerie et bijouterie";"BS33900";"Miscellaneous manufacturing";"";3
+"32.13Z";"Fabrication d’articles de bijouterie fantaisie et articles similaires";"BS33900";"Miscellaneous manufacturing";"";3
+"32.20Z";"Fabrication d'instruments de musique";"BS33900";"Miscellaneous manufacturing";"";3
+"32.30Z";"Fabrication d'articles de sport";"BS33900";"Miscellaneous manufacturing";"";3
+"32.40Z";"Fabrication de jeux et jouets";"BS33900";"Miscellaneous manufacturing";"";3
+"32.50A";"Fabrication de matériel médico-chirurgical et dentaire";"BS33900";"Miscellaneous manufacturing";"";3
+"32.50B";"Fabrication de lunettes";"BS33900";"Miscellaneous manufacturing";"";3
+"32.91Z";"Fabrication d’articles de brosserie";"BS33900";"Miscellaneous manufacturing";"";3
+"32.99Z";"Autres activités manufacturières n.c.a.";"BS33900";"Miscellaneous manufacturing";"";3
+"33.11Z";"Réparation d'ouvrages en métaux";"BS81100";"Repair and maintenance";"";3
+"33.12Z";"Réparation de machines et équipements mécaniques";"BS81100";"Repair and maintenance";"";3
+"33.13Z";"Réparation de matériels électroniques et optiques";"BS81100";"Repair and maintenance";"";3
+"33.14Z";"Réparation d'équipements électriques";"BS81100";"Repair and maintenance";"";3
+"33.15Z";"Réparation et maintenance navale";"BS81100";"Repair and maintenance";"";3
+"33.16Z";"Réparation et maintenance d'aéronefs et d'engins spatiaux";"BS81100";"Repair and maintenance";"";3
+"33.17Z";"Réparation et maintenance d'autres équipements de transport";"BS81100";"Repair and maintenance";"";3
+"33.19Z";"Réparation d'autres équipements";"BS81100";"Repair and maintenance";"";3
+"33.20A";"Installation de structures métalliques, chaudronnées et de tuyauterie";"BS23E00";"Other activities of the construction industry";"";3
+"33.20B";"Installation de machines et équipements mécaniques";"BS23E00";"Other activities of the construction industry";"";3
+"33.20C";"Conception d'ensemble et assemblage sur site industriel d'équipements de contrôle des processus industriels";"BS23E00";"Other activities of the construction industry";"";3
+"33.20D";"Installation d'équipements électriques, de matériels électroniques et optiques ou d'autres matériels";"BS23E00";"Other activities of the construction industry";"";3
+"35.11Z";"Production d'électricité";"BS22110";"Electric power generation, transmission and distribution";"";3
+"35.12Z";"Transport d'électricité";"BS22110";"Electric power generation, transmission and distribution";"";3
+"35.13Z";"Distribution d'électricité";"BS22110";"Electric power generation, transmission and distribution";"";3
+"35.14Z";"Commerce d'électricité";"BS22110";"Electric power generation, transmission and distribution";"";3
+"35.21Z";"Production de combustibles gazeux";"BS221A0";"Natural gas distribution, water, sewage and other systems";"";3
+"35.22Z";"Distribution de combustibles gazeux par conduites";"BS221A0";"Natural gas distribution, water, sewage and other systems";"";3
+"35.23Z";"Commerce de combustibles gazeux par conduites";"BS221A0";"Natural gas distribution, water, sewage and other systems";"";3
+"35.30Z";"Production et distribution de vapeur et d'air conditionné";"BS221A0";"Natural gas distribution, water, sewage and other systems";"";3
+"36.00Z";"Captage, traitement et distribution d'eau";"BS221A0";"Natural gas distribution, water, sewage and other systems";"";5
+"37.00Z";"Collecte et traitement des eaux usées";"BS221A0";"Natural gas distribution, water, sewage and other systems";"";5
+"38.11Z";"Collecte des déchets non dangereux";"BS56200";"Waste management and remediation services";"";3
+"38.12Z";"Collecte des déchets dangereux";"BS56200";"Waste management and remediation services";"";3
+"38.21Z";"Traitement et élimination des déchets non dangereux";"BS56200";"Waste management and remediation services";"";3
+"38.22Z";"Traitement et élimination des déchets dangereux";"BS56200";"Waste management and remediation services";"";3
+"38.31Z";"Démantèlement d'épaves";"BS56200";"Waste management and remediation services";"";3
+"38.32Z";"Récupération de déchets triés";"BS56200";"Waste management and remediation services";"";3
+"39.00Z";"Dépollution et autres services de gestion des déchets";"BS56200";"Waste management and remediation services";"";3
+"41.10A";"Promotion immobilière de logements";"BS23A00";"Residential building construction";"";3
+"41.10B";"Promotion immobilière de bureaux";"BS23B00";"Non-residential building construction";"";3
+"41.10C";"Promotion immobilière d'autres bâtiments";"BS23B00";"Non-residential building construction";"";3
+"41.10D";"Supports juridiques de programmes";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";3
+"41.20A";"Construction de maisons individuelles";"BS56100";"Residential building construction";"";1
+"41.20B";"Construction d'autres bâtiments";"BS23B00";"Non-residential building construction";"";1
+"42.11Z";"Construction de routes et autoroutes";"BS23C10";"Transportation engineering construction";"";2
+"42.12Z";"Construction de voies ferrées de surface et souterraines";"BS23C10";"Transportation engineering construction";"";2
+"42.13A";"Construction d'ouvrages d'art";"BS23C10";"Transportation engineering construction";"";2
+"42.13B";"Construction et entretien de tunnels";"BS23C10";"Transportation engineering construction";"";2
+"42.21Z";"Construction de réseaux pour fluides";"BS23C20";"Oil and gas engineering construction";"";3
+"42.22Z";"Construction de réseaux électriques et de télécommunications";"BS23C30";"Electric power engineering construction";"p";1
+"42.22Z";"Construction de réseaux électriques et de télécommunications";"BS23C40";"Communication engineering construction";"p";1
+"42.91Z";"Construction d'ouvrages maritimes et fluviaux";"BS23C50";"Other engineering construction";"";3
+"42.99Z";"Construction d'autres ouvrages de génie civil n.c.a.";"BS23C50";"Other engineering construction";"";3
+"43.11Z";"Travaux de démolition";"BS23E00";"Other engineering construction";"";3
+"43.12A";"Travaux de terrassement courants et travaux préparatoires";"BS23E00";"Other engineering construction";"";3
+"43.12B";"Travaux de terrassement spécialisés ou de grande masse";"BS23E00";"Other engineering construction";"";3
+"43.13Z";"Forages et sondages";"BS23E00";"Other engineering construction";"";3
+"43.21A";"Travaux d'installation électrique dans tous locaux";"BS23E00";"Other engineering construction";"";3
+"43.21B";"Travaux d'installation électrique sur la voie publique";"BS23E00";"Other engineering construction";"";3
+"43.22A";"Travaux d'installation d'eau et de gaz en tous locaux";"BS23E00";"Other engineering construction";"";3
+"43.22B";"Travaux d'installation d'équipements thermiques et de climatisation";"BS23E00";"Other engineering construction";"";3
+"43.29A";"Travaux d'isolation";"BS23E00";"Other engineering construction";"";3
+"43.29B";"Autres travaux d'installation n.c.a.";"BS23E00";"Other engineering construction";"";3
+"43.31Z";"Travaux de plâtrerie";"BS23E00";"Other engineering construction";"";3
+"43.32A";"Travaux de menuiserie bois et PVC";"BS23E00";"Other engineering construction";"";3
+"43.32B";"Travaux de menuiserie métallique et serrurerie";"BS23E00";"Other engineering construction";"";3
+"43.32C";"Agencement de lieux de vente";"BS23E00";"Other engineering construction";"";3
+"43.33Z";"Travaux de revêtement des sols et des murs";"BS23E00";"Other engineering construction";"";3
+"43.34Z";"Travaux de peinture et vitrerie";"BS23E00";"Other engineering construction";"";3
+"43.39Z";"Autres travaux de finition";"BS23E00";"Other engineering construction";"";3
+"43.91A";"Travaux de charpente";"BS23E00";"Other engineering construction";"";3
+"43.91B";"Travaux de couverture par éléments";"BS23E00";"Other engineering construction";"";3
+"43.99A";"Travaux d'étanchéification";"BS23E00";"Other engineering construction";"";3
+"43.99B";"Travaux de montage de structures métalliques";"BS23E00";"Other engineering construction";"";3
+"43.99C";"Travaux de maçonnerie générale et gros œuvre de bâtiment";"BS23E00";"Other engineering construction";"";3
+"43.99D";"Autres travaux spécialisés de construction";"BS23E00";"Other engineering construction";"";3
+"43.99E";"Location avec opérateur de matériel de construction";"BS23E00";"Other engineering construction";"";3
+"45.11Z";"Commerce de voitures et de véhicules automobiles légers";"BS4AA00";"Retail trade (except cannabis)";"";3
+"45.19Z";"Commerce d'autres véhicules automobiles";"BS4AA00";"Retail trade (except cannabis)";"";3
+"45.20A";"Entretien et réparation de véhicules automobiles légers";"BS81100";"Repair and maintenance";"";2
+"45.20B";"Entretien et réparation d'autres véhicules automobiles";"BS81100";"Repair and maintenance";"";2
+"45.31Z";"Commerce de gros d'équipements automobiles";"BS41000";"Wholesale trade";"";5
+"45.32Z";"Commerce de détail d'équipements automobiles";"BS4AA00";"Retail trade (except cannabis)";"";5
+"45.40Z";"Commerce et réparation de motocycles";"BS4AA00";"Retail trade (except cannabis)";"";5
+"46.11Z";"Intermédiaires du commerce en matières premières agricoles, animaux vivants, matières premières textiles et produits semi-finis";"BS41000";"Wholesale trade";"";4
+"46.12A";"Centrales d'achat de carburant";"BS41000";"Wholesale trade";"";4
+"46.12B";"Autres intermédiaires du commerce en combustibles, métaux, minéraux et produits chimiques";"BS41000";"Wholesale trade";"";4
+"46.13Z";"Intermédiaires du commerce en bois et matériaux de construction";"BS41000";"Wholesale trade";"";4
+"46.14Z";"Intermédiaires du commerce en machines, équipements industriels, navires et avions";"BS41000";"Wholesale trade";"";4
+"46.15Z";"Intermédiaires du commerce en meubles, articles de ménage et quincaillerie";"BS41000";"Wholesale trade";"";4
+"46.16Z";"Intermédiaires du commerce en textiles, habillement, fourrures, chaussures et articles en cuir";"BS41000";"Wholesale trade";"";4
+"46.17A";"Centrales d'achat alimentaires";"BS41000";"Wholesale trade";"";4
+"46.17B";"Autres intermédiaires du commerce en denrées, boissons et tabac";"BS41000";"Wholesale trade";"";4
+"46.18Z";"Intermédiaires spécialisés dans le commerce d'autres produits spécifiques";"BS41000";"Wholesale trade";"";4
+"46.19A";"Centrales d'achat non alimentaires";"BS41000";"Wholesale trade";"";4
+"46.19B";"Autres intermédiaires du commerce en produits divers";"BS41000";"Wholesale trade";"";4
+"46.21Z";"Commerce de gros (commerce interentreprises) de céréales, de tabac non manufacturé, de semences et d'aliments pour le bétail";"BS41000";"Wholesale trade";"";4
+"46.22Z";"Commerce de gros (commerce interentreprises) de fleurs et plantes";"BS41000";"Wholesale trade";"";4
+"46.23Z";"Commerce de gros (commerce interentreprises) d'animaux vivants";"BS41000";"Wholesale trade";"";4
+"46.24Z";"Commerce de gros (commerce interentreprises) de cuirs et peaux";"BS41000";"Wholesale trade";"";4
+"46.31Z";"Commerce de gros (commerce interentreprises) de fruits et légumes";"BS41000";"Wholesale trade";"";4
+"46.32A";"Commerce de gros (commerce interentreprises) de viandes de boucherie";"BS41000";"Wholesale trade";"";4
+"46.32B";"Commerce de gros (commerce interentreprises) de produits à base de viande";"BS41000";"Wholesale trade";"";4
+"46.32C";"Commerce de gros (commerce interentreprises) de volailles et gibier";"BS41000";"Wholesale trade";"";4
+"46.33Z";"Commerce de gros (commerce interentreprises) de produits laitiers, œufs, huiles et matières grasses comestibles";"BS41000";"Wholesale trade";"";4
+"46.34Z";"Commerce de gros (commerce interentreprises) de boissons";"BS41000";"Wholesale trade";"";4
+"46.35Z";"Commerce de gros (commerce interentreprises) de produits à base de tabac";"BS41000";"Wholesale trade";"";4
+"46.36Z";"Commerce de gros (commerce interentreprises) de sucre, chocolat et confiserie";"BS41000";"Wholesale trade";"";4
+"46.37Z";"Commerce de gros (commerce interentreprises) de café, thé, cacao et épices";"BS41000";"Wholesale trade";"";4
+"46.38A";"Commerce de gros (commerce interentreprises) de poissons, crustacés et mollusques";"BS41000";"Wholesale trade";"";4
+"46.38B";"Commerce de gros (commerce interentreprises) alimentaire spécialisé divers";"BS41000";"Wholesale trade";"";4
+"46.39A";"Commerce de gros (commerce interentreprises) de produits surgelés";"BS41000";"Wholesale trade";"";4
+"46.39B";"Commerce de gros (commerce interentreprises) alimentaire non spécialisé";"BS41000";"Wholesale trade";"";4
+"46.41Z";"Commerce de gros (commerce interentreprises) de textiles";"BS41000";"Wholesale trade";"";4
+"46.42Z";"Commerce de gros (commerce interentreprises) d'habillement et de chaussures";"BS41000";"Wholesale trade";"";4
+"46.43Z";"Commerce de gros (commerce interentreprises) d'appareils électroménagers";"BS41000";"Wholesale trade";"";4
+"46.44Z";"Commerce de gros (commerce interentreprises) de vaisselle, verrerie et produits d'entretien";"BS41000";"Wholesale trade";"";4
+"46.45Z";"Commerce de gros (commerce interentreprises) de parfumerie et de produits de beauté";"BS41000";"Wholesale trade";"";4
+"46.46Z";"Commerce de gros (commerce interentreprises) de produits pharmaceutiques";"BS41000";"Wholesale trade";"";4
+"46.47Z";"Commerce de gros (commerce interentreprises) de meubles, de tapis et d'appareils d'éclairage";"BS41000";"Wholesale trade";"";4
+"46.48Z";"Commerce de gros (commerce interentreprises) d'articles d'horlogerie et de bijouterie";"BS41000";"Wholesale trade";"";4
+"46.49Z";"Commerce de gros (commerce interentreprises) d'autres biens domestiques";"BS41000";"Wholesale trade";"";4
+"46.51Z";"Commerce de gros (commerce interentreprises) d'ordinateurs, d'équipements informatiques périphériques et de logiciels";"BS41000";"Wholesale trade";"";4
+"46.52Z";"Commerce de gros (commerce interentreprises) de composants et d'équipements électroniques et de télécommunication";"BS41000";"Wholesale trade";"";4
+"46.61Z";"Commerce de gros (commerce interentreprises) de matériel agricole";"BS41000";"Wholesale trade";"";4
+"46.62Z";"Commerce de gros (commerce interentreprises) de machines-outils";"BS41000";"Wholesale trade";"";4
+"46.63Z";"Commerce de gros (commerce interentreprises) de machines pour l'extraction, la construction et le génie civil";"BS41000";"Wholesale trade";"";4
+"46.64Z";"Commerce de gros (commerce interentreprises) de machines pour l'industrie textile et l'habillement";"BS41000";"Wholesale trade";"";4
+"46.65Z";"Commerce de gros (commerce interentreprises) de mobilier de bureau";"BS41000";"Wholesale trade";"";4
+"46.66Z";"Commerce de gros (commerce interentreprises) d'autres machines et équipements de bureau";"BS41000";"Wholesale trade";"";4
+"46.69A";"Commerce de gros (commerce interentreprises) de matériel électrique";"BS41000";"Wholesale trade";"";4
+"46.69B";"Commerce de gros (commerce interentreprises) de fournitures et équipements industriels divers";"BS41000";"Wholesale trade";"";4
+"46.69C";"Commerce de gros (commerce interentreprises) de fournitures et équipements divers pour le commerce et les services";"BS41000";"Wholesale trade";"";4
+"46.71Z";"Commerce de gros (commerce interentreprises) de combustibles et de produits annexes";"BS41000";"Wholesale trade";"";4
+"46.72Z";"Commerce de gros (commerce interentreprises) de minerais et métaux";"BS41000";"Wholesale trade";"";4
+"46.73A";"Commerce de gros (commerce interentreprises) de bois et de matériaux de construction";"BS41000";"Wholesale trade";"";4
+"46.73B";"Commerce de gros (commerce interentreprises) d'appareils sanitaires et de produits de décoration";"BS41000";"Wholesale trade";"";4
+"46.74A";"Commerce de gros (commerce interentreprises) de quincaillerie";"BS41000";"Wholesale trade";"";4
+"46.74B";"Commerce de gros (commerce interentreprises) de fournitures pour la plomberie et le chauffage";"BS41000";"Wholesale trade";"";4
+"46.75Z";"Commerce de gros (commerce interentreprises) de produits chimiques";"BS41000";"Wholesale trade";"";4
+"46.76Z";"Commerce de gros (commerce interentreprises) d'autres produits intermédiaires";"BS41000";"Wholesale trade";"";4
+"46.77Z";"Commerce de gros (commerce interentreprises) de déchets et débris";"BS41000";"Wholesale trade";"";4
+"46.90Z";"Commerce de gros (commerce interentreprises) non spécialisé";"BS41000";"Wholesale trade";"";4
+"47.11A";"Commerce de détail de produits surgelés";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.11B";"Commerce d'alimentation générale";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.11C";"Supérettes";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.11D";"Supermarchés";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.11E";"Magasins multi-commerces";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.11F";"Hypermarchés";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.19A";"Grands magasins";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.19B";"Autres commerces de détail en magasin non spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.21Z";"Commerce de détail de fruits et légumes en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.22Z";"Commerce de détail de viandes et de produits à base de viande en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.23Z";"Commerce de détail de poissons, crustacés et mollusques en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.24Z";"Commerce de détail de pain, pâtisserie et confiserie en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.25Z";"Commerce de détail de boissons en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.26Z";"Commerce de détail de produits à base de tabac en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.29Z";"Autres commerces de détail alimentaires en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.30Z";"Commerce de détail de carburants en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.41Z";"Commerce de détail d'ordinateurs, d'unités périphériques et de logiciels en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.42Z";"Commerce de détail de matériels de télécommunication en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.43Z";"Commerce de détail de matériels audio et vidéo en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.51Z";"Commerce de détail de textiles en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.52A";"Commerce de détail de quincaillerie, peintures et verres en petites surfaces (moins de 400 m2)";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.52B";"Commerce de détail de quincaillerie, peintures et verres en grandes surfaces (400 m2et plus)";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.53Z";"Commerce de détail de tapis, moquettes et revêtements de murs et de sols en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.54Z";"Commerce de détail d'appareils électroménagers en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.59A";"Commerce de détail de meubles";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.59B";"Commerce de détail d'autres équipements du foyer";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.61Z";"Commerce de détail de livres en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.62Z";"Commerce de détail de journaux et papeterie en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.63Z";"Commerce de détail d'enregistrements musicaux et vidéo en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.64Z";"Commerce de détail d'articles de sport en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.65Z";"Commerce de détail de jeux et jouets en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.71Z";"Commerce de détail d'habillement en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.72A";"Commerce de détail de la chaussure";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.72B";"Commerce de détail de maroquinerie et d'articles de voyage";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.73Z";"Commerce de détail de produits pharmaceutiques en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.74Z";"Commerce de détail d'articles médicaux et orthopédiques en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.75Z";"Commerce de détail de parfumerie et de produits de beauté en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.76Z";"Commerce de détail de fleurs, plantes, graines, engrais, animaux de compagnie et aliments pour ces animaux en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.77Z";"Commerce de détail d'articles d'horlogerie et de bijouterie en magasin spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.78A";"Commerces de détail d'optique";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.78B";"Commerces de détail de charbons et combustibles";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.78C";"Autres commerces de détail spécialisés divers";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.79Z";"Commerce de détail de biens d'occasion en magasin";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.81Z";"Commerce de détail alimentaire sur éventaires et marchés";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.82Z";"Commerce de détail de textiles, d'habillement et de chaussures sur éventaires et marchés";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.89Z";"Autres commerces de détail sur éventaires et marchés";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.91A";"Vente à distance sur catalogue général";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.91B";"Vente à distance sur catalogue spécialisé";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.99A";"Vente à domicile";"BS4AA00";"Retail trade (except cannabis)";"";4
+"47.99B";"Vente par automates et autres commerces de détail hors magasin, éventaires ou marchés n.c.a.";"BS4AA00";"Retail trade (except cannabis)";"";4
+"49.10Z";"Transport ferroviaire interurbain de voyageurs";"BS48200";"Rail transportation";"";2
+"49.20Z";"Transports ferroviaires de fret";"BS48200";"Rail transportation";"";2
+"49.31Z";"Transports urbains et suburbains de voyageurs";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";2
+"49.32Z";"Transports de voyageurs par taxis";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";2
+"49.39A";"Transports routiers réguliers de voyageurs";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";2
+"49.39B";"Autres transports routiers de voyageurs";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";2
+"49.39C";"Téléphériques et remontées mécaniques";"BS71000";"Arts, entertainment and recreation";"";5
+"49.41A";"Transports routiers de fret interurbains";"BS48400";"Truck transportation";"";2
+"49.41B";"Transports routiers de fret de proximité";"BS48400";"Truck transportation";"";2
+"49.41C";"Location de camions avec chauffeur";"BS48400";"Truck transportation";"";2
+"49.42Z";"Services de déménagement";"BS48400";"Truck transportation";"";2
+"49.50Z";"Transports par conduites";"BS48600";"Pipeline transportation";"";1
+"50.10Z";"Transports maritimes et côtiers de passagers";"BS48300";"Water transportation";"";4
+"50.20Z";"Transports maritimes et côtiers de fret";"BS48300";"Water transportation";"";4
+"50.30Z";"Transports fluviaux de passagers";"BS48300";"Water transportation";"";4
+"50.40Z";"Transports fluviaux de fret";"BS48300";"Water transportation";"";4
+"51.10Z";"Transports aériens de passagers";"BS48100";"Air transportation";"";4
+"51.21Z";"Transports aériens de fret";"BS48100";"Air transportation";"";4
+"51.22Z";"Transports spatiaux";"BS48100";"Air transportation";"";4
+"52.10A";"Entreposage et stockage frigorifique";"BS49300";"Warehousing and storage";"";2
+"52.10B";"Entreposage et stockage non frigorifique";"BS49300";"Warehousing and storage";"";2
+"52.21Z";"Services auxiliaires des transports terrestres";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";5
+"52.22Z";"Services auxiliaires des transports par eau";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";5
+"52.23Z";"Services auxiliaires des transports aériens";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";5
+"52.24A";"Manutention portuaire";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";5
+"52.24B";"Manutention non portuaire";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";5
+"52.29A";"Messagerie, fret express";"BS49A00";"Postal service and couriers and messengers";"";3
+"52.29B";"Affrètement et organisation des transports";"BS48B00";"Transit, ground passenger and scenic and sightseeing transportation, taxi and limousine service and support activities for transportation";"";5
+"53.10Z";"Activités de poste dans le cadre d'une obligation de service universel";"BS49A00";"Postal service and couriers and messengers";"";4
+"53.20Z";"Autres activités de poste et de courrier";"BS49A00";"Postal service and couriers and messengers";"";4
+"55.10Z";"Hôtels et hébergement similaire";"BS72000";"Accommodation and food services";"";4
+"55.20Z";"Hébergement touristique et autre hébergement de courte durée";"BS72000";"Accommodation and food services";"";4
+"55.30Z";"Terrains de camping et parcs pour caravanes ou véhicules de loisirs";"BS72000";"Accommodation and food services";"";4
+"55.90Z";"Autres hébergements";"BS72000";"Accommodation and food services";"";4
+"56.10A";"Restauration traditionnelle";"BS72000";"Accommodation and food services";"";4
+"56.10B";"Cafétérias et autres libres-services";"BS72000";"Accommodation and food services";"";4
+"56.10C";"Restauration de type rapide";"BS72000";"Accommodation and food services";"";4
+"56.21Z";"Services des traiteurs";"BS72000";"Accommodation and food services";"";4
+"56.29A";"Restauration collective sous contrat";"BS72000";"Accommodation and food services";"";4
+"56.29B";"Autres services de restauration n.c.a.";"BS72000";"Accommodation and food services";"";4
+"56.30Z";"Débits de boissons";"BS72000";"Accommodation and food services";"";4
+"58.11Z";"Édition de livres";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.12Z";"Édition de répertoires et de fichiers d'adresses";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.13Z";"Édition de journaux";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.14Z";"Édition de revues et périodiques";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.19Z";"Autres activités d'édition";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.21Z";"Édition de jeux électroniques";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.29A";"Édition de logiciels système et de réseau";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.29B";"Edition de logiciels outils de développement et de langages";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"58.29C";"Edition de logiciels applicatifs";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"59.11A";"Production de films et de programmes pour la télévision";"BS51200";"Motion picture and sound recording industries";"";3
+"59.11B";"Production de films institutionnels et publicitaires";"BS51200";"Motion picture and sound recording industries";"";3
+"59.11C";"Production de films pour le cinéma";"BS51200";"Motion picture and sound recording industries";"";3
+"59.12Z";"Post-production de films cinématographiques, de vidéo et de programmes de télévision";"BS51200";"Motion picture and sound recording industries";"";3
+"59.13A";"Distribution de films cinématographiques";"BS51200";"Motion picture and sound recording industries";"";3
+"59.13B";"Edition et distribution vidéo";"BS51200";"Motion picture and sound recording industries";"";3
+"59.14Z";"Projection de films cinématographiques";"BS51200";"Motion picture and sound recording industries";"";3
+"59.20Z";"Enregistrement sonore et édition musicale";"BS51200";"Motion picture and sound recording industries";"";3
+"60.10Z";"Édition et diffusion de programmes radio";"BS51610";"Radio and television broadcasting stations";"";3
+"60.20A";"Edition de chaînes généralistes";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";3
+"60.20B";"Edition de chaînes thématiques";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";3
+"61.10Z";"Télécommunications filaires";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"61.20Z";"Télécommunications sans fil";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"61.30Z";"Télécommunications par satellite";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"61.90Z";"Autres activités de télécommunication";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"62.01Z";"Programmation informatique";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";2
+"62.02A";"Conseil en systèmes et logiciels informatiques";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";2
+"62.02B";"Tierce maintenance de systèmes et d’applications informatiques";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";2
+"62.03Z";"Gestion d'installations informatiques";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";2
+"62.09Z";"Autres activités informatiques";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";2
+"63.11Z";"Traitement de données, hébergement et activités connexes";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"63.12Z";"Portails Internet";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"63.91Z";"Activités des agences de presse";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"63.99Z";"Autres services d'information n.c.a.";"BS51B00";"Publishing, pay/specialty services, telecommunications and other information services";"";5
+"64.11Z";"Activités de banque centrale";"BS52B00";"Depository credit intermediation and monetary authorities";"";3
+"64.19Z";"Autres intermédiations monétaires";"BS52B00";"Depository credit intermediation and monetary authorities";"";3
+"64.20Z";"Activités des sociétés holding";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";3
+"64.30Z";"Fonds de placement et entités financières similaires";"BS52B00";"Depository credit intermediation and monetary authorities";"";3
+"64.91Z";"Crédit-bail";"BS52B00";"Depository credit intermediation and monetary authorities";"";3
+"64.92Z";"Autre distribution de crédit";"BS52B00";"Depository credit intermediation and monetary authorities";"";3
+"64.99Z";"Autres activités des services financiers, hors assurance et caisses de retraite, n.c.a.";"BS52B00";"Depository credit intermediation and monetary authorities";"";3
+"65.11Z";"Assurance vie";"BS52410";"Insurance carriers";"";4
+"65.12Z";"Autres assurances";"BS52410";"Insurance carriers";"";4
+"65.20Z";"Réassurance";"BS52410";"Insurance carriers";"";4
+"65.30Z";"Caisses de retraite";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.11Z";"Administration de marchés financiers";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.12Z";"Courtage de valeurs mobilières et de marchandises";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.19A";"Supports juridiques de gestion de patrimoine mobilier";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.19B";"Autres activités auxiliaires de services financiers, hors assurance et caisses de retraite, n.c.a.";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.21Z";"Évaluation des risques et dommages";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.22Z";"Activités des agents et courtiers d'assurances";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.29Z";"Autres activités auxiliaires d'assurance et de caisses de retraite";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"66.30Z";"Gestion de fonds";"BS52B00";"Depository credit intermediation and monetary authorities";"";4
+"68.10Z";"Activités des marchands de biens immobiliers";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";5
+"68.20A";"Location de logements";"BS53110";"Lessors of real estate";"";2
+"68.20B";"Location de terrains et d'autres biens immobiliers";"BS53110";"Lessors of real estate";"";2
+"68.31Z";"Agences immobilières";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";4
+"68.32A";"Administration d'immeubles et autres biens immobiliers";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";4
+"68.32B";"Supports juridiques de gestion de patrimoine immobilier";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";4
+"69.10Z";"Activités juridiques";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"69.20Z";"Activités comptables";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"70.10Z";"Activités des sièges sociaux";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";3
+"70.21Z";"Conseil en relations publiques et communication";"BS54180";"Advertising, public relations and related services";"";3
+"70.22Z";"Conseil pour les affaires et autres conseils de gestion";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";3
+"71.11Z";"Activités d'architecture";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"71.12A";"Activité des géomètres";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"71.12B";"Ingénierie, études techniques";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"71.20A";"Contrôle technique automobile";"BS81100";"Repair and maintenance";"";3
+"71.20B";"Analyses, essais et inspections techniques";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"72.11Z";"Recherche-développement en biotechnologie";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"72.19Z";"Recherche-développement en autres sciences physiques et naturelles";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"72.20Z";"Recherche-développement en sciences humaines et sociales";"BS541C0";"Legal, accounting and architectural, engineering and related services";"";5
+"73.11Z";"Activités des agences de publicité";"BS54180";"Advertising, public relations and related services";"";4
+"73.12Z";"Régie publicitaire de médias";"BS54180";"Advertising, public relations and related services";"";4
+"73.20Z";"Études de marché et sondages";"BS54180";"Advertising, public relations and related services";"";4
+"74.10Z";"Activités spécialisées de design";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";3
+"74.20Z";"Activités photographiques";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";3
+"74.30Z";"Traduction et interprétation";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";3
+"74.90A";"Activité des économistes de la construction";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";3
+"74.90B";"Activités spécialisées, scientifiques et techniques diverses";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";3
+"75.00Z";"Activités vétérinaires";"BS541D0";"Computer systems design and other professional, scientific and technical services";"";3
+"77.11A";"Location de courte durée de voitures et de véhicules automobiles légers";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.11B";"Location de longue durée de voitures et de véhicules automobiles légers";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.12Z";"Location et location-bail de camions";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.21Z";"Location et location-bail d'articles de loisirs et de sport";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.22Z";"Location de vidéocassettes et disques vidéo";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.29Z";"Location et location-bail d'autres biens personnels et domestiques";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.31Z";"Location et location-bail de machines et équipements agricoles";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.32Z";"Location et location-bail de machines et équipements pour la construction";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.33Z";"Location et location-bail de machines de bureau et de matériel informatique";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.34Z";"Location et location-bail de matériels de transport par eau";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.35Z";"Location et location-bail de matériels de transport aérien";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.39Z";"Location et location-bail d'autres machines, équipements et biens matériels n.c.a.";"BS53B00";"Rental and leasing services and lessors of non-financial intangible assets (except copyrighted works)";"";4
+"77.40Z";"Location-bail de propriété intellectuelle et de produits similaires, à l'exception des œuvres soumises à copyright";"BS5A000";"Other finance, insurance and real estate services and management of companies and enterprises";"";3
+"78.10Z";"Activités des agences de placement de main-d'œuvre";"BS56100";"Administrative and support services";"";5
+"78.20Z";"Activités des agences de travail temporaire";"BS56100";"Administrative and support services";"";5
+"78.30Z";"Autre mise à disposition de ressources humaines";"BS56100";"Administrative and support services";"";5
+"79.11Z";"Activités des agences de voyage";"BS56100";"Administrative and support services";"";5
+"79.12Z";"Activités des voyagistes";"BS56100";"Administrative and support services";"";5
+"79.90Z";"Autres services de réservation et activités connexes";"BS56100";"Administrative and support services";"";5
+"80.10Z";"Activités de sécurité privée";"BS56100";"Administrative and support services";"";5
+"80.20Z";"Activités liées aux systèmes de sécurité";"BS56100";"Administrative and support services";"";5
+"80.30Z";"Activités d'enquête";"BS56100";"Administrative and support services";"";5
+"81.10Z";"Activités combinées de soutien lié aux bâtiments";"BS56100";"Administrative and support services";"";5
+"81.21Z";"Nettoyage courant des bâtiments";"BS56100";"Administrative and support services";"";5
+"81.22Z";"Autres activités de nettoyage des bâtiments et nettoyage industriel";"BS56100";"Administrative and support services";"";5
+"81.29A";"Désinfection, désinsectisation, dératisation";"BS56100";"Administrative and support services";"";5
+"81.29B";"Autres activités de nettoyage n.c.a.";"BS56100";"Administrative and support services";"";5
+"81.30Z";"Services d'aménagement paysager";"BS56100";"Administrative and support services";"";5
+"82.11Z";"Services administratifs combinés de bureau";"BS56100";"Administrative and support services";"";5
+"82.19Z";"Photocopie, préparation de documents et autres activités spécialisées de soutien de bureau";"BS56100";"Administrative and support services";"";5
+"82.20Z";"Activités de centres d'appels";"BS56100";"Administrative and support services";"";5
+"82.30Z";"Organisation de foires, salons professionnels et congrès";"BS56100";"Administrative and support services";"";5
+"82.91Z";"Activités des agences de recouvrement de factures et des sociétés d'information financière sur la clientèle";"BS56100";"Administrative and support services";"";5
+"82.92Z";"Activités de conditionnement";"BS56100";"Administrative and support services";"";5
+"82.99Z";"Autres activités de soutien aux entreprises n.c.a.";"BS56100";"Administrative and support services";"";5
+"84.11Z";"Administration publique générale";"GS91100";"Other federal government services";"";4
+"84.12Z";"Administration publique (tutelle) de la santé, de la formation, de la culture et des services sociaux, autre que sécurité sociale";"GS91100";"Other federal government services";"";4
+"84.13Z";"Administration publique (tutelle) des activités économiques";"GS91100";"Other federal government services";"";4
+"84.21Z";"Affaires étrangères";"GS91100";"Other federal government services";"";4
+"84.22Z";"Défense";"GS91100";"Other federal government services";"";4
+"84.23Z";"Justice";"GS91100";"Other federal government services";"";4
+"84.24Z";"Activités d’ordre public et de sécurité";"GS91100";"Other federal government services";"";4
+"84.25Z";"Services du feu et de secours";"GS91100";"Other federal government services";"";4
+"84.30A";"Activités générales de sécurité sociale";"GS91100";"Other federal government services";"";4
+"84.30B";"Gestion des retraites complémentaires";"GS91100";"Other federal government services";"";4
+"84.30C";"Distribution sociale de revenus";"GS91100";"Other federal government services";"";4
+"85.10Z";"Enseignement pré-primaire";"GS611B0";"Educational services (except universities)";"p";4
+"85.10Z";"Enseignement pré-primaire";"BS61000";"Educational services";"p";4
+"85.20Z";"Enseignement primaire";"GS611B0";"Educational services (except universities)";"p";4
+"85.20Z";"Enseignement primaire";"BS61000";"Educational services";"p";4
+"85.31Z";"Enseignement secondaire général";"GS611B0";"Educational services (except universities)";"p";4
+"85.31Z";"Enseignement secondaire général";"BS61000";"Educational services";"p";4
+"85.32Z";"Enseignement secondaire technique ou professionnel";"GS611B0";"Educational services (except universities)";"p";4
+"85.32Z";"Enseignement secondaire technique ou professionnel";"BS61000";"Educational services";"p";4
+"85.41Z";"Enseignement post-secondaire non supérieur";"GS611B0";"Educational services (except universities)";"p";4
+"85.41Z";"Enseignement post-secondaire non supérieur";"BS61000";"Educational services";"p";4
+"85.42Z";"Enseignement supérieur";"GS61130";"Universities";"p";3
+"85.42Z";"Enseignement supérieur";"BS61000";"Educational services";"p";3
+"85.51Z";"Enseignement de disciplines sportives et d'activités de loisirs";"GS611B0";"Educational services (except universities)";"p";4
+"85.51Z";"Enseignement de disciplines sportives et d'activités de loisirs";"BS61000";"Educational services";"p";4
+"85.52Z";"Enseignement culturel";"GS611B0";"Educational services (except universities)";"p";4
+"85.52Z";"Enseignement culturel";"BS61000";"Educational services";"p";4
+"85.53Z";"Enseignement de la conduite";"GS611B0";"Educational services (except universities)";"p";4
+"85.53Z";"Enseignement de la conduite";"BS61000";"Educational services";"p";4
+"85.59A";"Formation continue d'adultes";"GS611B0";"Educational services (except universities)";"p";4
+"85.59A";"Formation continue d'adultes";"BS61000";"Educational services";"p";4
+"85.59B";"Autres enseignements";"BS61000";"Educational services";"";4
+"85.60Z";"Activités de soutien à l'enseignement";"BS61000";"Educational services";"";4
+"86.10Z";"Activités hospitalières";"BS62000";"Health care and social assistance";"";5
+"86.21Z";"Activité des médecins généralistes";"BS62000";"Health care and social assistance";"";5
+"86.22A";"Activités de radiodiagnostic et de radiothérapie";"BS62000";"Health care and social assistance";"";5
+"86.22B";"Activités chirurgicales";"BS62000";"Health care and social assistance";"";5
+"86.22C";"Autres activités des médecins spécialistes";"BS62000";"Health care and social assistance";"";5
+"86.23Z";"Pratique dentaire";"BS62000";"Health care and social assistance";"";5
+"86.90A";"Ambulances";"BS62000";"Health care and social assistance";"";5
+"86.90B";"Laboratoires d'analyses médicales";"BS62000";"Health care and social assistance";"";5
+"86.90C";"Centres de collecte et banques d'organes";"BS62000";"Health care and social assistance";"";5
+"86.90D";"Activités des infirmiers et des sages-femmes";"BS62000";"Health care and social assistance";"";5
+"86.90E";"Activités des professionnels de la rééducation, de l’appareillage et des pédicures-podologues";"BS62000";"Health care and social assistance";"";5
+"86.90F";"Activités de santé humaine non classées ailleurs";"BS62000";"Health care and social assistance";"";5
+"87.10A";"Hébergement médicalisé pour personnes âgées";"BS62000";"Health care and social assistance";"";5
+"87.10B";"Hébergement médicalisé pour enfants handicapés";"BS62000";"Health care and social assistance";"";5
+"87.10C";"Hébergement médicalisé pour adultes handicapés et autre hébergement médicalisé";"BS62000";"Health care and social assistance";"";5
+"87.20A";"Hébergement social pour handicapés mentaux et malades mentaux";"BS62000";"Health care and social assistance";"";5
+"87.20B";"Hébergement social pour toxicomanes";"BS62000";"Health care and social assistance";"";5
+"87.30A";"Hébergement social pour personnes âgées";"BS62000";"Health care and social assistance";"";5
+"87.30B";"Hébergement social pour handicapés  physiques";"BS62000";"Health care and social assistance";"";5
+"87.90A";"Hébergement social pour enfants en difficultés";"BS62000";"Health care and social assistance";"";5
+"87.90B";"Hébergement social pour adultes et familles en difficultés et autre hébergement social";"BS62000";"Health care and social assistance";"";5
+"88.10A";"Aide à domicile";"BS62000";"Health care and social assistance";"";5
+"88.10B";"Accueil ou accompagnement sans hébergement d’adultes handicapés ou de  personnes âgées";"BS62000";"Health care and social assistance";"";5
+"88.10C";"Aide par le travail";"BS62000";"Health care and social assistance";"";5
+"88.91A";"Accueil de jeunes enfants";"BS62000";"Health care and social assistance";"";5
+"88.91B";"Accueil ou accompagnement sans hébergement d’enfants handicapés";"BS62000";"Health care and social assistance";"";5
+"88.99A";"Autre accueil ou accompagnement sans hébergement d’enfants  et d’adolescents";"BS62000";"Health care and social assistance";"";5
+"88.99B";"Action sociale sans hébergement n.c.a.";"BS62000";"Health care and social assistance";"";5
+"90.01Z";"Arts du spectacle vivant";"BS71000";"Arts, entertainment and recreation";"";5
+"90.02Z";"Activités de soutien au spectacle vivant";"BS71000";"Arts, entertainment and recreation";"";5
+"90.03A";"Création artistique relevant des arts plastiques";"BS71000";"Arts, entertainment and recreation";"";5
+"90.03B";"Autre création artistique";"BS71000";"Arts, entertainment and recreation";"";5
+"90.04Z";"Gestion de salles de spectacles";"BS71000";"Arts, entertainment and recreation";"";5
+"91.01Z";"Gestion des bibliothèques et des archives";"BS71000";"Arts, entertainment and recreation";"";5
+"91.02Z";"Gestion des musées";"BS71000";"Arts, entertainment and recreation";"";5
+"91.03Z";"Gestion des sites et monuments historiques et des attractions touristiques similaires";"BS71000";"Arts, entertainment and recreation";"";5
+"91.04Z";"Gestion des jardins botaniques et zoologiques et des réserves naturelles";"BS71000";"Arts, entertainment and recreation";"";5
+"92.00Z";"Organisation de jeux de hasard et d'argent";"BS71000";"Arts, entertainment and recreation";"";5
+"93.11Z";"Gestion d'installations sportives";"BS71000";"Arts, entertainment and recreation";"";5
+"93.12Z";"Activités de clubs de sports";"BS71000";"Arts, entertainment and recreation";"";5
+"93.13Z";"Activités des centres de culture physique";"BS71000";"Arts, entertainment and recreation";"";5
+"93.19Z";"Autres activités liées au sport";"BS71000";"Arts, entertainment and recreation";"";5
+"93.21Z";"Activités des parcs d'attractions et parcs à thèmes";"BS71000";"Arts, entertainment and recreation";"";5
+"93.29Z";"Autres activités récréatives et de loisirs";"BS71000";"Arts, entertainment and recreation";"";5
+"94.11Z";"Activités des organisations patronales et consulaires";"BS81300";"Professional and similar organisations";"";3
+"94.12Z";"Activités des organisations professionnelles";"BS81300";"Professional and similar organisations";"";3
+"94.20Z";"Activités des syndicats de salariés";"BS81300";"Professional and similar organisations";"";3
+"94.91Z";"Activités des organisations religieuses";"NP81310";"Religious organizations";"";1
+"94.92Z";"Activités des organisations politiques";"BS81300";"Professional and similar organisations";"";3
+"94.99Z";"Autres organisations fonctionnant par adhésion volontaire";"BS81300";"Professional and similar organisations";"";3
+"95.11Z";"Réparation d'ordinateurs et d'équipements périphériques";"BS81100";"Repair and maintenance";"";4
+"95.12Z";"Réparation d'équipements de communication";"BS81100";"Repair and maintenance";"";4
+"95.21Z";"Réparation de produits électroniques grand public";"BS81100";"Repair and maintenance";"";4
+"95.22Z";"Réparation d'appareils électroménagers et d'équipements pour la maison et le jardin";"BS81100";"Repair and maintenance";"";4
+"95.23Z";"Réparation de chaussures et d'articles en cuir";"BS81100";"Repair and maintenance";"";4
+"95.24Z";"Réparation de meubles et d'équipements du foyer";"BS81100";"Repair and maintenance";"";4
+"95.25Z";"Réparation d'articles d'horlogerie et de bijouterie";"BS81100";"Repair and maintenance";"";4
+"95.29Z";"Réparation d'autres biens personnels et domestiques";"BS81100";"Repair and maintenance";"";4
+"96.01A";"Blanchisserie-teinturerie de gros";"BS81A00";"Personal services and private households";"";4
+"96.01B";"Blanchisserie-teinturerie de détail";"BS81A00";"Personal services and private households";"";4
+"96.02A";"Coiffure";"BS81A00";"Personal services and private households";"";4
+"96.02B";"Soins de beauté";"BS81A00";"Personal services and private households";"";4
+"96.03Z";"Services funéraires";"BS81A00";"Personal services and private households";"";4
+"96.04Z";"Entretien corporel";"BS81A00";"Personal services and private households";"";4
+"96.09Z";"Autres services personnels n.c.a.";"BS81A00";"Personal services and private households";"";4
+"97.00Z";"Activités des ménages en tant qu'employeurs de personnel domestique";"BS81A00";"Personal services and private households";"";4
+"98.10Z";"Activités indifférenciées des ménages en tant que producteurs de biens pour usage propre";"";"";"";
+"98.20Z";"Activités indifférenciées des ménages en tant que producteurs de services pour usage propre";"";"";"";
+"99.00Z";"Activités des organisations et organismes extraterritoriaux";"";"";"";

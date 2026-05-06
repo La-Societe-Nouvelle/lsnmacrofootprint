@@ -1,0 +1,224 @@
+PRODCOM Code	PRODCOM Label	Tonnage	CAS No. RefSub	Name RefSub	ENV C&L	Class ENV	HH C&L	Class HH
+20132434	Sulphuric acid; oleum	18 687 992 	7664-93-9	Sulphuric acid	nc	0	314 (1A)	C
+20141130	Ethylene	17 404 166 	74-85-1	Ethylene	nc	0	336	E
+20151075	Anhydrous ammonia	13 034 415 	7664-41-7	Ammonia, anhydrous	400, 411	B	314 (1B), 331	D
+20141140	Propene (propylene)	12 872 033 	115-07-1	Propene	nc	0	nc	0
+20134310	Disodium carbonate	8 346 174 	497-19-8	Sodium carbonate	nc	0	319	E
+20132111	Chlorine	8 007 202 	7782-50-5	Chlorine	400, 410	A	330 (Acute Tox. 2)	C
+20132527	Sodium hydroxide in aqueous solution (soda lye or liquid soda)	7 445 748 	1310-73-2	Sodium hydroxide	nc	0	314 (1A)	C
+20151050	Nitric acid; sulphonitric acids	6 982 144 	7697-37-2	Nitric acid	nc	0	314 (1A)	C
+20111230	Carbon dioxide	6 700 000 	124-38-9	Carbon dioxide	nc	0	nc	0
+20134157	Sulphates (excluding those of aluminium and barium)	 6 626 840 	7778-18-9	Calcium sulphate	nc	0	nc	0
+20141223	Benzene	 6 580 734 	71-43-2	Benzene	412	C	350	A
+20153300	Ammonium nitrate (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 5 376 887 	6484-52-2	Ammonium nitrate	nc	0	319	E
+20133130	Chlorides (excluding ammonium chloride)	 5 097 808 	10043-52-4	Calcium chloride	nc	0	319	E
+20132413	Hydrogen chloride (hydrochloric acid)	 4 824 459 	7647-01-0	Hydrogen chloride	nc	0	314 (1A), 314 (1B) (so-lution), 331 (gas)	C
+20111290	Inorganic oxygen compounds of non metals (excluding sulphur trioxide (sulphuric anhydride); diarsenic trioxide, nitrogen oxides, silicon dioxide, sulphur dioxide, carbon dioxide)	 4 711 578 	10049-04-4	Chlorine dioxide	400	E	314	D
+20134340	Calcium carbonate	 4 540 549 	471-34-1	Calcium carbonate	nc	0	nc	0
+20141371	Vinyl chloride (chloroethylene)	 4 483 328 	75-01-4	Chloroethylene	nc	0	350	A
+20141250	Styrene	 4 256 755 	100-42-5	Styrene	412	C	361	B
+20147340	Naphthalene and other aromatic hydrocarbon mixtures (excluding benzole, toluole, xylole)	 4 036 235 	91-20-3	Naphthalene	400, 410	A	351	B
+20155100	Potassium chloride (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 3 795 182 	7447-40-7	Potassium chloride	nc	0	nc	0
+20143430	Phthalic anhydride; terephthalic acid and its salts	 3 391 899 	100-21-0	Terephthalic acid	nc	0	nc	0
+20134320	Sodium hydrogencarbonate (sodium bicarbonate)	 3 275 851 	144-55-8	Sodium hydrogencarbonate	nc	0	nc	0
+20132455	Phosphoric acid and polyphosphoric acids	 3 221 018 	7664-38-2	Orthophosphoric acid	nc	0	314 (1B)	D
+20147390	Other oils and oil products, n.e.c.	 2 931 352 	91995-49-2	Distillates (coal tar), naphthalene oil crystn. mother liquor	410	A	350	A
+20141260	Ethylbenzene	 2 862 866 	100-41-4	Ethylbenzene	412	C	373	D
+20146111	Methanal (formaldehyde)	 2 852 266 	50-00-0	Formaldehyde	nc	0	350	A
+20153530	Mixtures of ammonium nitrate with calcium carbonate, ≤ 28 % nitrogen by weight	 2 795 933 	6484-52-2	Ammonium nitrate	nc	0	319	E
+20153130	Urea containing > 45 % by weight of nitrogen on the dry an¬hy¬drous product (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 2 679 675 	57-13-6	Urea	nc	0	nc	0
+20141160	Buta-1,3-diene and isoprene	 2 678 193 	106-99-0	Buta-1,3-diene	nc	0	350	A
+20146310	Acyclic ethers and their halogenated, sulphonated, nitrated or nitrosated derivatives	 2 498 895 	1634-04-4	tert-butyl methyl ether	nc	0	315	E
+20141353	1,2-Dichloroethane (ethylene dichloride)	 2 495 081 	107-06-2	1,2-dichloroethane	nc	0	350	A
+20146375	Methyloxirane (propylene oxide)	 2 403 053 	75-56-9	Methyloxirane	nc	0	350	A
+20142410	Monophenols	 2 320 621 	108-95-2	Phenol	411	B	341	B
+20141150	Butene (butylene) and isomers thereof	 2 217 219 	25167-67-3	Butene	nc	0	nc	0
+20146373	Oxirane (ethylene oxide)	 2 152 259 	75-21-8	Ethylene oxide	nc	0	340	A
+20153200	Ammonium sulphate (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 2 016 608 	7783-20-2	Ammonium sulphate	nc	0	nc	0
+20141290	Other cyclic hydrocarbons	 2 000 000 	99-87-6	p-Cymene	nc	0	319	E
+20147320	Benzol (benzene), toluol (toluene) and xylol (xylenes)	 1 985 065 	71-43-2	Benzene	412	C	350	A
+20132570	Aluminium hydroxide	 1 896 674 	21645-51-2	Aluminium hydroxide	nc	0	nc	0
+20141270	Cumene	 1 880 915 	98-82-8	Cumene	411	B	304	E
+20132130	Carbon (carbon blacks and other forms of carbon, n.e.c.)	 1 872 669 	1333-86-4	Carbon black	nc	0	nc	0
+20145280	Compounds containing in the structure an unfused pyridine ring or a quinoline or isoquinoline ring-system, not further fused; lac¬ta-mes; other heterocyclic compounds with nitrogen hetero-atom(s) only (excluding compounds containing in the structure an unfused py¬razole ring, an unfused imidazole ring, a pyrimidine ring, a pipe-ra¬zine ring or an unfused triazine ring)	 1 792 000 	105-60-2	ε-caprolactam	nc	0	319, 332	E
+20136240	Silicates; commercial alkali metal silicates	 1 701 661 	1344-09-8	Sodium silicate	nc	0	314 (1B), 318	D
+20132120	Sulphur, sublimed or precipitated; colloidal sulphur	 1 574 117 	7704-34-9	Ammonium sulphate	nc	0	315	E
+20141245	p-Xylene	 1 568 627 	106-42-3	p-xylene	412	C	312, 332	E
+20141190	Unsaturated acyclic hydrocarbons (excluding ethylene, propene, butene, buta-1,3-diene and isoprene)	 1 533 246 	74-86-2	Acetylene	nc	0	nc	0
+20133230	Hypochlorites; commercial calcium hypochlorite; chlorites; hypobromites	 1 511 921 	7681-52-9	Sodium hypochlorite	400, 410	A	314 (1B), 318	D
+20134280	Phosphates (excluding calcium hydrogenorthophosphate and mono- or disodium phosphate); polyphosphates (excluding sodium triphosphate)	 1 506 676 	7783-28-0	Diammonium hydrogenorthophosphate	nc	0	nc	0
+20146211	Acetone	 1 464 078 	67-64-1	Acetone	nc	0	319	E
+20144450	Isocyanates	 1 426 979 	9016-87-9	4,4’-diphenylmethanediisocyanate, isomere, homologe and mixtures	nc	0	334	B
+20143310	Acrylic acid and its salts and other monocarboxylic acid	 1 425 226 	79-10-7	Acrylic acid	400, 411	B	314 (1A)	C
+20153960	Mixtures of urea and ammonium nitrate in aqueous or ammoniacal solution (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 1 353 707 	6484-52-2	Ammonium nitrate	nc	0	319	E
+20142210	Methanol (methyl alcohol)	 1 326 000 	67-56-1	Methanol	nc	0	311, 331, 370	D
+20141225	Toluene	 1 302 480 	108-88-3	Toluene	nc	0	361	B
+20143280	Lauric acid and others; salts and esters	 1 287 314 	143-07-7	Lauric acid	nc	0	318	D
+20136300	Hydrogen peroxide	 1 247 447 	7722-84-1	Hydrogen peroxide	412	C	314 (1A)	C
+20154100	Superphosphates (excluding potassic, in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 1 245 363 	8011-76-5	Superphosphates	nc	0	318	D
+20142310	Ethylene glycol (ethanediol)	 1 216 377 	107-21-1	Ethane-1,2-diol	nc	0	373	D
+20146233	Cyclohexanone and methylcyclohexanones	 1 207 214 	108-94-1	Cyclohexanone	nc	0	318	D
+20141120	Saturated acyclic hydrocarbons	 1 201 301 	106-97-8	Butane	nc	0	nc	0
+20142339	Diols and polyhydric alcohols (excluding ethylene glycol and propylene glycol, D-glucitol)	 1 199 751 	110-63-4	Butane-1,4-diol	nc	0	302, 336	E
+20155200	Potassium sulphate (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 1 161 055 	7778-80-5	Potassium sulfate	nc	0	nc	0
+20134151	Sulphates of barium or aluminium	 1 056 498 	7784-31-8	Aluminium sulphate	nc	0	318	D
+20144151	Aniline and its salts (excluding derivatives)	 1 036 088 	62-53-3	Aniline	400, 410	A	341	B
+20157200	Diammonium hydrogenorthophosphate (diammonium phosphate) (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 1 023 441 	7783-28-0	Diammonium hydrogenorthophosphate	nc	0	nc	0
+20141470	Derivatives of hydrocarbons containing only nitro or only nitroso groups	 958 678 	25321-14-6	Dinitrotoluene	400, 410	A	350	A
+20146119	Acyclic aldehydes, without other oxygen function (excluding methanal (formaldehyde), ethanal (acetaldehyde), butanal (butyraldehyde; normal isomer))	 919 784 	123-38-6	Propionaldehyde	nc	0	318	D
+20143219	Esters of acetic acid (excluding ethyl acetate)	 918 450 	123-86-4	N-butyl acetate	nc	0	336	E
+20144123	Hexamethylenediamine and its salts; ethylenediamine and its salts	 882 467 	124-09-4	Hexamethylenediamine	nc	0	314 (1B)	D
+20136270	Double or complex silicates	 800 000 	EC 930-915-9	Silicic acid, aluminum sodium salt	nc	0	nc	0
+20141490	Derivatives of hydrocarbons (excluding those containing only sulpho groups; their salts and ethyl esters, those containing only nitro or only nitroso groups)	 800 000 	100-00-5	1-chloro-4-nitrobenzene 	411	B	351	B
+20143320	Esters of acrylic acid	 738 404 	140-88-5	Ethyl acrylate	412	C	317	B
+20142320	Propylene glycol (propane-1,2-diol)	 732 501 	57-55-6	Propane-1,2-diol	nc	0	nc	0
+20141213	Cyclohexane	 732 209 	110-82-7	Cyclohexane	400, 410	A	304	E
+20142265	Lauryl alcohol; cetyl alcohol; stearyl alcohol and other saturated monohydric alcohols (excluding methyl, propyl and isopropyl, n-butyl, other butanols, octyl)	 720 000 	112-53-8	Dodecan-1-ol	400, 411	B	319	E
+20142360	Glycerol (including synthetic; excluding crude, waters and lyes)	 686 517 	56-81-5	Glycerol	nc	0	nc	0
+20142230	Butan-1-ol (n-butyl alcohol)	 670 065 	71-36-3	Butan-1-ol	nc	0	318	D
+20144350	Acrylonitrile	 668 754 	107-13-1	Acrylonitrile	411	B	350	A
+20142263	Octanol (octyl alcohol) and isomers thereof	 661 391 	104-76-7	2-Ethylhexanol	nc	0	315	E
+20146115	Butanal (butyraldehyde; normal isomer)	 651 215 	123-72-8	Butyraldehyde	nc	0	319	E
+20153580	Mixtures of ammonium nitrate with calcium carbonate, > 28 % nitrogen by weight; IM/EXPORTS not responsible for difference	 650 000 	6484-52-2	Ammonium nitrate	nc	0	319	E
+20132475	Silicon dioxide	 645 361 	7631-86-9	Silicon dioxide	nc	0	nc	0
+20143420	Other esters of orthophthalic acid	 634 242 	68515-48-0	Di-''isononyl'' phthalate	nc	0	nc	0
+20145260	Melamine	 627 357 	108-78-1	Melamine	nc	0	nc	0
+20111250	Sulphur trioxide (sulphuric anhydride); diarsenic trioxide	 600 000 	7446-11-9	Sulphur trioxide 	nc	0	314 (1A)	C
+20132460	Oxides of boron; boric acids; inorganic acids (excluding hydrogen fluoride)	 600 000 	10043-35-3	Boric acid	nc	0	360	A
+20143385	Adipic acid; its salts and esters	 600 000 	124-04-9	Adipic acid	nc	0	318	D
+20134390	Other carbonates	 586 922 	584-08-7	Potassium carbonate	nc	0	315	E
+20145133	Thiocarbamates and dithiocarbamates; thiuram mono-, di- or tetrasulphides; methionine	 586 155 	128-04-1	Sodium dimethyldithiocarbamate	400, 411	B	nc	0
+20133250	Chlorates and perchlorates; bromates and perbromates; iodates and periodates	 579 366 	7775-09-9 	Sodium chlorate	411	B	302	E
+20144370	Nitrile-function compounds (excluding acrylonitrile, 1-cyanoguanidine (dicyandiamide))	 571 797 	75-86-5	2-hydroxy-2-methylpropionitrile	400, 410	A	310, 330	C
+20146339	Ether-alcohols and their halogenated, sulphonated, nitrated or nitrosated derivatives (excluding 2,2-Oxydiethanol)	 553 885 	107-98-2	1-methoxypropan-2-ol	nc	0	336	E
+20143195	Industrial monocarboxylic fatty acids distilled (excluding stearic, oleic tall oil)	 549 261 	67701-03-5	Fatty acids, C16-C18	nc	0	nc	0
+20121150	Titanium oxides	 546 827 	13463-67-7	Titanium dioxide	nc	0	nc	0
+20141243	o-Xylene	 537 157 	95-47-6	o-xylene	412	C	312, 332	E
+20136450	Carbides whether or not chemically defined	 528 774 	75-20-7	Calcium acetylide	nc	0	318	D
+20151077	Ammonia in aqueous solution	 511 758 	1336-21-6	Ammonia, aqueous solution	400	E	314 (1B)	D
+20143440	Aromatic polycarboxylic acids, their anhydrides, halides, peroxides, peroxyacids and their halogenated, sulphonated, nitrated or nitro-sated derivatives (excluding esters of orthophthalic acid, phthalic anhydride, terephthalic acid and its salts)	 507 405 	120-61-6	Dimethyl terephthalate	nc	0	nc	0
+20143250	Formic acid, its salts and esters	 500 000 	64-18-6	Formic acid	nc	0	314 (1A)	C
+20143271	Acetic acid	 500 000 	64-19-7	Acetic acid	nc	0	314 (1A)	C
+20142433	4,4-Isopropylidenediphenol (bisphenol A; diphenylolpropane) and its salts	 488 000 	80-05-7	4,4'-isopropylidenediphenol	411	B	360	A
+20132477	Sulphur dioxide	 486 272 	7446-09-5	Sulphur dioxide	nc	0	314 (1B), 331	D
+20142220	Propan-1-ol (propyl alcohol) and propan-2-ol (isopropyl alcohol)	 483 273 	67-63-0	Propan-2-ol	nc	0	319	E
+20144290	Oxygen-function amino-compounds (excluding amino-alcohols, their esters and ethers and salts thereof, lysine and its salts and esters, glutamic acid its salts and esters)	 475 837 	64-02-8	Tetrasodium ethylenediaminetetraacetate	nc	0	318	D
+20122415	Pigments and preparations based on titanium dioxide containing ≥ 80 % by weight of titanium dioxide	 472 972 	13463-67-7	Titanium dioxide	nc	0	nc	0
+20132580	Hydrazine and hydroxylamine and their inorganic salts	 466 729 	302-01-2	Hydrazine	400, 410	A	350	A
+20143475	Carboxylic acid with alcohol, phenol, aldehyde or ketone functions	 454 500 	79-33-4	L-(+)-lactic acid	nc	0	318	D
+20145139	Other organo-sulphur compounds	 437 783 	85536-14-7	Benzenesulfonic acid, 4-C10-13-sec-alkyl derivs.	412	C	318, 314 (1C)	D
+20141247	m-Xylene and mixed xylene isomers	 434 270 	1330-20-7	Xylene	412	C	332, 315	E
+20143220	Mono-, di- or tri-chloroacetic acids; propionic, butanoic and pentanoic acids; their salts and esters	 416 460 	79-09-4	Propionic acid	nc	0	314 (1B), 318	D
+20121910	Iron oxides and hydroxides; earth colours containing 70 % or more by weight of combined iron evaluated as Fe2O3	 414 309 	1309-37-1	Diiron trioxide	nc	0	nc	0
+20142100	Industrial fatty alcohols	 411 866 	36653-82-4	Hexadecan-1-ol	nc	0	nc	0
+20143473	Citric acid and its salts and esters	 407 183 	77-92-9	Citric acid	nc	0	nc	0
+20121990	Other inorganic bases; other metal oxides, hydroxides and peroxides, n.e.c.	 404 505 	1306-19-0	Cadmium oxide	400, 410	A	350	A
+20121130	Zinc oxide; zinc peroxide	 400 956 	1314-13-2	Zinc oxide	400, 410 	A	nc	0
+20142333	D-glucitol (sorbitol)	 400 000 	50-70-4	D-glucitol	nc	0	nc	0
+20143340	Esters of methacrylic acid	 377 955 	80-62-6	Methyl methacrylate	nc	0	317	B
+20153930	Double salts and mixtures of ammonium sulphate and ammonium nitrate (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 375 228 	6484-52-2	Ammonium nitrate	nc	0	319	E
+20153180	Urea containing ≤ 45 % by weight of nitrogen on the dry anhydrous product (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 372 973 	57-13-6	Urea	nc	0	nc	0
+20144113	Methylamine; di- or trimethylamine and their salts	 365 844 	124-40-3	Dimethylamine	412	C	314 (1B)	D
+20132530	Potassium hydroxide (caustic potash)	 344 375 	1310-58-3	Potassium hydroxide	nc	0	314 (1A)	C
+20134133	Sulphites	 343 020 	7631-90-5	Sodium hydrogensulfite	nc	0	302	E
+20146379	Epoxides, epoxyalcohols, -phenols, epoxyethers, with a 3-mem-ber¬ed ring and their halogenated, sulphonated, nitrated/nitrosated derivatives excluding oxirane, methyloxirane (propylene oxide)	 313 200 	106-89-8	1-chloro-2,3-epoxypropane	412	C	350	A
+20143120	Industrial stearic acid	 311 996 	57-11-4	Stearic acid	nc	0	nc	0
+20132473	Hydrogen fluoride (hydrofluoric acid)	 300 000 	7664-39-3	Hydrogen fluoride	nc	0	300	C
+20147360	Phenols	 291 617 	84989-04-8	Tar acids, methylphenol fraction	411	B	350	A
+20143197	Industrial monocarboxylic fatty acids (excluding stearic, oleic, tall oil, distilled)	 285 078 	67701-03-5	Fatty acids, C16-C18	nc	0	nc	0
+20132150	Silicon	 279 635 	7440-21-3	Silicon	nc	0	nc	0
+20132525	Sodium hydroxide (caustic soda), solid	 269 497 	1310-73-2	Sodium hydroxide	nc	0	314 (1A)	C
+20141379	Unsaturated chlorinated derivatives of acyclic hydrocarbons (excluding vinyl chloride, trichloroethylene, tetrachloroethylene)	 268 095 	107-05-1	3-chloroprene	400	E	351	B
+20141450	Derivatives of hydrocarbons containing only sulpho groups; their salts and ethyl esters	 267 636 	68411-30-3	Benzenesulfonic acid, C10-13-alkyl derivs., sodium salts	412	C	318	D
+20142373	Cyclanic, cyclenic or cycloterpenic alcohols and their halogenated, sulphonated, nitrated or nitrosated derivatives	 262 287 	108-93-0	Cyclohexanol	412	C	319	E
+20144170	Aromatic polyamines and their derivatives; salts thereof	 260 000 	101-77-9	4,4'-methylenedianiline	400, 410	A	350	A
+20133110	Fluorides; fluorosilicates; fluoroaluminates and other complex fluorine salts	 257 529 	7784-18-1	Aluminium fluoride	nc	0	nc	0
+20144310	Ureines and their derivatives; salts thereof	 255 575 	34123-59-6	Isoproturon	400, 410	A	351	B
+20157300	Ammonium dihydrogenorthophosphate (monoammonium phosphate)	 255 209 	7722-76-1	Ammonium dihydrogenorthophosphate	nc	0	nc	0
+20145380	Esters of other inorganic acids of non-metals (excluding esters of hydrogen halides) and their salts; their halogenated, sulphonated, nitrated or nitrosated derivatives	 246 715 	77-78-1	Dimethyl sulphate	nc	0	350	A
+20146213	Butanone (methyl ethyl ketone)	 245 445 	78-93-3	Butanone	nc	0	319	E
+20143410	Dibutyl and dioctyl orthophthalates	 243 646 	117-81-7	Bis(2-ethylhexyl) phthalate	400	E	360	A
+20144233	Monoethanolamine and its salts	 242 972 	141-43-5	2-aminoethanol	412	C	314 (1B)	D
+20122150	Other synthetic organic colouring matters	 242 337 	147-14-8	29H,31H-phthalocyaninato(2-)-N29,N30,N31,N32 copper	nc	0	nc	0
+20134110	Sulphides; polysulphides, whether or not chemically defined; dithionites and sulphoxylates	 241 423 	1314-98-3	Zins sulphide	nc	0	nc	0
+20144430	Organic derivatives of hydrazine or of hydroxylamine	 240 000 	3710-84-7	N,N-diethylhydroxylamine	411	B	335	E
+20122419	Pigments and preparations based on titanium dioxide (excluding those containing ≥ 80 % by weight of titanium dioxide)	 239 907 	13463-67-7	Titanium dioxide	nc	0	nc	0
+20143383	Oxalic, azelaic, malonic, other, cyclanic, cylenic or cycloterpenic polycarboxylic acids, salts	 237 765 	144-62-7	Oxalic acid	nc	0	318	D
+20133150	Chloride oxides and chloride hydroxides of copper and other metals	 217 373 	12042-91-0	Dialuminium chloride pentahydroxide	nc	0	nc	0
+20144119	Other acylic monoamines and their derivatives; salts thereof	 216 272 	107-15-3	Ethylenediamine	412	C	317	B
+20141313	Chloromethane (methyl chloride) and chloroethane (ethyl chloride)	 210 000 	74-87-3	Chloromethane	nc	0	351	B
+20144239	Amino-alcohols, their ethers and esters with only 1 oxygen func-tion and their salts (excluding monoethanolamine and its salts, di-etha¬nolamine and its salts, triethanolamine and its salts)	 203 605 	108-01-0	2-dimethylaminoethanol	nc	0	318	D
+20141315	Dichloromethane (methylene chloride)	 200 000 	75-09-2	Dichloromethane	nc	0	351	B
+20141357	Saturated chlorinated derivatives of acyclic hydrocarbons, n.e.c.	 193 012 	540-54-5	1-Chloropropane	nc	0	302, 332	E
+20143235	Palmitic acid, stearic acid, their salts and esters	 191 459 	57-11-4	Stearic aicd	nc	0	nc	0
+20134270	Sodium triphosphate (sodium tripolyphosphate)	 189 761 	7758-29-4	Pentasodium triphosphate	nc	0	nc	0
+20136220	Cyanides; cyanide oxides and complex cyanides	 175 488 	143-33-9	Sodium cyanide	400, 410	A	372	C
+20143363	Benzoic acid; its salts and esters	 170 000 	65-85-0	Benzoic acid	nc	0	372	C
+20142270	Unsaturated monohydric alcohols	 162 051 	107-18-6	Allyl alcohol	400, 412	C	361	B
+20141374	Trichloroethylene; tetrachloroethylene (perchloroethylene)	 158 217 	127-18-4	Tetrachloroethylene	411	B	351	B
+20132237	Halides and halide-oxides of non-metals (excluding chlorides and chloride oxides of phosphorus)	 155 200 	2551-62-4	Sulphur hexafluoride	nc	0	nc	0
+20134240	Calcium hydrogenorthophosphate (dicalcium phosphate)	 154 532 	7757-93-9	Calcium hydrogenorthophosphate	nc	0	nc	0
+20141323	Chloroform (trichloromethane)	 152 399 	67-66-3	Chloroform	nc	0	351	B
+20143130	Industrial oleic acid	 150 000 	112-80-1	Oleic acid	nc	0	nc	0
+20145290	Nucleic acids and other heterocyclic compounds - thiazole, benzothiazole, other cycles	 150 000 	2492-26-4	Sodium benzothiazol-2-yl sulphide	400, 410	A	317	B
+20141215	Cyclanes; cyclenes and cycloterpenes (excluding cyclohexane)	 147 440 	77-73-6	3a,4,7,7a-tetrahydro-4,7-methanoindene	400, 411	B	361	B
+20132560	Hydroxide and peroxide of magnesium; oxides, hydroxides and peroxides of strontium or barium	 141 421 	1309-42-8	Magnesium hydroxide	nc	0	nc	0
+20143150	Industrial tall oil fatty acids	 138 681 	65997-03-7	Fatty acids, tall-oil, low-boiling	nc	0	nc	0
+20152080	Nitrites	 131 329 	7632-00-0	Sodium nitrite	400	E	301	D
+20144129	Other acyclic polyamines and their derivatives; salts thereof	 131 076 	111-40-0	2,2'-iminodi(ethylamine) 	nc	0	317	B
+20132260	Sulphides of non-metals; commercial phosphorus trisulphide	 130 805 	16721-80-5	Sodium hydrogensulphide	400	E	314 (1B), 318	D
+20146160	Paraformaldehyde	 127 010 	30525-89-4	Paraformaldehyde	nc	0	317	B
+20134230	Phosphates of mono- or di-sodium	 122 367 	7758-16-9	Disodium dihydrogenpyrophosphate	nc	0	319	E
+20122160	Synthetic organic products used as fluorescent brightening agents	 120 000 	16470-24-9	Tetrasodium 4,4'-bis[[4-[bis(2-hy-dro¬xyethyl)amino]-6-(4-sul¬pho¬na-to¬anilino)-1,3,5-triazin-2-yl]ami-no]stilbene-2,2'-disulphonate]	nc	0	nc	0
+20143277	Acetic anhydride	 120 000 	108-24-7	Acetic anhydride	nc	0	314 (1B), 330, 331	D
+20144159	Other aromatic monoamines and their derivatives; salts thereof	 115 837 	122-39-4	Diphenylamine	400, 410	A	373	D
+20143387	Maleic anhydride	 108 215 	108-31-6	Maleic anhydride	nc	0	317	B
+20156000	Sodium nitrate	 105 447 	7631-99-4	Sodium nitrate	nc	0	319	E
+20132235	Chlorides and chloride oxides of phosphorus	 105 000 	10025-87-3	Phosphoryl trichloride	nc	0	314 (1A)	C
+20143350	Oleic, linoleic or linolenic acids; their salts and esters	 100 000 	25496-72-4	Glyceryl monooleate	nc	0	nc	0
+20146113	Ethanal (acetaldehyde)	 100 000 	75-07-0	Acetaldehyde	nc	0	351	B
+20147170	Wood tar; wood tar oils; wood creosote; wood naphtha; vegetable pitch; brewers’ pitch and similar preparations based on rosin, resin acids or on vegetable pitch	 99 686 	91722-33-7	Tar, wood	412	C	317	B
+20143330	Methacrylic acid and its salts	 90 000 	79-41-4	Methacrylic acid	nc	0	314 (1A)	C
+20144130	Cyclanic, cyclenic or cycloterpenic mono- or polyamines, and their derivatives; salts thereof	 90 000 	2855-13-2	3-aminomethyl-3,5,5-trimethylcyclohexylamine	412	C	317	B
+20146231	Camphor; aromatic ketones without other oxygen function; ketone-alcohols; ketone-aldehydes; ketone-phenols and ketones with other oxygen function	 82 484 	123-42-2	4-hydroxy-4-methylpentan-2-one	nc	0	319	E
+20111270	Nitrogen oxides	 79 667 	10024-97-2	Dinitrogen oxide	nc	0	336	E
+20146333	2,2-Oxydiethanol (diethylene glycol; digol)	 78 307 	111-46-6	2,2'-oxydiethanol	nc	E	373	D
+20142240	Butanols (excluding butan-1-ol (n-butyl alcohol))	 76 619 	75-65-0	2-methylpropan-2-ol	nc	0	319	E
+20144237	Triethanolamine and its salts	 74 221 	102-71-6	2,2',2''-nitrilotriethanol	nc	0	nc	0
+20134210	Nitrates (excluding those of potassium)	 68 301 	10124-37-5	Calcium nitrate	nc	0	318	D
+20143278	Salts of acetic acid	 60 693 	51404-69-4	Acetic acid, lead salt, basic	410	A	360	A
+20134175	Peroxosulphates (persulphates)	 60 000 	7727-54-0	Diammonium peroxodisulphate	nc	0	317	B
+20146219	Acyclic ketones; without other oxygen function (excluding acetone, butanone (methyl ethyl ketone), 4-methylpentan-2-one (methyl isobutyl ketone))	 58 308 	110-43-0	Heptan-2-one	nc	0	302	E
+20134135	Thiosulphates	 55 133 	7783-18-8	Ammonium thiosulphate	nc	0	nc	0
+20157600	Nitrates of potassium	 44 326 	7757-79-1	Potassium nitrate	nc	0	nc	0
+20132453	Diphosphorus pentaoxide	 42 261 	1314-56-3	Diphosphorus pentaoxide	nc	0	314 (1A)	C
+20142439	Polyphenols (including salts; excluding 4,4 isopropylidenediphenol) and phenol-alcohols	 42 000 	123-31-9	Hydroquinone	400, 410	A	351	B
+20143215	Ethyl acetate	 41 605 	141-78-6	Ethyl acetate	nc	0	319	E
+20146239	Cyclanic, cyclenic or cycloterpenic ketones without other oxygen function (excluding camphor, cyclohexanone and methylcyclohexanones, ionones and methylionones)	 40 000 	78-59-1	3,5,5-trimethylcyclohex-2-enone	nc	0	351	B
+20145215	Tetrahydrofuran, 2-Furaldehyde, Furfuryl alcohol, Tetrahydrofurfuryl alcohol and Piperonal	 39 000 	109-99-9	Tetrahydrofuran	nc	0	351	B
+20144235	Diethanolamine and its salts	 38 453 	111-42-2	2,2'-iminodiethanol	nc	0	318	D
+20136230	Borates; peroxoborates (perborates)	 36 845 	1330-43-4	Disodium tetraborate, anhydrous	nc	0	360	A
+20133170	Bromides and bromide oxides; iodides and iodide oxides	 31 937 	7789-41-5	Calcium bromide	nc	0	318	D
+20146215	4-Methylpentan-2-one (methyl isobutyl ketone)	 31 726 	108-10-1	4-methylpentan-2-one	nc	0	335, 332	E
+20121975	Antimony oxides	 30 739 	1309-64-4	Diantimony trioxide	412	C	351	B
+20141325	Carbon tetrachloride	 30 127 	56-23-5	Carbon tetrachloride	412, 420	C	351	B
+20152030	Ammonium chloride	 30 000 	12125-02-9	Ammonium chloride	nc	0	318	D
+20144153	Aniline derivatives and their salts	 28 465 	95-53-4	o-Toluidine	400, 411	B	350	A
+20142375	Aromatic alcohols and their halogenated, sulphonated, nitrated or nitrosated derivatives	 27 987 	100-51-6	Benzyl alcohol	nc	0	nc	0
+20143365	Benzoyl peroxide and benzoyl chloride	 26 916 	98-88-4	Benzoyl chloride	nc	0	317	B
+20144330	Imides and their derivatives, and salts thereof (excluding saccharin and its salts)	 26 603 	941-69-5	N-phenylmaleimide	400	E	317	B
+20146325	Aromatic ethers and their halogenated, sulphonated, nitrated or nitrosated derivatives	 25 960 	101-84-8	Diphenyl ether	400, 412	C	319	E
+20143370	Aromatic monocarboxylic acids, (anhydrides), halides, peroxides, peroxyacids, derivatives excluding benzoic acid, phenylacetic acids their salts/esters, benzoyl peroxide, benzoyl chloride	 19 600 	99-75-2	Methyl p-toluate	nc	0	317	B
+20142350	Halogenated, sulphonated, nitrated or nitrosated derivatives of acyclic alcohols	 19 352 	107-07-3	2-chloroethanol	411	B	300, 310	C
+20144340	Imines and their derivatives; and salts thereof	 18 183 	55-56-1	 Chlorhexidine	400, 410	A	318	D
+20146380	Acetals and hemiacetals and their halogenated; sulphonated; nitrated or nitrosated derivatives	 18 000 	110-88-3	1,3,5-trioxane	nc	0	361	B
+20153400	Double salts and mixtures of calcium nitrate and ammonium nitrate (excluding in tablets or similar forms or in packages of a weight of ≤ 10 kg)	 16 483 	10124-37-5	Calcium nitrate	nc	0	318	D
+20135125	Chromates and dichromates; peroxochromates	 15 000 	10588-01-9	Sodium dichromate	400, 410	A	350	A
+20132116	Iodine; fluorine; bromine	 12 080 	7726-95-6	Bromine	400	E	314 (1A)	C
+20144360	1-Cyanoguanidine (dicyandiamide)	 12 000 	461-58-5	Cyanoguanidine	nc	0	nc	0
+20132415	Chlorosulphuric acid	 11 960 	7790-94-5	Chlorosulphuric acid	nc	0	314 (1A)	C
+20142450	Halogenated, sulphonated, nitrated or nitrosated derivatives of phenols or phenol-alcohols	 11 400 	120-83-2	 2,4-dichlorophenol 	411	B	314 (1B)	D
+20121930	Cobalt oxides and hydroxides; commercial cobalt oxides	 7 000 	1307-96-6	Cobalt oxide	400, 410	A	317	B
+20121973	Molybdenum oxides and hydroxides	 5 953 	1313-27-5	Molybdenum trioxide	nc	0	351	B
+20144420	Diazo-, azo- or azoxy-compounds	 4 338 	5567-15-7	2,2'-[(3,3'-dichloro[1,1'-biphenyl]-4,4'-diyl)bis(azo)]bis[N-(4-chloro-2,5-dimethoxyphenyl)-3-oxobutyramide]	nc	0	nc	0
+20132180	Phosphorus; arsenic; selenium	 1 661 	7782-49-2	Selenium	413	D	331, 373, 301	D
