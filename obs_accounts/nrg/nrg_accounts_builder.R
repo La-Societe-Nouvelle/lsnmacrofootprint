@@ -208,7 +208,10 @@ build_nrg_obs_accounts <- function(
   figaro_nrg_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(eurostat_nrg_accounts) %>%
+    left_join(
+      eurostat_nrg_accounts,
+      by = c("year", "country", "industry")
+    ) %>%
     mutate(
       value = if_else(!is.na(eurostat_value), eurostat_value, NA),
       flag = if_else(!is.na(eurostat_flag), eurostat_flag, NA),
@@ -239,9 +242,9 @@ build_nrg_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (WAS)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_nrg_accounts %>%
@@ -253,9 +256,9 @@ build_nrg_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_nrg.csv")

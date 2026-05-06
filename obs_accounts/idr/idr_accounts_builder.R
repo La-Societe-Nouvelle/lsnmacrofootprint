@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for pay gap index (IDR)
@@ -15,7 +15,7 @@
 #' build_idr_obs_accounts()
 
 build_idr_obs_accounts <- function(
-  years = 2016:2022,
+  years = 2016:2023,
   do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
@@ -92,13 +92,13 @@ build_idr_obs_accounts <- function(
   # -------------------------------------------------------------------
   # BTS Data (Insee)
 
-  if (verbose) print("Chargement des données BTS...")
+  if (verbose) print("Loading BTS data...\n")
 
   base_url_bts_data <- "https://www.insee.fr/fr/statistiques/fichier/"
 
   bts_raw_data <- lapply(years$year, function(year_i)
   {
-    if (verbose) print(paste0("Année ", year_i))
+    if (verbose) cat(paste0("Année ", year_i, "\n"))
 
     # File ID
     file_id <- bts_files_ids %>% filter(year == year_i) %>% pull(file_id)
@@ -114,7 +114,7 @@ build_idr_obs_accounts <- function(
 
     if (!file.exists(file_path) || !use_temp_data)
     {
-      if (verbose) print("Téléchargement des données BTS...")
+      if (verbose) cat("Téléchargement des données BTS\n")
 
       curl_download(
         url = url_bts_data,
@@ -207,7 +207,8 @@ build_idr_obs_accounts <- function(
     select(year, country, decile, value)
 
   # -------------------------------------------------------------------
-  # Building FIGARO accounts
+  # Building FIGARO accounts
+
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
@@ -258,7 +259,10 @@ build_idr_obs_accounts <- function(
   figaro_idr_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(raw_idr_accounts) %>%
+    left_join(
+      raw_idr_accounts,
+      by = c("year", "country", "industry")
+    ) %>%
     select(year, country, industry, value, flag)
 
   # Complete with similarity
@@ -281,12 +285,10 @@ build_idr_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (IDR)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
-
-  if (verbose) print("Formattage...")
 
   formatted_data <- figaro_idr_accounts %>%
     mutate(
@@ -297,9 +299,9 @@ build_idr_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_idr.csv")

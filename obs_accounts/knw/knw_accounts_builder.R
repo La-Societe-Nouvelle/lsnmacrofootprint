@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for training/research contribution (KNW)
@@ -259,7 +259,8 @@ build_knw_obs_accounts <- function(
     select(year, country, industry, aggregate, value)
 
   # -------------------------------------------------------------------
-  # Building KNW impact vector
+  # Building KNW impact vector
+
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
@@ -284,7 +285,7 @@ build_knw_obs_accounts <- function(
     merge(va_distribution_anberd_activities) %>%
     merge(main_aggregates_data) %>%
     mutate(
-      value = round(value * share_anberd_activity / VA, digits = 6), # contribution (rate)
+      value = round(value * share_anberd_activity / NVA, digits = 6), # contribution (rate)
       flag = ""
     ) %>%
     select(year, country, industry, value, flag)
@@ -293,7 +294,10 @@ build_knw_obs_accounts <- function(
   research_contributions <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(research_contributions_raw) %>%
+    left_join(
+      research_contributions_raw,
+      by = c("year", "country", "industry")
+    ) %>%
     proxy_missing_value_by_similarity(., "KNW") %>%
     rename(
       research_value = value,
@@ -331,7 +335,10 @@ build_knw_obs_accounts <- function(
   training_contributions <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(training_contributions_raw) %>%
+    left_join(
+      training_contributions_raw,
+      by = c("year", "country", "industry")
+    ) %>%
     proxy_missing_value_by_similarity(., "KNW") %>%
     rename(
       training_value = value,
@@ -390,9 +397,9 @@ build_knw_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (KNW)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_knw_accounts %>%
@@ -404,9 +411,9 @@ build_knw_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_knw.csv")

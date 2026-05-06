@@ -29,7 +29,7 @@
 #' build_geq_obs_accounts()
 
 build_geq_obs_accounts <- function(
-  years = 2016:2022,
+  years = 2016:2023,
   do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
@@ -316,7 +316,10 @@ build_geq_obs_accounts <- function(
   figaro_geq_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(raw_geq_accounts) %>%
+    left_join(
+      raw_geq_accounts,
+      by = c("year", "country", "industry")
+    ) %>%
     select(year, country, industry, value, flag)
 
   # Complete with similarity

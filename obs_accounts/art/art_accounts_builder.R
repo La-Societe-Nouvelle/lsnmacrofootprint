@@ -227,8 +227,14 @@ build_art_obs_accounts <- function(
   figaro_art_accounts <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(main_aggregates_data) %>%
-    left_join(crafts_rates_fr) %>%
+    left_join(
+      main_aggregates_data,
+      by = c("year", "country", "industry")
+    ) %>%
+    left_join(
+      crafts_rates_fr,
+      by = c("year", "country", "industry")
+    ) %>%
     mutate(
       value = case_when(
         country == "FR" ~ round(NVA * crafts_rate_fr, digits = 0),

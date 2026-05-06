@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Environmental accounts builder for water consumption (WAT)
@@ -143,7 +143,7 @@ build_wat_obs_accounts <- function(
     select(year,country,oecd_industry,water_withdrawal,unit)
 
   # -------------------------------------------------------------------
-  # Building WAT impact vector
+  # Building WAT impact vector
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
@@ -172,19 +172,30 @@ build_wat_obs_accounts <- function(
   figaro_wat_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(raw_wat_accounts) %>%
+    left_join(
+      raw_wat_accounts,
+      by = c("year", "country", "industry")
+    ) %>%
     select(year, country, industry, value, flag)
+
+  if (verbose) cat("Completing with similarity...\n")
 
   # Complete with similarity
   figaro_wat_accounts <- figaro_wat_accounts_raw %>%
     proxy_missing_value_by_similarity(., "WAT") %>%
     select(year, country, industry, value, flag)
 
+  if (verbose) cat("Cleaning outliers...\n")
+
   # Clean outliers
   figaro_wat_accounts <- figaro_wat_accounts %>%
     merge(main_aggregates_data) %>%
     mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
+    clean_outliers(
+      .,
+      serie_pkey = c("country", "industry"),
+      verbose = TRUE
+    ) %>%
     merge(main_aggregates_data) %>%
     mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
     select(year, country, industry, value, flag)
@@ -199,9 +210,9 @@ build_wat_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (WAT)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_wat_accounts %>%
@@ -213,9 +224,9 @@ build_wat_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_wat.csv")

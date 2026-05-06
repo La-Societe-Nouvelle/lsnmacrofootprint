@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for hazardous substances use (HAZ)
@@ -197,7 +197,10 @@ build_haz_obs_accounts <- function(
   figaro_haz_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(haz_use) %>%
+    left_join(
+      haz_use,
+      by = c("year", "country", "industry")
+    ) %>%
     mutate(
       value = round(haz_use, digits = 0),
       flag = ""
@@ -228,9 +231,9 @@ build_haz_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (HAZ)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_haz_accounts %>%
@@ -242,9 +245,9 @@ build_haz_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_haz.csv")

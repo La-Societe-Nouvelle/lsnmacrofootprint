@@ -117,7 +117,8 @@ build_mat_obs_accounts <- function(
     select(year, country, flow, category, value, unit)
 
   # -------------------------------------------------------------------
-  # Building MAT impact vector & Fill missing values by similarity
+  # Building MAT impact vector & Fill missing values by similarity
+
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
@@ -160,13 +161,14 @@ build_mat_obs_accounts <- function(
   figaro_mat_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(raw_mat_accounts) %>%
+    left_join(
+      raw_mat_accounts,
+      by = c("year", "country", "industry")
+    ) %>%
     mutate(
       value = if_else(sector %in% c("A","B"), value, 0)
     ) %>%
     select(year, country, industry, value, flag)
-
-  print(figaro_mat_accounts_raw %>% as_tibble())
 
   # Complete with similarity
   figaro_mat_accounts <- figaro_mat_accounts_raw %>%
@@ -192,9 +194,9 @@ build_mat_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (MAT)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_mat_accounts %>%
@@ -206,9 +208,9 @@ build_mat_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_mat.csv")
