@@ -21,14 +21,14 @@ proxy_missing_value_by_similarity = function(
   raw_vector,
   indic_i,
   year_basis = 2018,
-  parallelize = FALSE, # TRUE
+  parallelize = TRUE,
   proxy = "VAFC",
   verbose = TRUE
 ) {
   # --------------------------------------------------
-  # db / Sources
+  # Utils
 
-  source("db/stats_db.R")
+  # ...
 
   # -------------------------
   # Similarity mode
@@ -56,7 +56,7 @@ proxy_missing_value_by_similarity = function(
     return(raw_vector)
   }
 
-  if (verbose) print(paste0("Missing value(s) : ", length(missing_values_indexes)))
+  if (verbose) cat(paste0("Missing value(s) : ", length(missing_values_indexes)),"\n")
 
   # --------------------------------------------------
   # Metadata
@@ -105,7 +105,6 @@ proxy_missing_value_by_similarity = function(
   file <- list.files(dirname(tempdir()), recursive = T, full.names = T) %>% subset(grepl(paste0("SBSDATA",proxy),.))
 
   if (length(file) == 1) {
-    if (verbose) print("Cached data used")
     sbs_raw_data <- readRDS(file)
   } else {
     # URL SBS data (OECD)
@@ -149,7 +148,7 @@ proxy_missing_value_by_similarity = function(
     merge(nace_lookup)
 
   oecd_sbs_data <- base_grid %>%
-    left_join(sbs_data) %>%
+    left_join(sbs_data, by = c("year", "country", "nace_code")) %>%
     # remove division matching FIGARO industry (false similarity)
     filter(nace_code != substring(industry,2)) %>%
     # remove incomplete industry at each level
@@ -181,7 +180,7 @@ proxy_missing_value_by_similarity = function(
   # --------------------------------------------------
   # Computations
 
-  if (verbose) print("Building missing data...")
+  if (verbose) cat("Building missing data...\n")
 
   # -------------------------
   # Parallel mode
@@ -194,7 +193,11 @@ proxy_missing_value_by_similarity = function(
     on.exit(plan(old_plan), add = TRUE)
     on.exit(options(progressr.enable = old_progressr_enable), add = TRUE)
 
-    registerDoFuture()
+    suppressPackageStartupMessages(
+      suppressMessages(
+        registerDoFuture()
+      )
+    )
     plan(multisession, workers = max(1, detectCores() - 1))
 
     options(progressr.enable = TRUE)
