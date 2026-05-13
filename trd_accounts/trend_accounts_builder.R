@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for trend series
@@ -77,10 +77,7 @@ build_trd_accounts <- function(
 
   main_aggregates_data <- main_aggregates_data_raw %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    mutate(
-      rate = ifelse(PRD == 0, 0, NVA / PRD)
-    ) %>%
-    select(year, country, industry, X, VA, rate)
+    select(year, country, industry, NVA)
 
   # -------------------------------------------------------------------
   # OBS Accounts
@@ -156,11 +153,11 @@ build_trd_accounts <- function(
       value = case_when(
         # -------------------------
         # contribution rates
-        metadata_indic$type == "rate" ~ value/100 * VA,
+        metadata_indic$type == "rate" ~ value / 100 * NVA,
         # indexes
         metadata_indic$type == "index" ~ value,
         # intensities
-        metadata_indic$type == "intensity" ~ value * VA
+        metadata_indic$type == "intensity" ~ value * NVA
         # -------------------------
       ),
       flag = "f"

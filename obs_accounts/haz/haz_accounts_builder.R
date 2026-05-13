@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for hazardous substances use (HAZ)
@@ -91,13 +91,30 @@ build_haz_obs_accounts <- function(
   # -------------------------------------------------------------------
   # FIGARO Economic data (C20 ressources)
 
-  intermediate_inputs_data_raw <- map_dfr(
+  if (verbose) cat("Loading FIGARO chemicals inputs data...\n")
+
+  load_figaro_chemicals_inputs <- function(
+    year_i
+  ) {
+    if (verbose) cat(paste0("\t", year_i, "\n"))
+
+    intermediate_inputs_filename <- paste0("figaro_intermediate_inputs_", year_i, ".parquet")
+    intermediate_inputs_filepath <- file.path("data_figaro/", intermediate_inputs_filename)
+
+    intermediate_inputs <- read_parquet(intermediate_inputs_filepath) %>%
+      filter(resource_industry == "C20") %>%
+      mutate(
+        year = year_i,
+      ) %>%
+      select(year, use_country, use_industry, resource_country, resource_industry, value)
+  }
+
+  intermediate_inputs_c20_data_raw <- map_dfr(
     years$year,
-    load_local_figaro_intermediate_inputs
+    load_figaro_chemicals_inputs
   )
 
-  intermediate_inputs_data <- intermediate_inputs_data_raw %>%
-    filter(resource_industry != "C20") %>%
+  figaro_resource_c20 <- intermediate_inputs_c20_data_raw %>%
     select(year, use_country, use_industry, resource_country, resource_industry, value)
 
   # -------------------------------------------------------------------
@@ -159,7 +176,8 @@ build_haz_obs_accounts <- function(
     group_by(year, country) %>%
     summarise(
       haz_production = round(sum(value / 1e3, na.rm = TRUE), digits = 1),
-      unit = "T"
+      unit = "T",
+      .groups = "drop"
     ) %>%
     select(year, country, haz_production, unit)
 
@@ -182,7 +200,8 @@ build_haz_obs_accounts <- function(
     ) %>%
     group_by(year, use_country, use_industry) %>%
     summarise(
-      haz_use = sum(haz_use, na.rm = TRUE) # sum over resource country
+      haz_use = sum(haz_use, na.rm = TRUE), # sum over resource country
+      .groups = "drop"
     ) %>%
     rename(
       country = use_country,
@@ -197,7 +216,10 @@ build_haz_obs_accounts <- function(
   figaro_haz_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(haz_use) %>%
+    left_join(
+      haz_use,
+      by = c("year", "country", "industry")
+    ) %>%
     mutate(
       value = round(haz_use, digits = 0),
       flag = ""
@@ -228,9 +250,9 @@ build_haz_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (HAZ)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_haz_accounts %>%
@@ -242,9 +264,9 @@ build_haz_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_haz.csv")

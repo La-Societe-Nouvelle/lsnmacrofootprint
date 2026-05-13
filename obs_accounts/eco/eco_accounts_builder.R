@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for domestic production (ECO)
@@ -69,14 +69,18 @@ build_eco_obs_accounts <- function(
   if (verbose) cat("FIGARO data loaded\n")
 
   # -------------------------------------------------------------------
-  # Building FIGARO accounts
+  # Building FIGARO accounts
+
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
   figaro_eco_accounts <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(main_aggregates_data, by = c("year", "country", "industry")) %>%
+    left_join(
+      main_aggregates_data,
+      by = c("year", "country", "industry")
+    ) %>%
     mutate(
       value = case_when(
         country == "FR" ~ NVA,
@@ -96,15 +100,15 @@ build_eco_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (ECO)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_eco_accounts %>%
     mutate(
       serie_id    = "eco_obs",
-      value       = round(value, digits = 0),
+      value       = round(value, digits = 3),
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%

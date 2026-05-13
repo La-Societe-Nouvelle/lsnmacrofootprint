@@ -157,3 +157,128 @@ upload_footprints_data <- function(
     verbose = verbose
   )
 }
+
+# -------------------------------------------------------------------
+# FIGARO data
+
+upload_figaro_data <- function(
+  years = 2010:2030,
+  data_dir = "data_figaro",
+  schema = "models",
+  table = "figaro_main_aggregates_extended",
+  verbose = FALSE
+) {
+  # if (missing(years) || length(years) == 0) {
+  #   stop("Argument 'years' is required.")
+  # }
+
+  years <- as.character(years)
+
+  files <- file.path(data_dir, paste0("figaro_main_aggregates_", years, ".parquet"))
+  missing_files <- files[!file.exists(files)]
+
+  if (length(missing_files) > 0) {
+    stop(
+      "Missing FIGARO main aggregate file(s): ",
+      paste(missing_files, collapse = ", ")
+    )
+  }
+
+  if (verbose) {
+    message("Files to upload:")
+    print(basename(files))
+  }
+
+  figaro_data <- purrr::map_dfr(
+    files,
+    function(file) {
+      arrow::read_parquet(file) %>%
+        mutate(year = as.character(year))
+    }
+  )
+
+  required_columns <- c("industry", "country", "aggregate", "year", "value")
+  missing_columns <- setdiff(required_columns, names(figaro_data))
+
+  if (length(missing_columns) > 0) {
+    stop(
+      "Missing required column(s) in FIGARO data: ",
+      paste(missing_columns, collapse = ", ")
+    )
+  }
+
+  if (!"flag" %in% names(figaro_data)) {
+    figaro_data$flag <- NA_character_
+  }
+
+  figaro_data <- figaro_data %>%
+    mutate(
+      industry = as.character(industry),
+      country = as.character(country),
+      aggregate = as.character(aggregate),
+      year = as.character(year),
+      value = format(
+        round(as.numeric(value), digits = 3),
+        nsmall = 3,
+        scientific = FALSE,
+        trim = TRUE
+      ),
+      flag = as.character(flag),
+      lastupdate = Sys.Date()
+    ) %>%
+    select(industry, country, aggregate, year, value, flag, lastupdate)
+
+  duplicated_keys <- figaro_data %>%
+    count(industry, country, aggregate, year, name = "n") %>%
+    filter(n > 1)
+
+  if (nrow(duplicated_keys) > 0) {
+    stop(
+      "Duplicate primary keys found in FIGARO data before upload. ",
+      "First duplicated key: ",
+      paste(unlist(duplicated_keys[1, c("industry", "country", "aggregate", "year")]), collapse = " / ")
+    )
+  }
+
+  conn <- get_connection_db()
+  on.exit(DBI::dbDisconnect(conn), add = TRUE)
+
+  if (verbose) {
+    message(
+      "Deleting existing rows from ",
+      schema, ".", table,
+      " for year(s): ",
+      paste(years, collapse = ", ")
+    )
+  }
+
+  DBI::dbExecute(
+    conn,
+    paste0(
+      "DELETE FROM ",
+      DBI::dbQuoteIdentifier(conn, schema),
+      ".",
+      DBI::dbQuoteIdentifier(conn, table),
+      " WHERE year IN (",
+      paste(DBI::dbQuoteString(conn, years), collapse = ", "),
+      ")"
+    )
+  )
+
+  if (verbose) {
+    message("Uploading ", nrow(figaro_data), " rows into ", schema, ".", table, "...")
+  }
+
+  DBI::dbWriteTable(
+    conn = conn,
+    name = DBI::Id(schema = schema, table = table),
+    value = figaro_data,
+    append = TRUE
+  )
+
+  if (verbose) {
+    message("Upload complete.")
+  }
+
+  invisible(figaro_data)
+}

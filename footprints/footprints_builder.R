@@ -79,8 +79,7 @@ build_footprints <- function(
     accounts_data_raw <- read.csv(accounts_data_file_path)
 
     accounts_data <- accounts_data_raw %>%
-      select(serie_id, year, country, industry, value, flag) %>%
-      arrange(year, country, industry)
+      select(serie_id, year, country, industry, value, flag)
 
     years <- accounts_data %>%
       pull(year) %>%
@@ -175,7 +174,7 @@ build_footprints <- function(
 
       # Consumptions of fixed capital
       cfc <- colSums(k)
-      cfc[ic < 0] <- 0
+      cfc[cfc < 0] <- 0
 
       # Gross value added
       gva <- x - ic
@@ -197,8 +196,13 @@ build_footprints <- function(
         # compute leontief inverse if not exist
         if (verbose) print(paste0("Computing Leontief inverse for year ", year_i))
 
+        # A = (Z + K) x diag(x)^(-1), soit a_ij = (z_ij + k_ij) / x_j
         a <- sweep(z+k, 2, as.numeric(x), `/`)
+
+        # a_ij = 0 si a_ij ∈ {NaN, Inf, -Inf}
         a[is.nan(a) | is.infinite(a)] <- 0
+
+        # a_ii <- 0.995 si a_ii = 1
         diag(a)[diag(a) == 1] <- 0.995
 
         l <- solve(diag(nrow = nrow(a)) - a)
@@ -219,8 +223,12 @@ build_footprints <- function(
         as.matrix()
 
       # Indirects contributions
-      contribution_z <- sweep(z,2,x,`/`) ; contribution_z[is.na(contribution_z)] <- 0 ; contribution_z <- contribution_z %*% l
-      contribution_k <- sweep(k,2,x,`/`) ; contribution_k[is.na(contribution_k)] <- 0 ; contribution_k <- contribution_k %*% l
+
+      contribution_z <- l %*% z
+      contribution_z[is.na(contribution_z)] <- 0
+
+      contribution_k <- l %*% k
+      contribution_k[is.na(contribution_k)] <- 0
 
       # --------------------------------------------------------------------
       # Computing impacts vector
@@ -241,7 +249,7 @@ build_footprints <- function(
       c <- case_when(
         # -------------------------
         # contribution rates
-        metadata_indic$type == "rate" ~ ifelse(x > 0 & gva > 0, (e *(nva/gva) / x) * 100, 0),
+        metadata_indic$type == "rate" ~ ifelse(x > 0 & nva > 0, (e / x) * 100, 0),
         # indexes
         metadata_indic$type == "index" ~ ifelse(x > 0, e * (nva / x), 0),
         # intensities
@@ -254,9 +262,17 @@ build_footprints <- function(
       # --------------------------------------------------------------------
       # Computing footprints
 
+      # -------------------------
       # prd footprint
+
+      # P = N x diag(x)
+      #   = diag(c) x M
+      #   = diag(c) x L x diag(1 / diag(L)) x diag(x)
+
       fpt <- sweep(
+        # N = diag(c) x M
         sweep(
+          # M = L x diag(1 / diag(L))
           sweep(l, 2, diag(l), `/`),
           1,
           unlist(c), `*`
@@ -266,22 +282,18 @@ build_footprints <- function(
         colSums(na.rm = TRUE)
 
       # ic contribution
+
       indirect_impacts_ic <- sweep(
-        sweep(
-          sweep(contribution_z, 2, diag(l), `/`),
-          1, unlist(c), `*`
-        ),
-        2, x, `*`
+        contribution_z,
+        1, unlist(c), `*`
       ) %>%
         colSums(na.rm = TRUE)
 
       # cfc contribution
+
       indirect_impacts_cfc <- sweep(
-        sweep(
-          sweep(contribution_k, 2, diag(l), `/`),
-          1, unlist(c), `*`
-        ),
-        2, x, `*`
+        contribution_k,
+        1, unlist(c), `*`
       ) %>%
         colSums(na.rm = TRUE)
 

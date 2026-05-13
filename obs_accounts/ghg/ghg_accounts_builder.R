@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for ghg emissions (GHG)
@@ -173,15 +173,22 @@ build_ghg_obs_accounts <- function(
     select(year,country,industry,oecd_ghg_emissions,unit)
 
   # -------------------------------------------------------------------
-  # Building FIGARO accounts
+  # Building FIGARO accounts
+
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
   figaro_ghg_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(eurostat_data) %>% # by year, country, industry, unit
-    left_join(oecd_data) %>% # by year, country, industry, unit
+    left_join(
+      eurostat_data,
+      by = c("year", "country", "industry")
+    ) %>%
+    left_join(
+      oecd_data,
+      by = c("year", "country", "industry", "unit")
+    ) %>%
     mutate(
       value = case_when(
         country %in% eurostat_data$country ~ eurostat_ghg_emissions,
@@ -200,7 +207,10 @@ build_ghg_obs_accounts <- function(
   figaro_ghg_accounts <- figaro_ghg_accounts %>%
     merge(main_aggregates_data) %>%
     mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
+    clean_outliers(
+      .,
+      serie_pkey = c("country", "industry")
+    ) %>%
     merge(main_aggregates_data) %>%
     mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
     select(year, country, industry, value, flag)
@@ -215,9 +225,9 @@ build_ghg_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (GHG)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <<- figaro_ghg_accounts %>%
@@ -231,5 +241,12 @@ build_ghg_obs_accounts <- function(
 
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
+  # Save data
+
+  accounts_data_path  <- file.path(output_dir, "accounts_obs_ghg.csv")
+  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+
+  # Return
   return(formatted_data)
 }

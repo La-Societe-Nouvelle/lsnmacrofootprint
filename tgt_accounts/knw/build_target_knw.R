@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' TARGETS BUILDER - KNW
 #'
@@ -44,21 +44,6 @@ build_target_knw <- function(
     select(country)
 
   # -------------------------------------------------------------------
-  # FIGARO Economic data
-
-  main_aggregates_data_raw <- map_dfr(
-    years,
-    load_local_figaro_main_aggregates
-  )
-
-  main_aggregates_data <- main_aggregates_data_raw %>%
-    pivot_wider(names_from = aggregate, values_from = value) %>%
-    mutate(
-      rate = ifelse(PRD == 0, 0, NVA / PRD)
-    ) %>%
-    select(year, country, industry, PRD, NVA, rate)
-
-  # -------------------------------------------------------------------
   # OBS Accounts
 
   obs_accounts_path  <- file.path(output_dir, "accounts_obs_knw.csv")
@@ -80,82 +65,119 @@ build_target_knw <- function(
 
   # -------------------------------------------------------------------
 
-  last_year_obs = max(as.integer(obs_data_raw$year), na.rm = TRUE)
+  last_year_obs <- max(as.integer(obs_data_raw$year), na.rm = TRUE)
 
-  years <- last_year_obs : 2030
-  n_years <- 2030 - years[1]
+  tgt_years <- last_year_obs : 2030
+  n_years <- 2030 - tgt_years[1]
+
+  years <- tibble(year = as.character(tgt_years))
+
+  # -------------------------------------------------------------------
+  # FIGARO Economic data
+
+  main_aggregates_data_raw <- map_dfr(
+    years$year,
+    load_local_figaro_main_aggregates
+  )
+
+  main_aggregates_data <- main_aggregates_data_raw %>%
+    pivot_wider(names_from = aggregate, values_from = value) %>%
+    select(year, country, industry, NVA)
+
+  # -------------------------------------------------------------------
 
   # -------------------------
   # Starting point
 
-  base_targets <- fpt_obs %>%
-    filter(year == last_year_obs) %>%
-    rename(base_year = year,
-           base_fpt = value) %>%
+  base_targets <- obs_data_raw %>%
+    filter(year == as.character(last_year_obs)) %>%
+    merge(main_aggregates_data) %>%
+    mutate(
+      fpt = if_else(NVA > 0, value / NVA * 100, 0)
+    ) %>%
+    rename(
+      base_year = year,
+      base_fpt = fpt
+    ) %>%
     select(country,industry,base_year,base_fpt)
 
   # -------------------------
   # Targets for 2030
 
-  target_coefs = fpt_obs %>%
-    filter(year == '2020') %>%
-    rename(fpt = value) %>%
+  target_coefs <- obs_data_raw %>%
+    filter(
+      year == "2020",
+      country == "FR"
+    ) %>%
+    merge(main_aggregates_data) %>%
+    mutate(
+      fpt = if_else(NVA > 0, value / NVA * 100, 0)
+    ) %>%
     select(country,industry,fpt) %>%
     merge(main_aggregates_data) %>%
-    filter(year %in% c('2020','2030')) %>%
-    pivot_wider(names_from = year, values_from = NVA) %>%
+    filter(year %in% c("2020", "2030")) %>%
+    pivot_wider(
+      names_from = year,
+      values_from = NVA,
+      names_glue = "nva_{year}"
+    ) %>%
     group_by(country) %>%
     summarise(
-      fpt_total_2020 = sum(fpt*`2020`) / sum(`2020`),
-      fpt_total_2030 = sum(fpt*`2030`) / sum(`2030`),
+      fpt_total_2020 = sum(fpt * nva_2020) / sum(nva_2020),
+      fpt_total_2030 = sum(fpt * nva_2030) / sum(nva_2030),
       delta = 0.8 - (fpt_total_2030 - fpt_total_2020),
-      coef = (fpt_total_2020 + 0.8)/fpt_total_2030
+      coef = (fpt_total_2020 + 0.8) / fpt_total_2030
     ) %>%
     mutate(
-      coef_yearly = ifelse(country == 'FR', coef^(1 / 10), NA) # coef annuel sur 10 ans
+      coef_yearly = ifelse(country == "FR", coef^(1 / 10), 1.0) # coef annuel sur 10 ans
     ) %>%
     select(country,coef_yearly)
 
-  targets_data = base_targets %>%
-    # add years ----------------------------------------
-    slice(rep(1:n(), each = length(years))) %>%
-    mutate(year = rep(years, n()/length(years))) %>%
+  targets_data <- figaro_industries %>%
+    merge(figaro_countries) %>%
+    crossing(years) %>%
+    filter(year != last_year_obs) %>%
     # build raw fpt tgt --------------------------------
-    merge(target_coefs) %>%
+    left_join(base_targets) %>%
+    left_join(target_coefs) %>%
     mutate(
-      n = year - as.integer(base_year),
-      fpt_tgt = ifelse(country == 'FR', pmin(base_fpt * (coef_yearly^n), 100.0), NA)
+      n = as.integer(year) - as.integer(base_year),
+      fpt_tgt = ifelse(country == "FR", pmin(base_fpt * (coef_yearly^n), 100.0), NA)
     ) %>%
     # build raw impact_tgt -----------------------------
     merge(main_aggregates_data) %>%
     mutate(
-      impact_tgt = round(fpt_tgt * NVA, 1)
+      impact_tgt = round(fpt_tgt * NVA / 100, 1)
     ) %>%
     # use trend for other countries --------------------
-    merge(impacts_trd_data) %>%
+    merge(trd_data) %>%
     mutate(
-      impact_tgt = ifelse(country == 'FR', impact_tgt, impacts_trd)
+      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
     ) %>%
     # check increasing fpt -----------------------------
     arrange(year) %>%
     group_by(country, industry) %>%
     mutate(
-      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA, 0),
+      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA *100, 0),
       fpt_tgt = pmax(fpt_tgt, base_fpt),
       fpt_tgt = cummax(fpt_tgt),
-      impact_tgt = fpt_tgt * NVA
+      impact_tgt = fpt_tgt * NVA / 100
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
-    select(country, industry, year, impact_tgt)
+    rename(
+      value = impact_tgt
+    ) %>%
+    select(country, industry, year, value)
 
   # Check
-  size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
+  size <- (nrow(years)-1)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
     stop("ERROR - Wrong size for tgt accounts (KNW)")
   } else if (any(is.na(targets_data$value))) {
     error_data <<- targets_data
+    print(targets_data %>% filter(is.na(value)) %>% as_tibble())
     stop("ERROR - NA values in tgt accounts (KNW)")
   }
 
@@ -165,7 +187,8 @@ build_target_knw <- function(
   formatted_data <- targets_data %>%
     mutate(
       serie_id    = "knw_tgt",
-      value       = round(value, digits = 0),
+      value       = round(value, digits = 3),
+      flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, industry, country, year, value, flag, lastupdate) %>%

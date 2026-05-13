@@ -16,17 +16,18 @@
 
 clean_outliers <- function(
   data,
-  serie_pkey       = c("country", "industry"), # without year
-  kmax             = 2,
-  verbose          = FALSE
+  serie_pkey = c("country", "industry"), # without year
+  kmax       = 2,
+  use_tw_apc = FALSE,
+  verbose    = FALSE
 ) {
-  if (verbose) message("clean outliers")
-
+  if (verbose) message("Clean outliers")
   # --------------------------------------------------
   # Prepare data
 
   dataset_colnames <- colnames(data)
 
+  # table avec colonnes PKEY
   series_keys <- data %>%
     unite(id, !!!syms(serie_pkey), remove = FALSE) %>%
     select(id, all_of(serie_pkey)) %>%
@@ -67,7 +68,8 @@ clean_outliers <- function(
 
   imputed_time_series <- impute_outliers_fbi(
       time_series_cleared,
-      kmax = kmax
+      kmax = kmax,
+      use_tw_apc = use_tw_apc
     ) %>%
     rename(imputed_value = value) %>%
     select(id, year, imputed_value)
@@ -143,7 +145,8 @@ detect_outlier_fbi <- function(
 
 impute_outliers_fbi <- function(
   time_series,
-  kmax = 2
+  kmax = 2,
+  use_tw_apc = FALSE
 ) {
   # --------------------------------------------------
   # Build wide matrix for FBI imputation
@@ -160,16 +163,27 @@ impute_outliers_fbi <- function(
   # --------------------------------------------------
   # Run FBI imputation
 
-  n_years <- nrow(imputation_matrix)
-  n_series <- ncol(imputation_matrix)
-
-  use_two_way_apc <- n_series > n_years
-
-  imputed_matrix <- if (use_two_way_apc) {
-    fbi::tw_apc(as.matrix(imputation_matrix), kmax)[["data"]]
-  } else {
-    fbi::tp_apc(as.matrix(imputation_matrix), kmax)[["data"]]
-  }
+  imputed_matrix <- suppressPackageStartupMessages(
+    suppressMessages(
+      if (use_tw_apc) {
+        fbi::tw_apc(
+          as.matrix(imputation_matrix),
+          kmax
+          # center = TRUE,
+          # standardize = TRUE,
+          # re_estimate = TRUE
+        )[["data"]]
+      } else {
+        fbi::tp_apc(
+          as.matrix(imputation_matrix),
+          kmax
+          # center = TRUE,
+          # standardize = TRUE,
+          # re_estimate = TRUE
+        )[["data"]]
+      }
+    )
+  )
 
   # --------------------------------------------------
   # Convert imputed matrix back to long format

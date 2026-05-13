@@ -35,8 +35,6 @@ build_was_obs_accounts <- function(
 
   if (verbose) cat("Loading metadata...\n")
 
-  if (verbose) print("Load metadata")
-
   years <- tibble(year = as.character(years))
 
   figaro_industries <- read_delim(
@@ -194,7 +192,8 @@ build_was_obs_accounts <- function(
     select(year,country,oecd_activity,waste_generation,unit)
 
   # -------------------------------------------------------------------
-  # Building WAS impact vector
+  # Building WAS impact vector
+
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
@@ -252,8 +251,14 @@ build_was_obs_accounts <- function(
   figaro_was_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(eurostat_was_accounts) %>%
-    left_join(oecd_was_accounts) %>%
+    left_join(
+      eurostat_was_accounts,
+      by = c("year", "country", "industry")
+    ) %>%
+    left_join(
+      oecd_was_accounts,
+      by = c("year", "country", "industry")
+    ) %>%
     mutate(
       value = if_else(!is.na(eurostat_value), eurostat_value, oecd_value),
       flag = if_else(!is.na(eurostat_flag), eurostat_flag, oecd_flag),
@@ -284,9 +289,9 @@ build_was_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (WAS)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_was_accounts %>%
@@ -298,9 +303,9 @@ build_was_obs_accounts <- function(
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_was.csv")

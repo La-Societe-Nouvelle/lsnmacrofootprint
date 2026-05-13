@@ -36,8 +36,24 @@ load_local_figaro_intermediate_inputs <- function(
 
   intermediate_inputs <- read_parquet(intermediate_inputs_filepath) %>%
     mutate(
+      year = year_i,
       use_id = paste0(use_country, "_", use_industry),
       resource_id = paste0(resource_country, "_", resource_industry)
     ) %>%
-    select(use_id, use_country, use_industry, resource_id, resource_country, resource_industry, value)
+    select(year, use_id, use_country, use_industry, resource_id, resource_country, resource_industry, value)
+}
+
+load_local_figaro_capital_use <- function(
+  year_i
+) {
+  capital_use_filename <- paste0("figaro_capital_use_", year_i, ".parquet")
+  capital_use_filepath <- file.path("data_figaro/", capital_use_filename)
+
+  capital_use <- read_parquet(capital_use_filepath) %>%
+    mutate(
+      year = year_i,
+      use_id = paste0(use_country, "_", use_industry),
+      resource_id = paste0(resource_country, "_", resource_industry)
+    ) %>%
+    select(year, use_id, use_country, use_industry, resource_id, resource_country, resource_industry, value)
 }

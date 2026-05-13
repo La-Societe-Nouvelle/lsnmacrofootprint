@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' TARGETS BUILDER - SOC
 #'
@@ -44,21 +44,6 @@ build_target_soc <- function(
     select(country)
 
   # -------------------------------------------------------------------
-  # FIGARO Economic data
-
-  main_aggregates_data_raw <- map_dfr(
-    years,
-    load_local_figaro_main_aggregates
-  )
-
-  main_aggregates_data <- main_aggregates_data_raw %>%
-    pivot_wider(names_from = aggregate, values_from = value) %>%
-    mutate(
-      rate = ifelse(PRD == 0, 0, NVA / PRD)
-    ) %>%
-    select(year, country, industry, PRD, NVA, rate)
-
-  # -------------------------------------------------------------------
   # OBS Accounts
 
   obs_accounts_path  <- file.path(output_dir, "accounts_obs_soc.csv")
@@ -80,18 +65,43 @@ build_target_soc <- function(
 
   # -------------------------------------------------------------------
 
-  last_year_obs = max(as.integer(fpt_obs$year), na.rm = TRUE)
+  last_year_obs <- max(as.integer(obs_data_raw$year), na.rm = TRUE)
 
-  years <- (last_year_obs + 1) : 2030
-  n_years <- 2050 - years[1]
+  tgt_years <- (last_year_obs + 1) : 2030
+  n_years <- 2050 - tgt_years[1]
+
+  years <- tibble(year = as.character(tgt_years))
+
+  # -------------------------------------------------------------------
+  # FIGARO Economic data
+
+  main_aggregates_years <- c(years$year, as.character(last_year_obs))
+
+  main_aggregates_data_raw <- map_dfr(
+    main_aggregates_years,
+    load_local_figaro_main_aggregates
+  )
+
+  main_aggregates_data <- main_aggregates_data_raw %>%
+    pivot_wider(names_from = aggregate, values_from = value) %>%
+    select(year, country, industry, NVA)
+
+  # -------------------------------------------------------------------
+  # Building SOC Targets accounts data
 
   # -------------------------
   # Start point (base)
 
-  base_targets <- fpt_obs %>%
+  base_targets <- obs_data_raw %>%
     filter(year == last_year_obs) %>%
-    rename(base_year = year,
-           base_fpt = value) %>%
+    merge(main_aggregates_data) %>%
+    mutate(
+      fpt = if_else(NVA > 0, value / NVA * 100, 0)
+    ) %>%
+    rename(
+      base_year = year,
+      base_fpt = fpt
+    ) %>%
     select(country, industry, base_year, base_fpt)
 
   # -------------------------
@@ -99,7 +109,7 @@ build_target_soc <- function(
 
   target_coefs <- base_targets %>%
     mutate(
-      target_2050 = ifelse(country == 'FR', 100.0, NA), # taux de contribution de 100%
+      target_2050 = ifelse(country == "FR", 100.0, NA), # taux de contribution de 100%
       coef_yearly = ifelse(is.na(target_2050) | base_fpt == 100.0, 1.0, (target_2050 / base_fpt)^(1 / n_years)) # pas d'augmentation si taux de contribution atteint
     ) %>%
     select(country, industry, target_2050, coef_yearly)
@@ -107,38 +117,42 @@ build_target_soc <- function(
   # -------------------------
   # Targets fpt
 
-  targets_data <- base_targets %>%
-    merge(target_coefs) %>%
-    # add years ----------------------------------------
-    slice(rep(1:n(), each = length(years))) %>%
-    mutate(year = rep(years, n()/length(years))) %>%
+  targets_data <- figaro_industries %>%
+    merge(figaro_countries) %>%
+    crossing(years) %>%
+    filter(year != last_year_obs) %>%
     # build raw fpt tgt --------------------------------
+    merge(base_targets) %>%
+    merge(target_coefs) %>%
     mutate(
-      n = year - as.integer(base_year),
+      n = as.integer(year) - as.integer(base_year),
       fpt_tgt = base_fpt * (coef_yearly^n)
     ) %>%
     # build impact tgt ---------------------------------
     merge(main_aggregates_data) %>%
     mutate(
-      impact_tgt = round(fpt_tgt * NVA, 1)
+      impact_tgt = round(fpt_tgt / 100 * NVA, 1)
     ) %>%
     # apply trend for other countries ------------------
-    merge(impacts_trd_data) %>%
+    merge(trd_data) %>%
     mutate(
-      impact_tgt = ifelse(country == 'FR', impact_tgt, impacts_trd)
+      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
     ) %>%
     # check increasing fpt -----------------------------
     arrange(year) %>%
     group_by(country, industry) %>%
     mutate(
-      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA, 0),
+      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA * 100, 0),
       fpt_tgt = pmax(fpt_tgt, base_fpt),
       fpt_tgt = cummax(fpt_tgt),
-      impact_tgt = fpt_tgt * NVA
+      impact_tgt = fpt_tgt / 100 * NVA
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
-    select(country, industry, year, impact_tgt)
+    rename(
+      value = impact_tgt
+    ) %>%
+    select(country, industry, year, value)
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
@@ -156,7 +170,8 @@ build_target_soc <- function(
   formatted_data <- targets_data %>%
     mutate(
       serie_id    = "soc_tgt",
-      value       = round(value, digits = 0),
+      value       = round(value, digits = 3),
+      flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, industry, country, year, value, flag, lastupdate) %>%

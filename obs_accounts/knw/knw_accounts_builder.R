@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for training/research contribution (KNW)
@@ -36,8 +36,6 @@ build_knw_obs_accounts <- function(
   # Metadata
 
   if (verbose) cat("Loading metadata...\n")
-
-  if (verbose) print("Load metadata")
 
   years <- tibble(year = as.character(years))
 
@@ -86,14 +84,12 @@ build_knw_obs_accounts <- function(
     rename(industry = figaro_industry) %>%
     select(industry, nace_r2)
 
-  # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
 
+  # -------------------------------------------------------------------
   # FIGARO Economic data
 
   if (verbose) cat("Loading FIGARO data...\n")
-
-  if (verbose) print("Load FIGARO data")
 
   main_aggregates_data_raw <- map_dfr(
     years$year,
@@ -119,7 +115,7 @@ build_knw_obs_accounts <- function(
   # -------------------------------------------------------------------
   # ANBERD data (R&D Expenditure)
 
-  if (verbose) print("Load ANBERD data")
+  if (verbose) cat("Loading ANBERD data...\n")
 
   base_url_anberd_data = "https://sdmx.oecd.org/public/rest/data/OECD.STI.STP,DSD_ANBERD@DF_ANBERDi4,/.A.MA..USD_PPP.V.?"
   url_anberd_data = paste0(base_url_anberd_data,
@@ -165,10 +161,12 @@ build_knw_obs_accounts <- function(
     select(year, country, anberd_activity, value, unit) %>%
     arrange(year, country, anberd_activity)
 
+  if (verbose) cat("ANBERD data loaded\n")
+
   # -------------------------------------------------------------------
   # EUROSTAT data (TRNG CVT)
 
-  if (verbose) print("Load EUROSTAT data")
+  if (verbose) cat("Loading EUROSTAT data...\n")
 
   base_url_trng_cvt_data = "https://ec.europa.eu/eurostat/api/dissemination/sdmx/3.0/data/dataflow/ESTAT/trng_cvt_16n2/1.0?"
   url_trng_cvt_data = paste0(base_url_trng_cvt_data,
@@ -181,7 +179,7 @@ build_knw_obs_accounts <- function(
 
   if (!file.exists(eurostat_file_path) | !use_temp_data)
   {
-    if (verbose) print("Download EUROSTAT data")
+    if (verbose) cat("Download EUROSTAT data")
 
     trng_cvt_raw_data <- read.csv(url_trng_cvt_data)
 
@@ -212,10 +210,12 @@ build_knw_obs_accounts <- function(
     ) %>%
     select(year,country,nace_r2,trng_cvt)
 
+  if (verbose) print("EUROSTAT data loaded\n")
+
   # -------------------------------------------------------------------
   # OCDE STAN data
 
-  if (verbose) print("Load OECD STAN data")
+  if (verbose) cat("Loading OECD STAN data...")
 
   base_url_stan_data = "https://sdmx.oecd.org/public/rest/data/OECD.STI.PIE,DSD_STAN@DF_STAN_2025,1.0/A...D11+B1G.V.?"
   url_stan_data = paste0(base_url_stan_data,
@@ -258,8 +258,10 @@ build_knw_obs_accounts <- function(
     merge(oecd_correspondence_table_activity) %>%
     select(year, country, industry, aggregate, value)
 
+  if (verbose) cat("OECD STAN data loaded\n")
+
   # -------------------------------------------------------------------
-  # Building KNW impact vector
+  # Building KNW impact vector
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
@@ -284,7 +286,7 @@ build_knw_obs_accounts <- function(
     merge(va_distribution_anberd_activities) %>%
     merge(main_aggregates_data) %>%
     mutate(
-      value = round(value * share_anberd_activity / VA, digits = 6), # contribution (rate)
+      value = round(value * share_anberd_activity / NVA, digits = 6), # contribution (rate)
       flag = ""
     ) %>%
     select(year, country, industry, value, flag)
@@ -293,7 +295,10 @@ build_knw_obs_accounts <- function(
   research_contributions <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(research_contributions_raw) %>%
+    left_join(
+      research_contributions_raw,
+      by = c("year", "country", "industry")
+    ) %>%
     proxy_missing_value_by_similarity(., "KNW") %>%
     rename(
       research_value = value,
@@ -331,7 +336,10 @@ build_knw_obs_accounts <- function(
   training_contributions <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(training_contributions_raw) %>%
+    left_join(
+      training_contributions_raw,
+      by = c("year", "country", "industry")
+    ) %>%
     proxy_missing_value_by_similarity(., "KNW") %>%
     rename(
       training_value = value,
@@ -363,7 +371,7 @@ build_knw_obs_accounts <- function(
       )
     ) %>%
     mutate(
-      value = if_else(NVA > 0, round(NVA * contribution_rate, digits = 0), 0.0),
+      value = if_else(NVA > 0, round(NVA * contribution_rate, digits = 3), 0.0),
       flag = flag
     ) %>%
     select(year, country, industry, value, flag)
@@ -371,13 +379,13 @@ build_knw_obs_accounts <- function(
   # Check max / Clean outliers
   figaro_knw_accounts <- figaro_knw_accounts %>%
     merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA * 100.0, 0)) %>%
+    mutate(value = if_else(NVA > 0, value / NVA * 100, 0)) %>%
     # Clean outliers
     clean_outliers(., serie_pkey = c("country", "industry")) %>%
     # Check upper limit
-    mutate(value = min(value, 100.0)) %>%
+    mutate(value = pmin(value, 100.0)) %>%
     merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / 100.0 * NVA, 0)) %>%
+    mutate(value = if_else(NVA > 0, value / 100 * NVA, 0)) %>%
     select(year, country, industry, value, flag)
 
   # Check
@@ -390,23 +398,23 @@ build_knw_obs_accounts <- function(
     stop("ERROR - NA values in obs accounts (KNW)")
   }
 
-  # -------------------------------------------------------------------
   if (verbose) message("Accounts ready !")
 
+  # -------------------------------------------------------------------
   # Formatting data
 
   formatted_data <- figaro_knw_accounts %>%
     mutate(
       serie_id    = "knw_obs",
-      value       = round(value, digits = 0),
+      value       = round(value, digits = 3),
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
-  # -------------------------------------------------------------------
   if (verbose) print(formatted_data %>% as_tibble())
 
+  # -------------------------------------------------------------------
   # Save data
 
   accounts_data_path  <- file.path(output_dir, "accounts_obs_knw.csv")
