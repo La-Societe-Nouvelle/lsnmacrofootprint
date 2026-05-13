@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' TARGETS BUILDER - NRG
 #'
@@ -47,7 +47,15 @@ build_target_nrg <- function(
     ) %>%
     select(country)
 
-  eurostat_correspondence_table_geo <- read_delim(
+  ppe_correspondence_table_secteur <- read_delim(
+      "tgt_accounts/nrg/ppe_correspondence_table_secteur.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
+    rename(industry = figaro_industry) %>%
+    select(industry, secteur_ppe)
+
+  ppe_data <- read_delim(
       "tgt_accounts/nrg/ppe.csv",
       delim = ";",
       show_col_types = FALSE
@@ -55,31 +63,16 @@ build_target_nrg <- function(
     select(secteur_ppe, annee, consommation_energie)
 
   # -------------------------------------------------------------------
-  # FIGARO Economic data
-
-  main_aggregates_data_raw <- map_dfr(
-    years,
-    load_local_figaro_main_aggregates
-  )
-
-  main_aggregates_data <- main_aggregates_data_raw %>%
-    pivot_wider(names_from = aggregate, values_from = value) %>%
-    mutate(
-      rate = ifelse(PRD == 0, 0, NVA / PRD)
-    ) %>%
-    select(year, country, industry, PRD, NVA, rate)
-
-  # -------------------------------------------------------------------
   # OBS Accounts
 
-  obs_accounts_path  <- file.path(output_dir, "accounts_obs_knw.csv")
+  obs_accounts_path  <- file.path(output_dir, "accounts_obs_nrg.csv")
 
   obs_data_raw <- read.csv(obs_accounts_path)
 
   # -------------------------------------------------------------------
   # TRD Accounts
 
-  trd_accounts_path  <- file.path(output_dir, "accounts_trd_knw.csv")
+  trd_accounts_path  <- file.path(output_dir, "accounts_trd_nrg.csv")
 
   trd_data_raw <- read.csv(trd_accounts_path)
 
@@ -91,16 +84,32 @@ build_target_nrg <- function(
 
   # -------------------------------------------------------------------
 
-  last_year_obs = max(as.integer(impacts_obs_data$year), na.rm = TRUE)
+  last_year_obs <- max(as.integer(obs_data_raw$year), na.rm = TRUE)
 
-  years <- last_year_obs : 2030
-  n_years <- 2030 - years[1]
+  tgt_years <- last_year_obs : 2030
+  n_years <- 2030 - tgt_years[1]
+
+  years <- tibble(year = as.character(tgt_years))
+
+  # -------------------------------------------------------------------
+  # FIGARO Economic data
+
+  main_aggregates_data_raw <- map_dfr(
+    years$year,
+    load_local_figaro_main_aggregates
+  )
+
+  main_aggregates_data <- main_aggregates_data_raw %>%
+    pivot_wider(names_from = aggregate, values_from = value) %>%
+    select(year, country, industry, NVA)
+
+  # -------------------------------------------------------------------
 
   # -------------------------
   # Start point (base)
 
-  base_targets <- impacts_obs_data %>%
-    filter(year == last_year_obs) %>%
+  base_targets <- obs_data_raw %>%
+    filter(year == "2023") %>%
     merge(main_aggregates_data) %>%
     mutate(
       base_year = year,
@@ -113,27 +122,32 @@ build_target_nrg <- function(
   # Targets
 
   target_ppe_coefs <- ppe_data %>%
-    pivot_wider(names_from = "annee", values_from = "consommation_energie") %>%
+    pivot_wider(
+      names_from = "annee",
+      values_from = "consommation_energie",
+      names_glue = "consommation_energie_{annee}"
+    ) %>%
     mutate(
-      coef_yearly = (`2028` / `2023`)^(1/5)
+      coef_yearly = (consommation_energie_2028 / consommation_energie_2023)^(1/5)
     ) %>%
     select(secteur_ppe,coef_yearly)
 
-  targets_data = base_targets %>%
-    # add years ----------------------------------------
-    slice(rep(1:n(), each = length(years))) %>%
-    mutate(year = rep(years, n()/length(years))) %>%
+  targets_data <- figaro_industries %>%
+    merge(figaro_countries) %>%
+    crossing(years) %>%
+    filter(year != last_year_obs) %>%
     # build raw impact tgt -----------------------------
-    merge(metadata_industries) %>%
+    merge(base_targets) %>%
+    merge(ppe_correspondence_table_secteur) %>%
     merge(target_ppe_coefs) %>%
     mutate(
-      n = year - as.integer(base_year),
-      impact_tgt = ifelse(country == 'FR', base_impact * (coef_yearly^n), NA)
+      n = as.integer(year) - as.integer(base_year),
+      impact_tgt = ifelse(country == "FR", base_impact * (coef_yearly^n), NA)
     ) %>%
     # apply trend for other countries ------------------
-    merge(impacts_trd_data) %>%
+    merge(trd_data) %>%
     mutate(
-      impact_tgt = ifelse(country == 'FR', impact_tgt, impacts_trd)
+      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
     ) %>%
     # build raw fpt tgt --------------------------------
     merge(main_aggregates_data) %>%
@@ -146,14 +160,17 @@ build_target_nrg <- function(
     mutate(
       fpt_tgt = pmin(fpt_tgt, base_fpt),
       fpt_tgt = cummin(fpt_tgt),
-      impact_tgt = fpt_tgt*VA
+      impact_tgt = fpt_tgt * NVA
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
-    select(country, industry, year, impact_tgt)
+    rename(
+      value = impact_tgt
+    ) %>%
+    select(country, industry, year, value)
 
   # Check
-  size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
+  size <- (nrow(years) - 1)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
     stop("ERROR - Wrong size for tgt accounts (NRG)")
@@ -169,6 +186,7 @@ build_target_nrg <- function(
     mutate(
       serie_id    = "nrg_tgt",
       value       = round(value, digits = 0),
+      flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, industry, country, year, value, flag, lastupdate) %>%

@@ -72,6 +72,8 @@ build_target_geq <- function(
   tgt_years <- (last_year_obs + 1) : 2030
   n_years <- 2050 - tgt_years[1]
 
+  years <- tibble(year = as.character(tgt_years))
+
   # Start point
   base_targets <- obs_data_raw %>%
     filter(year == last_year_obs) %>%
@@ -84,28 +86,28 @@ build_target_geq <- function(
   # Coef (reduction gender gap)
   target_coefs <- base_targets %>%
     mutate(
-      target_2050 = ifelse(country == 'FR', 1.0, base_fpt), # écart < 1.0 %
+      target_2050 = ifelse(country == "FR", 1.0, base_fpt), # écart < 1.0 %
       coef_yearly = ifelse(base_fpt <= 1.0, 1.0, (target_2050 / base_fpt)^(1 / n_years)) # pas de réduction si écart inférieur à 1.0 %
     ) %>%
     select(country, industry, target_2050, coef_yearly)
 
   # Fpt targets for each year
-  targets_data <- base_targets %>%
-    # add years ----------------------------------------
-    slice(rep(1:n(), each = length(years))) %>%
-    mutate(
-      year = rep(years, n()/length(years))
+  targets_data <- figaro_industries %>%
+    merge(figaro_countries) %>%
+    crossing(years) %>%
+    left_join(
+      base_targets
     ) %>%
     # build raw fpt tgt --------------------------------
     merge(target_coefs) %>%
     mutate(
-      n = year - as.integer(base_year),
+      n = as.integer(year) - as.integer(base_year),
       tgt_value = base_fpt * (coef_yearly^n)
     ) %>%
     # use trend for other countries --------------------
     merge(trd_data) %>%
     mutate(
-      tgt_value = ifelse(country == 'FR', tgt_value, trd_value)
+      tgt_value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
     # check decreasing fpt -----------------------------
     arrange(year) %>%
@@ -115,11 +117,14 @@ build_target_geq <- function(
       tgt_value = cummin(tgt_value) # value < prev year value
     ) %>%
     ungroup() %>%
+    mutate(
+      value = tgt_value
+    ) %>%
     # select -------------------------------------------
-    select(country, industry, year, tgt_value)
+    select(country, industry, year, value)
 
   # Check
-  size <- nrow(tgt_years)*nrow(figaro_industries)*nrow(figaro_countries)
+  size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
     stop("ERROR - Wrong size for tgt accounts (GEQ)")
@@ -134,7 +139,8 @@ build_target_geq <- function(
   formatted_data <- targets_data %>%
     mutate(
       serie_id    = "geq_tgt",
-      value       = round(value, digits = 0),
+      value       = round(value, digits = 1),
+      flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, industry, country, year, value, flag, lastupdate) %>%

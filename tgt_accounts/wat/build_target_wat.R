@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' TARGETS BUILDER - WAT
 #'
@@ -22,6 +22,8 @@ build_target_wat <- function(
   # -------------------------------------------------------------------
   # Metadata
 
+  if (verbose) cat("Loading metadata...\n")
+
   figaro_industries <- read_delim(
       "metadata/metadata_figaro_industries.csv",
       delim = ";",
@@ -43,30 +45,23 @@ build_target_wat <- function(
     ) %>%
     select(country)
 
-  # -------------------------------------------------------------------
-  # FIGARO Economic data
-
-  main_aggregates_data_raw <- map_dfr(
-    years,
-    load_local_figaro_main_aggregates
-  )
-
-  main_aggregates_data <- main_aggregates_data_raw %>%
-    pivot_wider(names_from = aggregate, values_from = value) %>%
-    mutate(
-      rate = ifelse(PRD == 0, 0, NVA / PRD)
-    ) %>%
-    select(year, country, industry, PRD, NVA, rate)
+  if (verbose) cat("Metadata loaded\n")
 
   # -------------------------------------------------------------------
   # OBS Accounts
+
+  if (verbose) cat("Loading obs accounts data...\n")
 
   obs_accounts_path  <- file.path(output_dir, "accounts_obs_wat.csv")
 
   obs_data_raw <- read.csv(obs_accounts_path)
 
+  if (verbose) cat("obs data loaded\n")
+
   # -------------------------------------------------------------------
   # TRD Accounts
+
+  if (verbose) cat("Loading trd accounts data...\n")
 
   trd_accounts_path  <- file.path(output_dir, "accounts_trd_wat.csv")
 
@@ -78,17 +73,39 @@ build_target_wat <- function(
       trd_flag = flag
     )
 
+  if (verbose) cat("trd accounts data loaded\n")
+
   # -------------------------------------------------------------------
 
-  last_year_obs = max(as.integer(impacts_obs_data$year), na.rm = TRUE)
+  last_year_obs <- max(as.integer(obs_data_raw$year), na.rm = TRUE)
 
-  years <- last_year_obs : 2030
-  n_years <- 2030 - years[1]
+  tgt_years <- last_year_obs : 2030
+  n_years <- 2030 - tgt_years[1]
+
+  years <- tibble(year = as.character(tgt_years))
+
+  # -------------------------------------------------------------------
+  # FIGARO Economic data
+
+  if (verbose) cat("Loading FIGARO data...\n")
+
+  main_aggregates_data_raw <- map_dfr(
+    years$year,
+    load_local_figaro_main_aggregates
+  )
+
+  main_aggregates_data <- main_aggregates_data_raw %>%
+    pivot_wider(names_from = aggregate, values_from = value) %>%
+    select(year, country, industry, NVA)
+
+  if (verbose) cat("FIGARO data loaded\n")
+
+  # -------------------------------------------------------------------
 
   # -------------------------
   # Start point (base)
 
-  base_impacts <- impacts_obs_data %>%
+  base_impacts <- obs_data_raw %>%
     filter(year == last_year_obs) %>%
     merge(main_aggregates_data) %>%
     mutate(
@@ -101,18 +118,19 @@ build_target_wat <- function(
   # -------------------------
   # Targets impacts
 
-  targets_data <- base_impacts %>%
-    # add years ----------------------------------------
-    slice(rep(1:n(), each = length(years))) %>%
-    mutate(year = rep(years, n()/length(years))) %>%
-    # build raw impact tgt -----------------------------
+  targets_data <- figaro_industries %>%
+    merge(figaro_countries) %>%
+    crossing(years) %>%
+    filter(year != last_year_obs) %>%
+    # build raw fpt tgt --------------------------------
+    merge(base_impacts) %>%
     mutate(
-      impact_tgt = ifelse(country == 'FR', base_impact, NA)
+      impact_tgt = ifelse(country == "FR", base_impact, NA)
     ) %>%
     # apply trend for other countries ------------------
-    merge(impacts_trd_data) %>%
+    merge(trd_data) %>%
     mutate(
-      impact_tgt = ifelse(country == 'FR', impact_tgt, impacts_trd)
+      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
     ) %>%
     # build raw fpt tgt --------------------------------
     merge(main_aggregates_data) %>%
@@ -129,10 +147,13 @@ build_target_wat <- function(
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
-    select(country,industry,year,impact_tgt)
+    rename(
+      value = impact_tgt
+    ) %>%
+    select(country,industry,year,value)
 
   # Check
-  size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
+  size <- (nrow(years) - 1)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
     stop("ERROR - Wrong size for tgt accounts (WAT)")
@@ -148,6 +169,7 @@ build_target_wat <- function(
     mutate(
       serie_id    = "wat_tgt",
       value       = round(value, digits = 0),
+      flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, industry, country, year, value, flag, lastupdate) %>%
