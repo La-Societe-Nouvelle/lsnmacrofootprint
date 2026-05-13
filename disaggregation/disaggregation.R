@@ -1,37 +1,20 @@
-####################################################################################################
-
-# --------------------------------------------------
-# Librairies
-
-# x = c(
-#   "tidyverse",
-#   "curl",
-#   "DBI",
-#   "arrow",
-#   "bir",
-#   "icarus",
-#   "readxl",
-#   "countrycode",
-#   "httr2",
-#   "rvest"
-# )
-
-# lapply(x,library,character.only = T)
-
-conn <<- m0_connexion_init()
+# La Société Nouvelle
 
 ####################################################################################################
 # PARAMETERS
 
 YEAR = 2022
 
-DO_UPDATE = TRUE
+conn <<- get_connection_db()
+
+use_temp_data <- TRUE
+do_update <- TRUE
 
 ####################################################################################################
 # UTILS
 
 source("DB/stats_db.R")
-source("disaggregation/monetary_conversion.R")
+source("utils/utils_monetary_conversion.R")
 
 ####################################################################################################
 # FETCHING EEIO DATA
@@ -69,7 +52,11 @@ get_uk_eeio = function(year_i, verbose = T)
     ) %>%
     select(code_ape_a732, eeio_industry, accuracy_mapping_a732)
 
-  metadata_nace_niv5 <- get_metadata("insee_nace_niv5") %>%
+  metadata_nace_niv5 <- read_delim(
+      "metadata/metadata_nace_niv5.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
     rename(
       code_ape_a732 = code,
       figaro_industry = industry
@@ -82,7 +69,11 @@ get_uk_eeio = function(year_i, verbose = T)
     rbind(data.frame(eeio_industry = "L68A", figaro_industry = "L")) %>% # ajout L68A
     distinct()
 
-  correspondences_sic_groups = get_metadata("ons_uk_sic_groups") %>%
+  correspondences_sic_groups <- read_delim(
+      "disaggregation/eeio_uk/metadata_uk_sic_groups.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
     rename(sic_group = code) %>%
     select(sic_group, iot_ref)
 
@@ -303,7 +294,11 @@ get_us_eeio_data = function(year_i, verbose = T)
     ) %>%
     select(code_ape_a732, eeio_industry, accuracy_mapping_a732, flag_mapping_a732)
 
-  metadata_nace_niv5 <- get_metadata("insee_nace_niv5") %>%
+  metadata_nace_niv5 <- read_delim(
+      "metadata/metadata_nace_niv5.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
     rename(
       code_ape_a732 = code,
       figaro_industry = industry
@@ -513,9 +508,14 @@ get_canada_eeio_data = function(year_i, verbose = T)
   # ----------------------------------------------------------------------------------------------------
   # Metadata
 
-  statcan_sectors = get_metadata("statcan_sectors") %>%
+  statcan_sectors <- read_delim(
+      "disaggregation/eeio_canada/metadata_statcan_sectors.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
     rename(
-      statcan_sector = code
+      statcan_sector = code,
+      statcan_sector_niv7 = sector
     ) %>%
     filter(
       !is.na(statcan_sector_niv7)
@@ -536,7 +536,11 @@ get_canada_eeio_data = function(year_i, verbose = T)
     ) %>%
     select(code_ape_a732, eeio_industry, accuracy_mapping_a732)
 
-  metadata_nace_niv5 <- get_metadata("insee_nace_niv5") %>%
+  metadata_nace_niv5 <- read_delim(
+      "metadata/metadata_nace_niv5.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
     rename(
       code_ape_a732 = code,
       figaro_industry = industry
@@ -799,7 +803,11 @@ compute_ghg_fpt = function(eeio_country, z, main_aggregates, emissions_data, cor
   # --------------------------------------------------
   # Metadata
 
-  figaro_industries = get_metadata("figaro_industries") %>%
+  figaro_industries = read_delim(
+      "metadata/metadata_figaro_industries.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
     filter(code != "TOTAL") %>%
     rename(
       figaro_industry = code
@@ -824,7 +832,7 @@ compute_ghg_fpt = function(eeio_country, z, main_aggregates, emissions_data, cor
 
   domestic_share_intermediate_inputs_fr = figaro_intermediate_inputs_fr_raw_data %>%
     filter(
-      use_country = "FR"
+      use_country == "FR"
     ) %>%
     group_by(use_country, use_industry, resource_industry) %>%
     summarise(
@@ -905,9 +913,9 @@ compute_ghg_fpt = function(eeio_country, z, main_aggregates, emissions_data, cor
 
   # Production - Nomenclature FIGARO (128x1)
 
-  figaro_prd <- figaro_main_aggregates_raw_data %>%
+  figaro_prd <- figaro_main_aggregates_data %>%
     filter(country %in% c("FR", eeio_country)) %>%
-    rename(X = value) %>%
+    rename(X = PRD) %>%
     select(country, industry, year, X)
 
   # Production GHG intensities - Nomenclature FIGARO (128x1)
@@ -940,12 +948,12 @@ compute_ghg_fpt = function(eeio_country, z, main_aggregates, emissions_data, cor
 
   # Part de la production par industrie, moyenne mondiale (secteur C - 19 industries) - Nomenclature FIGARO
 
-  gap_ratio_C <- figaro_main_aggregates_raw_data %>%
+  gap_ratio_C <- figaro_main_aggregates_data %>%
     # Share of each industry (world average)
     filter(substr(industry, 1, 1) == "C") %>%
     group_by(industry) %>%
     summarise(
-      value = sum(value),
+      value = sum(PRD),
       .groups = "drop"
     ) %>%
     mutate(share = value / sum(value)) %>%
@@ -1139,7 +1147,7 @@ get_figaro_imported_embedded_emissions = function(year_i)
   Z <- load_local_figaro_intermediate_inputs(year_i)
 
   # Production
-  X <- load_local_figaro_main_aggregates %>%
+  X <- load_local_figaro_main_aggregates(year_i) %>%
     filter(aggregate == "PRD") %>%
     rename(
       x = value
@@ -1206,7 +1214,11 @@ get_figaro_imported_embedded_emissions = function(year_i)
   # --------------------------------------------------
   # Imported fpt for FR + A*732
 
-  metadata_nace_niv5 <- get_metadata("insee_nace_niv5") %>%
+  metadata_nace_niv5 <- read_delim(
+      "metadata/metadata_nace_niv5.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
   rename(
     code_ape_a732 = code,
     figaro_industry = industry
@@ -1269,22 +1281,28 @@ fetch_esane_data = function()
   # -------------------------
   # A*732 Format
 
-  metadata_nace_niv5 <- get_metadata("insee_nace_niv5") %>%
+  metadata_nace_niv5 <- read_delim(
+      "metadata/metadata_nace_niv5.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
     mutate(
       code_ape_a732 = code,
       nace_niv5 = gsub("\\.", "", code),
-      nace_niv4 = gsub("\\.", "", nace_niv4),
-      nace_niv3 = gsub("\\.", "", nace_niv3)
+      nace_niv4 = gsub("\\.", "", classe),
+      nace_niv3 = gsub("\\.", "", groupe),
+      nace_niv2 = division,
+      sector = section
     ) %>%
     filter(code_ape_a732 != "00.00Z") %>%
-    select(code_ape_a732, nace_niv5, nace_niv4, nace_niv3, nace_niv2, sector, nace_a10)
+    select(code_ape_a732, nace_niv5, nace_niv4, nace_niv3, nace_niv2, sector)
 
   data_esane_a732 <- esane_raw_data %>% filter(niveau_naf == "a732") %>% reframe(nace_niv5 = secteur_activite, taux_va_a732 = taux_va)
   data_esane_a615 <- esane_raw_data %>% filter(niveau_naf == "a615") %>% reframe(nace_niv4 = secteur_activite, taux_va_a615 = taux_va)
   data_esane_a272 <- esane_raw_data %>% filter(niveau_naf == "a272") %>% reframe(nace_niv3 = secteur_activite, taux_va_a272 = taux_va)
   data_esane_a88  <- esane_raw_data %>% filter(niveau_naf == "a88")  %>% reframe(nace_niv2 = secteur_activite, taux_va_a88 = taux_va)
   data_esane_a21  <- esane_raw_data %>% filter(niveau_naf == "a21")  %>% reframe(sector = secteur_activite, taux_va_a21 = taux_va)
-  data_esane_a10  <- esane_raw_data %>% filter(niveau_naf == "a10")  %>% reframe(nace_a10 = secteur_activite, taux_va_a10 = taux_va)
+  # data_esane_a10  <- esane_raw_data %>% filter(niveau_naf == "a10")  %>% reframe(nace_a10 = secteur_activite, taux_va_a10 = taux_va)
 
   data_esane = metadata_nace_niv5 %>%
     left_join(data_esane_a732, by = "nace_niv5") %>%
@@ -1292,15 +1310,15 @@ fetch_esane_data = function()
     left_join(data_esane_a272, by = "nace_niv3") %>%
     left_join(data_esane_a88,  by = "nace_niv2") %>%
     left_join(data_esane_a21,  by = "sector") %>%
-    left_join(data_esane_a10,  by = "nace_a10") %>%
+    # left_join(data_esane_a10,  by = "nace_a10") %>%
     mutate(
       taux_va = coalesce(
         taux_va_a732,
         taux_va_a615,
         taux_va_a272,
         taux_va_a88,
-        taux_va_a21,
-        taux_va_a10
+        taux_va_a21
+        # taux_va_a10
       )
     ) %>%
     select(code_ape_a732, taux_va) %>%
@@ -1376,21 +1394,27 @@ fetch_na_prices = function(year_i)
 # Building EEIO Data
 
 # Fetching UK data
-# data_uk_eeio <<- get_uk_eeio(YEAR)
-# message("[INFO] Ok - Empreintes EEIO UK")
-# write.csv(data_uk_eeio, file = "disaggregation/data_temp/data_uk_eeio.csv", row.names = FALSE)
+if (!use_temp_data) {
+  data_uk_eeio <<- get_uk_eeio(YEAR)
+  message("[INFO] Ok - Empreintes EEIO UK")
+  write.csv(data_uk_eeio, file = "disaggregation/data_temp/data_uk_eeio.csv", row.names = FALSE)
+}
 data_uk_eeio <- read_delim("disaggregation/data_temp/data_uk_eeio.csv", delim = ",", show_col_types = FALSE)
 
 # Fetching US data
-# data_us_eeio <<- get_us_eeio_data(YEAR)
-# message("[INFO] Ok - Empreintes EEIO US")
-# write.csv(data_us_eeio, file = "disaggregation/data_temp/data_us_eeio.csv", row.names = FALSE)
+if (!use_temp_data) {
+  data_us_eeio <<- get_us_eeio_data(YEAR)
+  message("[INFO] Ok - Empreintes EEIO US")
+  write.csv(data_us_eeio, file = "disaggregation/data_temp/data_us_eeio.csv", row.names = FALSE)
+}
 data_us_eeio <- read_delim("disaggregation/data_temp/data_us_eeio.csv", delim = ",", show_col_types = FALSE)
 
 # Fetching CANADA data
-# data_canada_eeio <<- get_canada_eeio_data(YEAR)
-# message("[INFO] Ok - Empreintes EEIO CANADA")
-# write.csv(data_canada_eeio, file = "disaggregation/data_temp/data_canada_eeio.csv", row.names = FALSE)
+if (!use_temp_data) {
+  data_canada_eeio <<- get_canada_eeio_data(YEAR)
+  message("[INFO] Ok - Empreintes EEIO CANADA")
+  write.csv(data_canada_eeio, file = "disaggregation/data_temp/data_canada_eeio.csv", row.names = FALSE)
+}
 data_canada_eeio <- read_delim("disaggregation/data_temp/data_canada_eeio.csv", delim = ",", show_col_types = FALSE)
 
 # Fetching FIGARO data
@@ -1400,17 +1424,21 @@ message("[INFO] Ok - Empreintes EEIO FIGARO")
 # ----------------------------------------------------------------------------------------------------
 # Building Imported embedded emissions
 
-# imported_fpt_fr <- get_figaro_imported_embedded_emissions(YEAR)
-# message("[INFO] Ok - Empreintes (Importations)")
-# write.csv(imported_fpt_fr, file = "disaggregation/data_temp/imported_fpt_fr.csv", row.names = FALSE)
+if (!use_temp_data) {
+  imported_fpt_fr <- get_figaro_imported_embedded_emissions(YEAR)
+  message("[INFO] Ok - Empreintes (Importations)")
+  write.csv(imported_fpt_fr, file = "disaggregation/data_temp/imported_fpt_fr.csv", row.names = FALSE)
+}
 imported_fpt_fr <- read_delim("disaggregation/data_temp/imported_fpt_fr.csv", delim = ",", show_col_types = FALSE)
 
 # ----------------------------------------------------------------------------------------------------
 # Fetching ESANE Data
 
-# data_esane <- fetch_esane_data()
-# message("[INFO] Ok - Données ESANE")
-# write.csv(data_esane, file = "disaggregation/data_temp/data_esane.csv", row.names = FALSE)
+if (!use_temp_data) {
+  data_esane <- fetch_esane_data()
+  message("[INFO] Ok - Données ESANE")
+  write.csv(data_esane, file = "disaggregation/data_temp/data_esane.csv", row.names = FALSE)
+}
 data_esane <- read_delim("disaggregation/data_temp/data_esane.csv", delim = ",", show_col_types = FALSE)
 
 # ----------------------------------------------------------------------------------------------------
@@ -1427,10 +1455,14 @@ message("[INFO] Ok - Indices prix")
 # --------------------------------------------------
 # Metadata A*732
 
-metadata_nace_niv5 <- get_metadata("insee_nace_niv5") %>%
+metadata_nace_niv5 <- read_delim(
+    "metadata/metadata_nace_niv5.csv",
+    delim = ";",
+    show_col_types = FALSE
+  ) %>%
   rename(
     code_ape_a732 = code,
-    libelle_ape_a732 = label,
+    libelle_ape_a732 = label_fr,
     figaro_industry = industry
   ) %>%
   select(code_ape_a732, figaro_industry, libelle_ape_a732)
@@ -1521,7 +1553,8 @@ nace_a732_fpt <- metadata_nace_niv5 %>%
   ) %>%
   # output
   mutate(
-    fpt = round(fpt, 0)
+    fpt = round(fpt, 0),
+    accuracy_fpt = round(accuracy_fpt, 1)
   ) %>%
   merge(metadata_nace_niv5) %>%
   select(year, code_ape_a732, aggregate, fpt, accuracy_fpt, unit, libelle_ape_a732)
@@ -1530,7 +1563,7 @@ message("Traitement terminé")
 print(nace_a732_fpt %>% as_tibble())
 write.csv(nace_a732_fpt, file = "disaggregation/data_temp/nace_a732_fpt.csv", row.names = FALSE)
 
-if (DO_UPDATE) 
+if (do_update) 
 {
   formatted_data <- nace_a732_fpt %>%
     mutate(
