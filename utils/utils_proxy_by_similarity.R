@@ -211,7 +211,8 @@ proxy_missing_value_by_similarity = function(
         i = missing_values_indexes,
         .combine = rbind,
         .options.future = list(
-          packages = c("dplyr", "progressr")
+          packages = c("dplyr", "progressr"),
+          conditions = structure("condition", exclude = "message")
         )
       ) %dofuture% {
         # Compute proxy data
