@@ -16,7 +16,7 @@
 #' build_wat_obs_accounts()
 
 build_wat_obs_accounts <- function(
-  years = 2010:2020, # OECD available since 1990
+  years = 2010:2022, # OECD available since 1990
   do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
@@ -77,9 +77,9 @@ build_wat_obs_accounts <- function(
     ) %>%
     select(industry, oecd_industry)
 
-  # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
 
+  # -------------------------------------------------------------------
   # FIGARO Economic data
 
   if (verbose) cat("Loading FIGARO data...\n")
@@ -99,12 +99,14 @@ build_wat_obs_accounts <- function(
   # -------------------------------------------------------------------
   # Fetch OECD data
 
+  if (verbose) cat("Loading OECD data...\n")
+
   # Water accounts - supply and use
 
   base_url_oecd_data = "https://sdmx.oecd.org/public/rest/data/OECD.ENV.EPI,DSD_WATER_PSUT@DF_WATER_PSUT,1.0/.A.SURFACE_GROUND..USE.SEC.?"
   url_oecd_data = paste0(base_url_oecd_data,
     "startPeriod=",min(years$year),
-    "&endPeriod=",max(years$year),
+    # "&endPeriod=",max(years$year),
     "&dimensionAtObservation=","AllDimensions",
     "&format=","csvfilewithlabels"
   )
@@ -113,6 +115,7 @@ build_wat_obs_accounts <- function(
 
   if (!file.exists(oecd_file_path) | !use_temp_data)
   {
+    if (verbose) cat("Downloadding OECD data...\n")
     oecd_raw_data <- read.csv(url_oecd_data)
 
     write.csv(oecd_raw_data, oecd_file_path, row.names = FALSE)
@@ -141,6 +144,8 @@ build_wat_obs_accounts <- function(
       unit = "THS_M3",
     ) %>%
     select(year,country,oecd_industry,water_withdrawal,unit)
+
+  if (verbose) cat("OECD data loaded\n")
 
   # -------------------------------------------------------------------
   # Building WAT impact vector

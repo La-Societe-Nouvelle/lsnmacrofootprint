@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 # ----------------------------------------------------------------------------------------------------
 # Non-financial accounts builder for social purpose organisations (SOC)
@@ -16,7 +16,7 @@
 # /!\ N80T82 -> link to 81/82 not 80 / R90T92 link to 90 & 91, not 92
 
 build_soc_obs_accounts <- function(
-  years = 2010:2020,
+  years = 2010:2023,
   do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
@@ -183,7 +183,7 @@ build_soc_obs_accounts <- function(
   formatted_data <- figaro_soc_accounts %>%
     mutate(
       serie_id    = "soc_obs",
-      value       = round(value, digits = 0), # *100 for percentage
+      value       = round(value, digits = 3),
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%

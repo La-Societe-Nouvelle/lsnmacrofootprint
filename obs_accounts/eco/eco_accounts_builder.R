@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Non-financial FIGARO accounts builder for domestic production (ECO)
@@ -108,7 +108,7 @@ build_eco_obs_accounts <- function(
   formatted_data <- figaro_eco_accounts %>%
     mutate(
       serie_id    = "eco_obs",
-      value       = round(value, digits = 0),
+      value       = round(value, digits = 3),
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%

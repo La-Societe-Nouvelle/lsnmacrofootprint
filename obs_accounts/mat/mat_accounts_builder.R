@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Environmental FIGARO accounts builder for raw material extraction (MAT)
@@ -14,7 +14,7 @@
 #' build_mat_obs_accounts()
 
 build_mat_obs_accounts <- function(
-  years = 2010:2022,
+  years = 2010:2023,
   do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
@@ -55,9 +55,9 @@ build_mat_obs_accounts <- function(
     ) %>%
     select(country)
 
-  # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
 
+  # -------------------------------------------------------------------
   # FIGARO Economic data
 
   if (verbose) cat("Loading FIGARO data...\n")
@@ -118,7 +118,6 @@ build_mat_obs_accounts <- function(
 
   # -------------------------------------------------------------------
   # Building MAT impact vector & Fill missing values by similarity
-
 
   if (verbose) cat("Building FIGARO accounts...\n")
 

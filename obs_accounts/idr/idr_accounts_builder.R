@@ -92,7 +92,7 @@ build_idr_obs_accounts <- function(
   # -------------------------------------------------------------------
   # BTS Data (Insee)
 
-  if (verbose) print("Loading BTS data...\n")
+  if (verbose) cat("Loading BTS data...\n")
 
   base_url_bts_data <- "https://www.insee.fr/fr/statistiques/fichier/"
 
@@ -105,7 +105,7 @@ build_idr_obs_accounts <- function(
     zip_name <- bts_files_ids %>% filter(year == year_i) %>% pull(zip_name)
     file_name <- bts_files_ids %>% filter(year == year_i) %>% pull(file_name)
 
-    url_bts_data <- paste0(base_url_bts_data,"/",zip_name)
+    url_bts_data <- paste0(base_url_bts_data, file_id, "/", zip_name)
 
     zip_path <- file.path(download_dir, zip_name)
     file_path  <- file.path(download_dir, file_name)
@@ -114,7 +114,8 @@ build_idr_obs_accounts <- function(
 
     if (!file.exists(file_path) || !use_temp_data)
     {
-      if (verbose) cat("Téléchargement des données BTS\n")
+      if (verbose) cat("Downloading BTS data\n")
+      if (verbose) cat(paste0(url_bts_data,"\n"))
 
       curl_download(
         url = url_bts_data,
@@ -165,10 +166,12 @@ build_idr_obs_accounts <- function(
     ) %>%
     select(year, country, branch, working_hours, net_pay)
 
+  if (verbose) cat("BTS data loaded\n")
+
   # -------------------------------------------------------------------
   # ILOSTAT data
 
-  if (verbose) print("Chargement des données ILOSTAT...")
+  if (verbose) cat("Loading ILOSTAT data...\n")
 
   ilostat_path  <- file.path(download_dir, "LAP_2LID_QTL_RT_A.csv")
 
@@ -206,13 +209,12 @@ build_idr_obs_accounts <- function(
     ) %>%
     select(year, country, decile, value)
 
+  if (verbose) cat("ILOSTAT data loaded\n")
+
   # -------------------------------------------------------------------
   # Building FIGARO accounts
 
-
   if (verbose) cat("Building FIGARO accounts...\n")
-
-  if (verbose) print("Construction des données")
 
   # BTS - Pay gap by industry
 
@@ -238,6 +240,7 @@ build_idr_obs_accounts <- function(
       names_from = decile,
       values_from = value
     ) %>%
+    group_by(year) %>%
     mutate(
       pay_gap_index = round((DCL_DECILE_09 + DCL_DECILE_10) / (DCL_DECILE_01 + DCL_DECILE_02), digits = 2), # /!\ definition differs
       coef = pay_gap_index / pay_gap_index[country == "FR"]

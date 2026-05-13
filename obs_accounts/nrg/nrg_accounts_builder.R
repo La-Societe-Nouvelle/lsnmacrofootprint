@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Environmental FIGARO accounts builder for energy consumptions (NRG)
@@ -15,7 +15,7 @@
 #' build_nrg_obs_accounts()
 
 build_nrg_obs_accounts <- function(
-  years = 2014:2022,
+  years = 2014:2023,
   do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
@@ -80,9 +80,9 @@ build_nrg_obs_accounts <- function(
     rename(industry = figaro_industry) %>%
     select(industry, jrc_industry)
 
-  # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
 
+  # -------------------------------------------------------------------
   # FIGARO Economic data
 
   if (verbose) cat("Loading FIGARO data...\n")
@@ -102,12 +102,14 @@ build_nrg_obs_accounts <- function(
   # -------------------------------------------------------------------
   # EUROSTAT data
 
+  if (verbose) cat("Loading EUROSTAT data...\n")
+
   base_url_eurostat_data = "https://ec.europa.eu/eurostat/api/dissemination/sdmx/3.0/data/dataflow/ESTAT/env_ac_pefasu/1.0/*.*.*.*.*.*?"
   url_eurostat_data = paste0(base_url_eurostat_data,
     "c[freq]=","A",
-    "&c[stk_flow]=","ER_USE", # SUP
-    "&c[prod_nrg]=N00_P00_R00",
-    "&c[unit]=TJ",
+    "&c[stk_flow]=","SUP", # SUP
+    # "&c[prod_nrg]=N00_P00_R00",
+    "&c[unit]=","TJ",
     "&c[TIME_PERIOD]=",paste0(years$year, collapse = ","),
     "&compress=","false",
     "&format=","csvdata"
@@ -117,6 +119,7 @@ build_nrg_obs_accounts <- function(
 
   if (!file.exists(eurostat_file_path) | !use_temp_data)
   {
+    if (verbose) cat("Downloading FIGARO data...\n")
     eurostat_raw_data <- read.csv(url_eurostat_data)
 
     write.csv(eurostat_raw_data, eurostat_file_path, row.names = FALSE)
@@ -127,8 +130,8 @@ build_nrg_obs_accounts <- function(
   eurostat_data <- eurostat_raw_data %>%
     filter(
       freq == "A",
-      stk_flow == "SUP", # ER_USE
-      prod_nrg == "R30", # N00_P00_R00
+      stk_flow == "SUP",
+      prod_nrg == "R30",
       unit == "TJ",
       TIME_PERIOD %in% years$year
     ) %>%
@@ -142,8 +145,12 @@ build_nrg_obs_accounts <- function(
     ) %>%
     select(year,country,industry,nrg_use,unit)
 
+  if (verbose) cat("EROSTAT data loaded\n")
+
   # -------------------------------------------------------------------
   # JRC data (2015)
+
+  if (verbose) cat("Loading JRC data...\n")
 
   base_url_jrc_data = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/FIGARO-E3/Energy%20and%20emissions/flatfile_FIGARO-e_ENE_TJ_2015.csv"
 
@@ -151,6 +158,8 @@ build_nrg_obs_accounts <- function(
 
   if (!file.exists(jrc_file_path) | !use_temp_data)
   {
+    if (verbose) cat("Downloading JRC data...\n")
+
     jrc_raw_data <- read.csv(base_url_jrc_data)
 
     write.csv(jrc_raw_data, jrc_file_path, row.names = FALSE)
@@ -162,7 +171,6 @@ build_nrg_obs_accounts <- function(
     filter(
       category == "Energy",
       codeIndicator == "NEU", # Net energy use
-      # codeIndicator == "FEU", # Net energy use
       codeEproduct == "Total",
       timePeriod == "2015",
       unit == "TJ"
@@ -180,6 +188,8 @@ build_nrg_obs_accounts <- function(
       value = sum(value, na.rm = TRUE)
     ) %>%
     select(year,country,industry,value,unit)
+
+  if (verbose) cat("JRC data loaded\n")
 
   # -------------------------------------------------------------------
 

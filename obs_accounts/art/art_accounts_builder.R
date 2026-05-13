@@ -237,7 +237,7 @@ build_art_obs_accounts <- function(
     ) %>%
     mutate(
       value = case_when(
-        country == "FR" ~ round(NVA * crafts_rate_fr, digits = 0),
+        country == "FR" ~ round(NVA * crafts_rate_fr, digits = 3),
         TRUE            ~ 0
       ),
       flag = ""
@@ -262,7 +262,7 @@ build_art_obs_accounts <- function(
   formatted_data <- figaro_art_accounts %>%
     mutate(
       serie_id    = "art_obs",
-      value       = round(value, digits = 0),
+      value       = round(value, digits = 3),
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, country, industry, year, value, flag, lastupdate) %>%
