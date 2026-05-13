@@ -26,8 +26,7 @@ write_figaro_parquet <- function(df, table_name, year_i) {
 # 1. figaro_capital_use
 # --------------------------------------------------
 
-get_figaro_capital_use <- function(con, year_i) 
-{
+get_figaro_capital_use <- function(con, year_i) {
   source_year <- ifelse(as.integer(year_i) > 2021, 2021, as.integer(year_i))
 
   query <- paste0(

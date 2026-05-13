@@ -16,3 +16,5 @@ data_figaro/*
 .env
 .Renviron
 *.log
+
+sandbox/*
