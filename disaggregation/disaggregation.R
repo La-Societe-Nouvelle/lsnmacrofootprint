@@ -327,7 +327,7 @@ get_us_eeio_data = function(year_i, verbose = T)
   z <- suppressMessages(
       read_xlsx(excel_file, sheet = "U")
     ) %>%
-    column_to_rownames("...1") %>% 
+    column_to_rownames("...1") %>%
     {
       rownames(.) <- sub("/US$", "", rownames(.))
       colnames(.) <- sub("/US$", "", colnames(.))
@@ -1544,7 +1544,7 @@ nace_a732_fpt <- metadata_nace_niv5 %>%
    .
   } %>%
   # compute prd fpt with ESANE data
-  filter(aggregate %in% c("GVA", "IC", "PRD")) %>%  
+  filter(aggregate %in% c("GVA", "IC", "PRD")) %>%
   # Actualisation des empreintes
   rename(base_year = year) %>%
   merge(data_prices %>% filter(year == "2022")) %>%
@@ -1558,12 +1558,12 @@ nace_a732_fpt <- metadata_nace_niv5 %>%
   ) %>%
   merge(metadata_nace_niv5) %>%
   select(year, code_ape_a732, aggregate, fpt, accuracy_fpt, unit, libelle_ape_a732)
-  
+
 message("Traitement terminé")
 print(nace_a732_fpt %>% as_tibble())
 write.csv(nace_a732_fpt, file = "disaggregation/data_temp/nace_a732_fpt.csv", row.names = FALSE)
 
-if (do_update) 
+if (do_update)
 {
   formatted_data <- nace_a732_fpt %>%
     mutate(
@@ -1589,3 +1589,85 @@ if (do_update)
 }
 
 ####################################################################################################
+x = c('tidyverse','curl','httr2','rvest','readxl')
+lapply(x,library,character.only = T)
+get_denmark_eeio_data = functon()
+{
+
+  # ----------------------------------------------------------------------------------------------------
+  # Metadata
+
+  eeio_size = 117
+
+  table_passage_a732 <- read_delim(
+    "disaggregation/eeio_dk/table_passage_a732_dk.csv",
+    delim = ";",
+    na = character(),
+    show_col_types = FALSE
+  ) %>%
+    rename(
+      eeio_industry = code_eeio_dk
+    ) %>%
+    select(code_ape_a732, eeio_industry, accuracy_mapping_a732)
+
+  metadata_nace_niv5 <- read_delim(
+    "metadata/metadata_nace_niv5.csv",
+    delim = ";",
+    show_col_types = FALSE
+  ) %>%
+    rename(
+      code_ape_a732 = code,
+      figaro_industry = industry
+    ) %>%
+    select(code_ape_a732, figaro_industry)
+
+  correspondences_figaro <- table_passage_a732 %>%
+    merge(metadata_nace_niv5) %>%
+    select(eeio_industry, figaro_industry) %>%
+    distinct()
+
+  #get_eeio_data
+
+  year = 2018
+
+  dst.url = 'https://www.dst.dk/en/Statistik/emner/oekonomi/nationalregnskab/input-output'
+
+  dst.urls = read_html(dst.url) %>%
+    html_nodes("a") %>%
+    html_attr("href") %>%
+    subset(grepl('Excel-files',.)) %>%
+    subset(!grepl('69-industries',.))
+
+
+  dst.time_span = lapply(dst.urls, function(x) {
+    matches <- regmatches(x, gregexpr("(?<=-)\\d{4}(?=-)", x, perl = TRUE)) %>% unlist()
+    as.numeric(matches[1]):as.numeric(matches[2])
+  })
+
+  dst.url_io = file.path("https://www.dst.dk",
+                         dst.urls[which(sapply(dst.time_span, function(seq) year %in% seq))])
+
+  dst.files_io = curl_download(dst.url_io,tempfile())
+
+  dst.file_io = unzip(dst.file_io,list = T) %>%
+    filter(grepl(year,Name)) %>%
+    pull(Name)
+
+  dst.excel_io = unzip(dst.files_io,files = dst.file_io,exdir = tempdir())
+
+  dst.excel_sheet = read_xlsx(dst.excel_io,sheet = "IO",skip = 2) %>%
+    {.[-1,c(1,3:(3+116))]}
+
+  dst.excel_sheet_formatted =
+    dst.excel_sheet %>%
+    rename('product' = `From/To`) %>%
+    mutate(Origin = case_when(n() < which(dst.excel_sheet$`From/To` == 'Imports') ~ 'Domestic',
+                              T ~ 'Imports')) %>%
+    filter(product != 'Imports') %>%
+    relocate(product,Origin,.before = 1)
+
+  message("[LOG] Fetching and formatting CANADA EEIO")
+
+
+
+}
