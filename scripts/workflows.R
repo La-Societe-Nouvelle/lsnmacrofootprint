@@ -105,7 +105,7 @@ update_trd_accounts <- function(
       source("db/update_data.R")
 
       # Update data
-      serie = paste0(tolower(indic_i), "_trd")
+      serie <- paste0(tolower(indic_i), "_trd")
       update_direct_impacts_data(
         serie,
         trend_accounts_data
@@ -140,11 +140,11 @@ update_tgt_accounts <- function(
     path <- file.path(
       "tgt_accounts",
       tolower(indic_i),
-      paste0("build_target_", tolower(indic_i), ".R")
+      paste0(tolower(indic_i), "_targets_builder", ".R")
     )
     source(path)
 
-    function_name <- paste0("build_target_",tolower(indic_i), "")
+    function_name <- paste0("build_", tolower(indic_i), "_tgt_accounts")
     tgt_accounts_builder <- get(function_name)
 
     # -------------------------
