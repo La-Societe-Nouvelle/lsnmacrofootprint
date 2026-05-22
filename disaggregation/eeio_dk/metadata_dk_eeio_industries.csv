@@ -1,0 +1,118 @@
+dk_eeio_industry_code;dk_eeio_industry_label
+010000;Agriculture and horticulture                                                       
+020000;Forestry                                                                           
+030000;Fishing                                                                            
+060000;Extraction of oil and gas                                                          
+080090;Extraction of gravel and stone                                                     
+090000;Mining support service activities                                                  
+100010;Production of meat and meat products                                               
+100020;Processing and preserving of fish                                                  
+100030;Manufacture of dairy products                                                      
+100040;Manufacture of grain mill and bakery products                                      
+100050;Other manufacture of food products                                                 
+110000;Manufacture of beverages                                                           
+120000;Manufacture of tobacco products                                                    
+130000;Manufacture of textiles                                                            
+140000;Manufacture of wearing apparel                                                     
+150000;Manufacture of leather and footwear                                                
+160000;Manufacture of wood and wood products                                              
+170000;Manufacture of paper and paper products                                            
+180000;Printing etc.                                                                      
+190000;Oil refinery etc.                                                                  
+200010;Manufacture of basic chemicals                                                     
+200020;Manufacture of paints and soap etc.                                                
+210000;Pharmaceuticals                                                                    
+220000;Manufacture of rubber and plastic products                                         
+230010;Manufacture of glass and ceramic products                                          
+230020;Manufacture of concrete and bricks                                                 
+240000;Manufacture of basic metals                                                        
+250000;Manufacture of fabricated metal products                                           
+260010;Manufacture of computers and communication equipment etc.                          
+260020;Manufacture of other electronic products                                           
+270010;Manufacture of electric motors, etc.                                               
+270020;Manufacture of wires and cables                                                    
+270030;Manufacture of household appliances, lamps, etc.                                   
+280010;Manufacture of engines, windmills and pumps                                        
+280020;Manufacture of other machinery                                                     
+290000;Manufacture of motor vehicles and related parts                                    
+300000;Manufacture of ships and other transport equipment                                 
+310000;Manufacture of furniture                                                           
+320010;Manufacture of medical instruments, etc.                                           
+320020;Manufacture of toys and other manufacturing                                        
+330000;Repair and installation of machinery and equipment                                 
+350010;Production and distribution of electricity                                         
+350020;Manufacture and distribution of gas                                                
+350030;Steam and hot water supply                                                         
+360000;Water collection, purification and supply                                          
+370000;Sewerage                                                                           
+383900;Waste management and materials recovery                                            
+410009;Construction of new buildings                                                      
+420000;Civil engeneering                                                                  
+430003;Professionel repair and maintenance of buildings                                   
+430004;Own-account repair and maintenance of buildings                                    
+450010;Sale of motor vehicles                                                             
+450020;Repair and maintenance of motor vehicles etc.                                      
+460000;Wholesale                                                                          
+470000;Retail sale                                                                        
+490010;Passenger rail transport, interurban                                               
+490020;Transport by suburban trains, buses and taxi operation, etc.                       
+490030;Freight transport by road and via pipeline                                         
+500000;Water transport                                                                    
+510000;Air transport                                                                      
+520000;Support activities for transportation                                              
+530000;Postal and courier activities                                                      
+550000;Hotels and similar accommodation                                                   
+560000;Restaurants                                                                        
+580010;Publishing                                                                         
+580020;Publishing of computer games and other software                                    
+590000;Motion picture and tv prg. production, and sound recording activities 
+600000;Radio and television broadcasting                                                  
+610000;Telecommunications                                                                 
+620000;Information technology service activities                                          
+630000;Information service activities                                                     
+640010;Monetary intermediation                                                            
+640020;Mortgage credit institutes, etc.                                                   
+650000;Insurance and pension funding                                                      
+660000;Other financial activities                                                         
+680010;Buying and selling of real estate                                                  
+680030;Renting of non-residential buildings                                               
+680023;Renting of residential buildings                                                   
+680024;Owner-occupied dwellings                                                           
+690010;Legal activities                                                                   
+690020;Accounting and bookkeeping activities                                              
+700000;Business consultancy activities                                                    
+710000;Architectural and engineering activities                                           
+720001;Scientific research and development (market)                                       
+720002;Scientific research and development (non-market)                                   
+730000;Advertising and market research                                                    
+740000;Other technical business services                                                  
+750000;Veterinary activities                                                              
+770000;Rental and leasing activities                                                      
+780000;Employment activities                                                              
+790000;Travel agent activities                                                            
+800000;Security and investigation activities                                              
+810000;Services to buildings, cleaning and landscape activities                           
+820000;Other business service activities                                                  
+840010;Public administration                                                              
+840022;Defence, public order, security and justice activities (non-market)                
+840021;Rescue service ect. (market)                                                       
+850010;Primary education                                                                  
+850020;Secondary education                                                                
+850030;Higher education                                                                   
+850042;Adult and other education (non-market)                                             
+850041;Adult and other education (market)                                                 
+860010;Hospital activities                                                                
+860020;Medical and dental practice activities                                             
+870000;Residential care activities                                                        
+880000;Social work activities without accommodation                                       
+900000;Theatres, concerts, and arts activities                                            
+910001;Libraries, museums and other cultural activities (market)                          
+910002;Libraries, museums and other cultural activities (non-market)                      
+920000;Gambling and betting activities                                                    
+930011;Sports activities (market)                                                         
+930012;Sports activities (non-market)                                                     
+930020;Amusement and recreation activities                                                
+940000;Activities of membership organizations                                             
+950000;Repair of personal goods                                                           
+960000;Other personal service activities                                                  
+970000;Activities of households as employers of domestic personnel                        

@@ -1591,7 +1591,7 @@ if (do_update)
 ####################################################################################################
 x = c('tidyverse','curl','httr2','rvest','readxl')
 lapply(x,library,character.only = T)
-get_denmark_eeio_data = functon()
+get_denmark_eeio_data = function()
 {
 
   # ----------------------------------------------------------------------------------------------------
@@ -1669,5 +1669,63 @@ get_denmark_eeio_data = functon()
   message("[LOG] Fetching and formatting CANADA EEIO")
 
 
+
+}
+
+
+summarise_foreign_options = function()
+{
+metadata_paths = list.files(here::here('disaggregation'),recursive = T,pattern = 'eeio_industries.csv',full.names = T)
+
+metadata_labels = map_dfr(metadata_paths,
+                          ~ read.csv(.x, sep = ";",colClasses = 'character') %>%
+                            select(contains("label"),contains("code")) %>%
+                            rename(LABEL = 1,CODE = 2) %>%
+                            mutate(COUNTRY = toupper(gsub("eeio_", "", basename(dirname(.x)))),
+                                   LABEL = trimws(LABEL)))
+
+correspondence_paths = list.files(here::here('disaggregation'),recursive = T,pattern = 'table_passage',full.names = T)
+
+
+correspondence_references = map_dfr(correspondence_paths,
+                                    ~ read.csv(.x,sep = ";",colClasses = 'character') %>%
+                                      select(code_ape_a732,code_eeio = contains('code_eeio'))) %>%
+  distinct()
+
+
+metadata_nace_niv5 <- read_delim(
+  "metadata/metadata_nace_niv5.csv",
+  delim = ";",
+  show_col_types = FALSE
+) %>%
+  rename(
+    code_ape_a732 = code,
+    figaro_industry = industry
+  ) %>%
+  select(code_ape_a732, figaro_industry)
+
+correspondences_figaro_top_level <- correspondence_references %>%
+  merge(metadata_nace_niv5) %>%
+  distinct(code_eeio,figaro_industry) %>%
+  left_join(metadata_labels,by = c('code_eeio' = 'CODE'),relationship = "many-to-many")
+
+formatted = correspondences_figaro_top_level %>%
+  filter(code_eeio != "") %>%
+  group_by(figaro_industry) %>%
+  mutate(
+    option_nb = row_number(),  # Numérote les options par figaro_industry
+    combined = paste(code_eeio, LABEL, COUNTRY, sep = " | ")
+  ) %>%
+  ungroup() %>%
+  pivot_wider(
+    id_cols = option_nb,       # 1 ligne par numéro d'option
+    names_from = figaro_industry,
+    values_from = combined
+  ) %>%
+  select(!option_nb)
+
+writexl::write_xlsx(formatted,here::here('disaggregation/option_summary.xlsx'))
+
+return(formatted)
 
 }
