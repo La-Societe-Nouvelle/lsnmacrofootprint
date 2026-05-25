@@ -22,7 +22,7 @@ source("utils/utils_monetary_conversion.R")
 # --------------------------------------------------
 # Fetching UK EEIO data
 
-get_uk_eeio = function(year_i, verbose = T)
+get_uk_eeio = function(year_i, details = F, verbose = T)
 {
   message("[LOG] Fetching and formatting UK EEIO")
 
@@ -154,7 +154,7 @@ get_uk_eeio = function(year_i, verbose = T)
   message("[INFO] Ok - Table Z")
 
   # --------------------------------------------------
-  # Main aggregates (in CAD)
+  # Main aggregates (in GBP)
 
   intermediate_consumptions <- data.frame(
     eeio_industry = colnames(z),
@@ -257,13 +257,15 @@ get_uk_eeio = function(year_i, verbose = T)
 
   print(ghg_fpt_a732 %>% as_tibble())
 
+  if(details) return(list(Z = z,AGGREGATES = main_aggregates,EMISSIONS = emissions_data,CORRESPONDENCES = correspondences_figaro))
+
   return(ghg_fpt_a732)
 }
 
 # ----------------------------------------------------------------------------------------------------
 # Fetching US EEIO data
 
-get_us_eeio_data = function(year_i, verbose = T)
+get_us_eeio_data = function(year_i, details = F,verbose = T)
 {
   message("[LOG] Fetching and formatting US EEIO")
 
@@ -495,13 +497,15 @@ get_us_eeio_data = function(year_i, verbose = T)
   message("[INFO] Ok - Empreintes US EEIO")
   print(ghg_fpt_a732 %>% as_tibble())
 
+  if(details) return(list(Z = z,AGGREGATES = main_aggregates,EMISSIONS = emissions_data,CORRESPONDENCES = correspondences_figaro))
+
   return(ghg_fpt_a732)
 }
 
 # ----------------------------------------------------------------------------------------------------
 # Fetching CANADA EEIO data
 
-get_canada_eeio_data = function(year_i, verbose = T)
+get_canada_eeio_data = function(year_i,details = F, verbose = T)
 {
   message("[LOG] Fetching and formatting CANADA EEIO")
 
@@ -785,6 +789,8 @@ get_canada_eeio_data = function(year_i, verbose = T)
   # --------------------------------------------------
 
   print(ghg_fpt_a732 %>% as_tibble())
+
+  if(details) return(list(Z = z,AGGREGATES = main_aggregates,EMISSIONS = emissions_data,CORRESPONDENCES = correspondences_figaro))
 
   return(ghg_fpt_a732)
 }
@@ -1589,9 +1595,9 @@ if (do_update)
 }
 
 ####################################################################################################
-x = c('tidyverse','curl','httr2','rvest','readxl')
+x = c('tidyverse','curl','httr2','rvest','readxl','DBI')
 lapply(x,library,character.only = T)
-get_denmark_eeio_data = function()
+get_denmark_eeio_data = function(year_i)
 {
 
   # ----------------------------------------------------------------------------------------------------
@@ -1628,8 +1634,6 @@ get_denmark_eeio_data = function()
 
   #get_eeio_data
 
-  year = 2018
-
   dst.url = 'https://www.dst.dk/en/Statistik/emner/oekonomi/nationalregnskab/input-output'
 
   dst.urls = read_html(dst.url) %>%
@@ -1645,29 +1649,92 @@ get_denmark_eeio_data = function()
   })
 
   dst.url_io = file.path("https://www.dst.dk",
-                         dst.urls[which(sapply(dst.time_span, function(seq) year %in% seq))])
+                         dst.urls[which(sapply(dst.time_span, function(seq) year_i %in% seq))])
 
   dst.files_io = curl_download(dst.url_io,tempfile())
 
-  dst.file_io = unzip(dst.file_io,list = T) %>%
-    filter(grepl(year,Name)) %>%
+  dst.file_io = unzip(dst.files_io,list = T) %>%
+    filter(grepl(year_i,Name)) %>%
     pull(Name)
 
   dst.excel_io = unzip(dst.files_io,files = dst.file_io,exdir = tempdir())
 
   dst.excel_sheet = read_xlsx(dst.excel_io,sheet = "IO",skip = 2) %>%
-    {.[-1,c(1,3:(3+116))]}
+    {.[-1,c(1,3:(3+116))]} %>%
+    rename('product' = `From/To`)
 
-  dst.excel_sheet_formatted =
+  z =
     dst.excel_sheet %>%
-    rename('product' = `From/To`) %>%
-    mutate(Origin = case_when(n() < which(dst.excel_sheet$`From/To` == 'Imports') ~ 'Domestic',
+    mutate(Origin = case_when(n() < which(dst.excel_sheet$product == 'Imports') ~ 'Domestic',
                               T ~ 'Imports')) %>%
-    filter(product != 'Imports') %>%
-    relocate(product,Origin,.before = 1)
+    group_by(product) %>%
+    filter(n() == 2) %>%
+    summarise(across(where(is.numeric), ~sum(.x/1000, na.rm = TRUE))) %>% #Initially in THS DKK
+    ungroup() %>%
+    column_to_rownames('product')
 
-  message("[LOG] Fetching and formatting CANADA EEIO")
+  x = dst.excel_sheet %>%
+    filter(product == 'Total Output') %>%
+    select(!product) %>%
+    t() %>%
+    as.data.frame() %>%
+    `colnames<-`('x') %>%
+    mutate(x = x / 1000) %>%#Initially in THS DKK
+    rownames_to_column('eeio_industry')
 
+  intermediate_consumptions = data.frame(p2 = colSums(z,na.rm=T)) %>%
+    rownames_to_column('eeio_industry')
+
+  main_aggregates = merge(x,
+                          intermediate_consumptions) %>%
+    mutate(va = x - p2,
+           unit = 'DKK',
+           year = year_i)
+
+  message("[LOG] Fetching and formatting DENMARK EEIO")
+
+  emissions_data = read.csv(paste0("https://api.statbank.dk/v1/data/DRIVHUS2/CSV?lang=en&valuePresentation=Code&delimiter=Semicolon&EMTYPE8=GHGBIO&Tid=",year_i,"&BRANCHE=*&OPPRINCIP=DIR"),
+                            sep = ";") %>%
+    filter(substr(BRANCHE,1,1) == 'V' & substr(BRANCHE,2,2) %in% 0:9) %>%
+    mutate(DKK_ID = gsub('V','',BRANCHE)) %>%
+    filter(DKK_ID %in% x$eeio_industry) %>%
+    reframe(eeio_industry = DKK_ID,emissions = INDHOLD * 1000) #Initially THS_T
+
+  ghg_fpt = compute_ghg_fpt("DK", z, main_aggregates, emissions_data, correspondences_figaro, year_i)
+
+  dkk_eur <- from_dkk_to_euro(year_i)
+
+  ghg_fpt_eur <- ghg_fpt %>%
+    mutate(
+      fpt = fpt*dkk_eur,
+      unit = "GCO2E_EUR"
+    ) %>%
+    select(eeio_country, eeio_industry, aggregate, fpt, unit, year)
+
+  # --------------------------------------------------
+  # Mapping A*732
+
+  ghg_fpt_a732 <- ghg_fpt_eur %>%
+    merge(table_passage_a732) %>%
+    group_by(eeio_country, aggregate, unit, year, code_ape_a732, accuracy_mapping_a732) %>%
+    summarise(
+      fpt = round(mean(fpt, na.rm = TRUE), digits = 0),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      eeio_model = "EEIO_DK",
+      country = "FR"
+    ) %>%
+    select(eeio_model, country, code_ape_a732, aggregate, fpt, unit, year, accuracy_mapping_a732) %>%
+    arrange(year, code_ape_a732, aggregate)
+
+  # --------------------------------------------------
+
+  print(ghg_fpt_a732 %>% as_tibble())
+
+  if(details) return(list(Z = z,AGGREGATES = main_aggregates,EMISSIONS = emissions_data,CORRESPONDENCES = correspondences_figaro))
+
+  return(ghg_fpt_a732)
 
 
 }
@@ -1729,3 +1796,14 @@ writexl::write_xlsx(formatted,here::here('disaggregation/option_summary.xlsx'))
 return(formatted)
 
 }
+
+related_sectors = list('Canada' = 'BS48100',
+                       'US' = '482000',
+                       'UK' = 'H491_2',
+                       'DK' = '490010')
+new_sector = 'Transport ferroviaire'
+origin_sector = 'H49'
+
+Z = dbGetQuery(bir::m0_connexion_init(),paste0("SELECT * FROM models.figaro_intermediate_inputs WHERE use_id = 'FR_H49' OR resource_id = 'FR_H49'"))
+
+IO = get_uk_eeio(2022,T)
