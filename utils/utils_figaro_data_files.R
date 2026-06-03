@@ -161,25 +161,70 @@ get_figaro_main_aggregates <- function(con, year_i, data_dir = "data_figaro") {
 }
 
 # --------------------------------------------------
+# 3. figaro_main_aggregates corrigée
+# --------------------------------------------------
+
+get_na_prices <- function(con, data_dir = "data_figaro") {
+
+  # Main aggregates from DB
+
+  main_query <- paste0(
+    "SELECT year, country, industry, aggregate, value ",
+    "FROM macrodata.na_prices"
+  )
+
+  na_prices_raw <- dbGetQuery(con, main_query) %>%
+    mutate(
+      year = as.character(year),
+      value = as.numeric(value)
+    ) %>%
+    filter(industry != "TOTAL")
+
+  na_prices <- na_prices_raw %>%
+    mutate(
+      aggregate = case_when(
+        aggregate == "B1G"  ~ "NVA",
+        aggregate == "P51G" ~ "CFC",
+        aggregate == "P2"   ~ "IC",
+        aggregate == "P1"   ~ "PRD"
+      )
+    ) %>%
+    mutate(
+      value = if_else(is.finite(value), value, 0),
+      value = round(value, digits = 3),
+      flag = ""
+    ) %>%
+    select(year, country, industry, aggregate, value, flag) %>%
+    arrange(country, industry, aggregate, year)
+
+  na_prices
+}
+
+# --------------------------------------------------
 # Boucle annuelle
 # --------------------------------------------------
 
-walk(years, \(year_i) {
-  message("Traitement année : ", year_i)
+# walk(years, \(year_i) {
+#   message("Traitement année : ", year_i)
 
-  figaro_capital_use <- get_figaro_capital_use(con, year_i)
-  write_figaro_parquet(figaro_capital_use, "figaro_capital_use", year_i)
+#   figaro_capital_use <- get_figaro_capital_use(con, year_i)
+#   write_figaro_parquet(figaro_capital_use, "figaro_capital_use", year_i)
 
-  figaro_intermediate_inputs <- get_figaro_intermediate_inputs(con, year_i)
-  write_figaro_parquet(figaro_intermediate_inputs, "figaro_intermediate_inputs", year_i)
+#   figaro_intermediate_inputs <- get_figaro_intermediate_inputs(con, year_i)
+#   write_figaro_parquet(figaro_intermediate_inputs, "figaro_intermediate_inputs", year_i)
 
-  figaro_main_aggregates <- get_figaro_main_aggregates(con, year_i, data_dir)
-  write_figaro_parquet(figaro_main_aggregates, "figaro_main_aggregates", year_i)
+#   figaro_main_aggregates <- get_figaro_main_aggregates(con, year_i, data_dir)
+#   write_figaro_parquet(figaro_main_aggregates, "figaro_main_aggregates", year_i)
 
-  rm(
-    figaro_main_aggregates,
-    figaro_intermediate_inputs,
-    figaro_capital_use
-  )
-  gc()
-})
+#   rm(
+#     figaro_main_aggregates,
+#     figaro_intermediate_inputs,
+#     figaro_capital_use
+#   )
+#   gc()
+# })
+
+figaro_na_prices <- get_na_prices(con, data_dir)
+output_filepath <- file.path(data_dir, paste0("figaro_na_prices", ".parquet"))
+write_parquet(figaro_na_prices, output_filepath)
+message("Export terminé : ", output_filepath)

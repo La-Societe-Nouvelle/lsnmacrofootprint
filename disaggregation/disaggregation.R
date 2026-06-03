@@ -1354,14 +1354,15 @@ fetch_figaro_data = function(year_i)
 
 fetch_na_prices = function(year_i)
 {
-  na_prices_raw = dbGetQuery(conn, paste0(
-    "SELECT * ",
-    "FROM macrodata.na_prices ",
-    "WHERE year >= '",year_i,"'"
-  ))
+  na_prices_filepath <- file.path(
+    "data_figaro",
+    "figaro_na_prices.parquet"
+  )
+
+  na_prices_raw <- read_parquet(na_prices_filepath)
 
   na_prices <- na_prices_raw %>%
-    filter(aggregate == "P1") %>%
+    filter(aggregate == "PRD") %>%
     mutate(
       price_index = value,
       figaro_industry = industry

@@ -116,7 +116,7 @@ upload_accounts_data <- function(
   upload_table_data(
     data = accounts_data,
     schema = "impacts",
-    table = "directs_impacts",
+    table = "direct_impacts",
     verbose = verbose
   )
 }
