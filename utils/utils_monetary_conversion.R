@@ -103,3 +103,40 @@ from_cad_to_euro = function(year,update = F,verbose = T)
 
   return(FROM_CDOLLAR_TO_EURO)
 }
+
+from_dkk_to_euro = function(year,update = F,verbose = T)
+{
+
+  if(!update)
+  {
+    files = list.files(dirname(tempdir()),recursive = T,pattern = paste0('OECD_DKK-',format.Date(Sys.Date(),"%Y-%m")),full.names = T)
+
+    if(length(files) == 1){
+
+      FROM_DKK_TO_EURO = read_parquet(files)
+
+      message("Cached data used")
+
+    }else{
+      unlink(files,recursive = T)
+    }
+  }
+
+  if(!exists('FROM_DKK_TO_EURO',envir = environment(),inherits = F))
+  {
+    FROM_DKK_TO_EURO = read.csv("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.DNK+EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels")
+
+    write_parquet(FROM_DKK_TO_EURO,
+                  tempfile(pattern = paste0('OECD_DKK-',format.Date(Sys.Date(),"%Y-%m"))))
+
+    if(verbose) message("Data cached")
+  }
+
+  FROM_DKK_TO_EURO =
+    FROM_DKK_TO_EURO %>%
+    filter(TIME_PERIOD == year) %>%
+    summarise(value = OBS_VALUE[REF_AREA == 'EU27_2020'] / OBS_VALUE[REF_AREA == 'DNK']) %>%
+    pull(value)
+
+  return(FROM_DKK_TO_EURO)
+}
