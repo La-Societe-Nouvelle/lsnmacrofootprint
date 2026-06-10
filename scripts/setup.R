@@ -19,23 +19,35 @@ required_packages <- c(
   "curl",
   "data.table",
   "DBI",
+  "doFuture",
   "dplyr",
   "eurostat",
   "foreach",
-  "doFuture",
   "future",
   "parallel",
   "progressr",
   "purrr",
   "readr",
+  "readsdmx",
   "readxl",
+  "Rilostat",
   "RPostgres",
+  "rvest",
   "stringr",
   "tibble",
   "tidyr"
 )
 
-missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
+runtime_packages <- if (isTRUE(do_clean_outliers)) {
+  c("fbi")
+} else {
+  character()
+}
+
+missing_packages <- unique(c(required_packages, runtime_packages))
+missing_packages <- missing_packages[
+  !vapply(missing_packages, requireNamespace, logical(1), quietly = TRUE)
+]
 if (length(missing_packages) > 0) {
   if (isTRUE(install_missing_packages)) {
     install.packages(missing_packages)

@@ -58,7 +58,7 @@ build_footprints <- function(
   # --------------------------------------------------
   # Iteration over each serie
 
-  all_footprints_data <- c()
+  all_footprints_data <- NULL
 
   for (serie_id in series)
   {
@@ -88,7 +88,7 @@ build_footprints <- function(
 
     # --------------------------------------------------
 
-    footprints_data <<- c()
+    footprints_data <- NULL
 
     for (year_i in years)
     {
@@ -390,16 +390,16 @@ build_footprints <- function(
       # if (verbose) print(macro_fpt %>% as_tibble())
       if (verbose) print(macro_fpt %>% filter(country == "FR", aggregate == "PRD") %>% arrange(industry) %>% as_tibble())
 
-      footprints_data <<- rbind(footprints_data, macro_fpt)
+      footprints_data <- rbind(footprints_data, macro_fpt)
     }
 
     # --------------------------------------------------------------------
     # Saving data
 
-    footprints_data_filename <- paste0("footprints", "_", serie_type, "_", tolower(indic_i), ".csv")
-    footprints_data_path  <- file.path(output_dir, footprints_data_filename)
+    # footprints_data_filename <- paste0("footprints", "_", serie_type, "_", tolower(indic_i), ".csv")
+    # footprints_data_path  <- file.path(output_dir, footprints_data_filename)
 
-    write.csv(footprints_data, footprints_data_path, row.names = FALSE)
+    # write.csv(footprints_data, footprints_data_path, row.names = FALSE)
 
     all_footprints_data <- rbind(all_footprints_data, footprints_data)
   }

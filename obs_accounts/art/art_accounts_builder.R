@@ -17,6 +17,7 @@
 
 build_art_obs_accounts <- function(
   years = 2010:2023,
+  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
