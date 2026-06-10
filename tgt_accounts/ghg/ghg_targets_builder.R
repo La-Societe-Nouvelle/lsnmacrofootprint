@@ -81,6 +81,9 @@ build_ghg_tgt_accounts <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   # -------------------------------------------------------------------
@@ -95,8 +98,10 @@ build_ghg_tgt_accounts <- function(
   # -------------------------------------------------------------------
   # FIGARO Economic data
 
+  main_aggregates_years <- c(years$year, last_year_obs)
+
   main_aggregates_data_raw <- map_dfr(
-    years$year,
+    main_aggregates_years,
     load_local_figaro_main_aggregates
   )
 
@@ -173,7 +178,7 @@ build_ghg_tgt_accounts <- function(
       tgt_value = ifelse(country == "FR", last_impact_obs * (coef_yearly^n), NA)
     ) %>%
     # apply trend for other countries ------------------
-    left_join(trd_data) %>%
+    left_join(trd_data, by = c("country", "industry", "year")) %>%
     mutate(
       tgt_value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
@@ -205,7 +210,6 @@ build_ghg_tgt_accounts <- function(
     stop("ERROR - Wrong size for tgt accounts (GHG)")
   } else if (any(is.na(targets_data$value))) {
     error_data <<- targets_data
-    print(targets_data %>% filter(is.na(value)) %>% as_tibble())
     stop("ERROR - NA values in tgt accounts (GHG)")
   }
 

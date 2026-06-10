@@ -75,6 +75,9 @@ build_geq_tgt_accounts <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   if (verbose) cat("trd accounts data loaded\n")

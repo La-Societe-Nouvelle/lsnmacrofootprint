@@ -68,6 +68,9 @@ build_was_tgt_accounts <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   # -------------------------------------------------------------------
@@ -82,7 +85,7 @@ build_was_tgt_accounts <- function(
   # -------------------------------------------------------------------
   # FIGARO Economic data
 
-  main_aggregates_years <- c(years$year, "2010")
+  main_aggregates_years <- c(years$year, last_year_obs, "2010")
 
   main_aggregates_data_raw <- map_dfr(
     main_aggregates_years,

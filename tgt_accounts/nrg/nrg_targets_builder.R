@@ -85,6 +85,9 @@ build_nrg_tgt_accounts <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   # -------------------------------------------------------------------
@@ -99,8 +102,10 @@ build_nrg_tgt_accounts <- function(
   # -------------------------------------------------------------------
   # FIGARO Economic data
 
+  main_aggregates_years <- c(years$year, last_year_obs)
+
   main_aggregates_data_raw <- map_dfr(
-    years$year,
+    main_aggregates_years,
     load_local_figaro_main_aggregates
   )
 

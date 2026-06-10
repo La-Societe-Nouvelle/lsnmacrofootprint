@@ -66,6 +66,9 @@ build_soc_tgt_accounts <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   # -------------------------------------------------------------------
@@ -143,7 +146,7 @@ build_soc_tgt_accounts <- function(
     left_join(targets_raw_data_fr) %>%
     left_join(trd_data) %>%
     mutate(
-      impact_tgt = ifelse(country == "FR", tgt_value, trd_value)
+      tgt_value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
     # check increasing fpt -----------------------------
     left_join(base_targets) %>%

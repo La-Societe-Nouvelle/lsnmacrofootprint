@@ -74,6 +74,9 @@ build_wat_tgt_accounts <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   if (verbose) cat("trd accounts data loaded\n")
@@ -124,7 +127,7 @@ build_wat_tgt_accounts <- function(
 
   # -------------------------
 
-  targets_raw_data_fr <- base_targets %>%
+  targets_raw_data_fr <- base_impacts %>%
     filter(country == "FR") %>%
     crossing(years) %>%
     mutate(
