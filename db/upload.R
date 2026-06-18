@@ -116,7 +116,7 @@ upload_accounts_data <- function(
   upload_table_data(
     data = accounts_data,
     schema = "impacts",
-    table = "directs_impacts",
+    table = "direct_impacts",
     verbose = verbose
   )
 }
@@ -282,3 +282,90 @@ upload_figaro_data <- function(
 
   invisible(figaro_data)
 }
+
+# -------------------------------------------------------------------
+# Footprints A*732
+
+upload_macro_fpt_A732 <- function(
+  data_dir = "disaggregation/data_temp",
+  schema = "macrodata",
+  table = "macro_fpt_a732",
+  verbose = FALSE
+) {
+  file <- file.path(data_dir, "nace_a732_fpt.csv")
+
+  if (verbose) {
+    message("Reading ", file, "...")
+  }
+
+  a732_data <- readr::read_csv(
+    file,
+    show_col_types = FALSE
+  ) %>%
+    mutate(year = as.character(year))
+
+  a732_data <- a732_data %>%
+    transmute(
+      year,
+      country = "FR",
+      code_ape_a732,
+      aggregate,
+      indic = "GHG",
+      value = fpt,
+      flag = "",
+      currency = "CPEUR",
+      lastupdate = Sys.Date(),
+      accuracy_index = accuracy_fpt
+    )
+
+  uploaded_years <- sort(unique(a732_data$year))
+  conn <- get_connection_db()
+  on.exit(DBI::dbDisconnect(conn), add = TRUE)
+
+  DBI::dbWithTransaction(conn, {
+    if (verbose) {
+      message(
+        "Deleting existing FR/GHG rows from ",
+        schema, ".", table,
+        " for year(s): ",
+        paste(uploaded_years, collapse = ", ")
+      )
+    }
+
+    DBI::dbExecute(
+      conn,
+      paste0(
+        "DELETE FROM ",
+        DBI::dbQuoteIdentifier(conn, schema),
+        ".",
+        DBI::dbQuoteIdentifier(conn, table),
+        " WHERE country = ",
+        DBI::dbQuoteString(conn, "FR"),
+        " AND indic = ",
+        DBI::dbQuoteString(conn, "GHG"),
+        " AND year IN (",
+        paste(DBI::dbQuoteString(conn, uploaded_years), collapse = ", "),
+        ")"
+      )
+    )
+
+    if (verbose) {
+      message("Uploading ", nrow(a732_data), " rows into ", schema, ".", table, "...")
+    }
+
+    DBI::dbWriteTable(
+      conn = conn,
+      name = DBI::Id(schema = schema, table = table),
+      value = a732_data,
+      append = TRUE
+    )
+  })
+
+  if (verbose) {
+    message("Upload complete.")
+  }
+
+  invisible(a732_data)
+}
+
+# -------------------------------------------------------------------

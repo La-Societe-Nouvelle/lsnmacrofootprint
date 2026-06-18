@@ -19,6 +19,7 @@ cran_packages <- c(
   "progressr",
   "purrr",
   "readr",
+  "readxl",
   "RPostgres",
   "stringr",
   "tibble",

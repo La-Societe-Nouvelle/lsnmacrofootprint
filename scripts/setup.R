@@ -19,23 +19,35 @@ required_packages <- c(
   "curl",
   "data.table",
   "DBI",
+  "doFuture",
   "dplyr",
   "eurostat",
   "foreach",
-  "doFuture",
   "future",
   "parallel",
   "progressr",
   "purrr",
   "readr",
+  "readsdmx",
   "readxl",
+  "Rilostat",
   "RPostgres",
+  "rvest",
   "stringr",
   "tibble",
   "tidyr"
 )
 
-missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
+runtime_packages <- if (isTRUE(do_clean_outliers)) {
+  c("fbi")
+} else {
+  character()
+}
+
+missing_packages <- unique(c(required_packages, runtime_packages))
+missing_packages <- missing_packages[
+  !vapply(missing_packages, requireNamespace, logical(1), quietly = TRUE)
+]
 if (length(missing_packages) > 0) {
   if (isTRUE(install_missing_packages)) {
     install.packages(missing_packages)
@@ -84,14 +96,14 @@ source_project_file("obs_accounts/was/was_accounts_builder.R")
 source_project_file("obs_accounts/wat/wat_accounts_builder.R")
 
 # Target accounts builders.
-source_project_file("tgt_accounts/geq/build_target_geq.R")
-source_project_file("tgt_accounts/ghg/build_target_ghg.R")
-source_project_file("tgt_accounts/knw/build_target_knw.R")
-source_project_file("tgt_accounts/mat/build_target_mat.R")
-source_project_file("tgt_accounts/nrg/build_target_nrg.R")
-source_project_file("tgt_accounts/soc/build_target_soc.R")
-source_project_file("tgt_accounts/was/build_target_was.R")
-source_project_file("tgt_accounts/wat/build_target_wat.R")
+source_project_file("tgt_accounts/geq/geq_targets_builder.R")
+source_project_file("tgt_accounts/ghg/ghg_targets_builder.R")
+source_project_file("tgt_accounts/knw/knw_targets_builder.R")
+source_project_file("tgt_accounts/mat/mat_targets_builder.R")
+source_project_file("tgt_accounts/nrg/nrg_targets_builder.R")
+source_project_file("tgt_accounts/soc/soc_targets_builder.R")
+source_project_file("tgt_accounts/was/was_targets_builder.R")
+source_project_file("tgt_accounts/wat/wat_targets_builder.R")
 
 # Footprints and EEIO helpers.
 source_project_file("footprints/footprints_builder.R")

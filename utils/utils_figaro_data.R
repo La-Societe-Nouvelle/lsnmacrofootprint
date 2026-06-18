@@ -3,10 +3,63 @@
 # ----------------------------------------------------------------------------------------------------
 #' Fonction pour télécharger les données FIGARO
 
-load_figaro_data_from_remote <- function(
-
+download_figaro_file <- function(
+  filename,
+  verbose = FALSE,
+  data_dir = "data_figaro"
 ) {
-  # ...
+  url <- paste0("https://api.sinese.fr/v2/figarodata/", filename)
+  filepath <- file.path(data_dir, filename)
+
+  if (verbose) {
+    message("Downloading ", filename, "...")
+  }
+
+  curl_download(
+    url = url,
+    destfile = filepath,
+    quiet = !verbose
+  )
+}
+
+load_figaro_data_from_remote <- function(
+  years = 2010:2030,
+  verbose = FALSE
+) {
+  # --------------------------------------------------
+  # Main aggregates
+
+  for (year_i in years) {
+    filename <- paste0("figaro_main_aggregates_", year_i, ".parquet")
+    download_figaro_file(filename, verbose)
+  }
+
+  # --------------------------------------------------
+  # Intermediate inputs
+
+  for (year_i in years) {
+    filename <- paste0("figaro_intermediate_inputs_", year_i, ".parquet")
+    download_figaro_file(filename, verbose)
+  }
+
+  # --------------------------------------------------
+  # Capital use
+
+  for (year_i in years) {
+    filename <- paste0("figaro_capital_use_", year_i, ".parquet")
+    download_figaro_file(filename, verbose)
+  }
+
+  # --------------------------------------------------
+  # NA prices
+
+  download_figaro_file("figaro_na_prices.parquet", verbose)
+
+  # --------------------------------------------------
+
+  if (verbose) {
+    message("FIGARO data download complete.")
+  }
 }
 
 # ----------------------------------------------------------------------------------------------------

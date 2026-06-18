@@ -1,17 +1,17 @@
 # La Société Nouvelle
 
-#' TARGETS BUILDER - SOC
+#' TARGETS BUILDER - WAT
 #'
 #' Note :
-#'   Update target function for indic SOC
+#'   Update target function for indic WAT
 #'
 #' Targets :
-#'   - FRA : 100% in 2050
+#'   - FRA : stability of raw water consumption
 #'   - other countries : trend
 #'
 #' output columns: serie_id, country, industry, year, value, flag, lastupdate
 
-build_target_soc <- function(
+build_wat_tgt_accounts <- function(
   verbose = FALSE
 ) {
   # -------------------------------------------------------------------
@@ -21,6 +21,8 @@ build_target_soc <- function(
 
   # -------------------------------------------------------------------
   # Metadata
+
+  if (verbose) cat("Loading metadata...\n")
 
   figaro_industries <- read_delim(
       "metadata/metadata_figaro_industries.csv",
@@ -43,17 +45,28 @@ build_target_soc <- function(
     ) %>%
     select(country)
 
+  if (verbose) cat("Metadata loaded\n")
+
   # -------------------------------------------------------------------
   # OBS Accounts
 
-  obs_accounts_path  <- file.path(output_dir, "accounts_obs_soc.csv")
+  if (verbose) cat("Loading obs accounts data...\n")
+
+  obs_accounts_path  <- file.path(output_dir, "accounts_obs_wat.csv")
 
   obs_data_raw <- read.csv(obs_accounts_path)
+
+  obs_data <- obs_data_raw %>%
+    select(year, country, industry, value, flag)
+
+  if (verbose) cat("obs data loaded\n")
 
   # -------------------------------------------------------------------
   # TRD Accounts
 
-  trd_accounts_path  <- file.path(output_dir, "accounts_trd_soc.csv")
+  if (verbose) cat("Loading trd accounts data...\n")
+
+  trd_accounts_path  <- file.path(output_dir, "accounts_trd_wat.csv")
 
   trd_data_raw <- read.csv(trd_accounts_path)
 
@@ -61,21 +74,29 @@ build_target_soc <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
-  # -------------------------------------------------------------------
+  if (verbose) cat("trd accounts data loaded\n")
 
-  last_year_obs <- max(as.integer(obs_data_raw$year), na.rm = TRUE)
+  # -------------------------------------------------------------------
+  # Target years
+
+  last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
   tgt_years <- (last_year_obs + 1) : 2030
-  n_years <- 2050 - tgt_years[1]
+  n_years <- 2030 - tgt_years[1]
 
   years <- tibble(year = as.character(tgt_years))
 
   # -------------------------------------------------------------------
   # FIGARO Economic data
 
-  main_aggregates_years <- c(years$year, as.character(last_year_obs))
+  if (verbose) cat("Loading FIGARO data...\n")
+
+  main_aggregates_years <- c(years$year, last_year_obs)
 
   main_aggregates_data_raw <- map_dfr(
     main_aggregates_years,
@@ -86,82 +107,71 @@ build_target_soc <- function(
     pivot_wider(names_from = aggregate, values_from = value) %>%
     select(year, country, industry, NVA)
 
+  if (verbose) cat("FIGARO data loaded\n")
+
   # -------------------------------------------------------------------
-  # Building SOC Targets accounts data
+  # Building accounts data
 
   # -------------------------
   # Start point (base)
 
-  base_targets <- obs_data_raw %>%
+  base_impacts <- obs_data %>%
     filter(year == last_year_obs) %>%
     merge(main_aggregates_data) %>%
     mutate(
-      fpt = if_else(NVA > 0, value / NVA * 100, 0)
-    ) %>%
-    rename(
       base_year = year,
-      base_fpt = fpt
+      base_impact = value,
+      base_fpt = ifelse(NVA > 0, value / NVA, 0)
     ) %>%
-    select(country, industry, base_year, base_fpt)
+    select(country,industry,base_year,base_impact,base_fpt)
 
   # -------------------------
-  # Targets coefs
 
-  target_coefs <- base_targets %>%
+  targets_raw_data_fr <- base_impacts %>%
+    filter(country == "FR") %>%
+    crossing(years) %>%
     mutate(
-      target_2050 = ifelse(country == "FR", 100.0, NA), # taux de contribution de 100%
-      coef_yearly = ifelse(is.na(target_2050) | base_fpt == 100.0, 1.0, (target_2050 / base_fpt)^(1 / n_years)) # pas d'augmentation si taux de contribution atteint
+      tgt_value = base_impact
     ) %>%
-    select(country, industry, target_2050, coef_yearly)
+    select(country,industry,year,tgt_value)
 
   # -------------------------
-  # Targets fpt
+  # Targets impacts
 
   targets_data <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    filter(year != last_year_obs) %>%
-    # build raw fpt tgt --------------------------------
-    merge(base_targets) %>%
-    merge(target_coefs) %>%
+    # build accounts tgt data --------------------------
+    left_join(targets_raw_data_fr) %>%
+    left_join(trd_data) %>%
     mutate(
-      n = as.integer(year) - as.integer(base_year),
-      fpt_tgt = base_fpt * (coef_yearly^n)
+      value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
-    # build impact tgt ---------------------------------
-    merge(main_aggregates_data) %>%
+    # check decreasing fpt -----------------------------
+    left_join(base_impacts) %>%
+    left_join(main_aggregates_data) %>%
     mutate(
-      impact_tgt = round(fpt_tgt / 100 * NVA, 1)
+      fpt_tgt = ifelse(NVA > 0, value / NVA, 0)
     ) %>%
-    # apply trend for other countries ------------------
-    merge(trd_data) %>%
-    mutate(
-      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
-    ) %>%
-    # check increasing fpt -----------------------------
     arrange(year) %>%
     group_by(country, industry) %>%
     mutate(
-      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA * 100, 0),
-      fpt_tgt = pmax(fpt_tgt, base_fpt),
-      fpt_tgt = cummax(fpt_tgt),
-      impact_tgt = fpt_tgt / 100 * NVA
+      fpt_tgt = pmin(fpt_tgt, base_fpt),
+      fpt_tgt = cummin(fpt_tgt),
+      value = fpt_tgt * NVA
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
-    rename(
-      value = impact_tgt
-    ) %>%
-    select(country, industry, year, value)
+    select(country,industry,year,value)
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
-    stop("ERROR - Wrong size for tgt accounts (SOC)")
+    stop("ERROR - Wrong size for tgt accounts (WAT)")
   } else if (any(is.na(targets_data$value))) {
     error_data <<- targets_data
-    stop("ERROR - NA values in tgt accounts (SOC)")
+    stop("ERROR - NA values in tgt accounts (WAT)")
   }
 
   # -------------------------------------------------------------------
@@ -169,8 +179,8 @@ build_target_soc <- function(
 
   formatted_data <- targets_data %>%
     mutate(
-      serie_id    = "soc_tgt",
-      value       = round(value, digits = 3),
+      serie_id    = "wat_tgt",
+      value       = round(value, digits = 0),
       flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
@@ -180,7 +190,7 @@ build_target_soc <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_tgt_soc.csv")
+  accounts_data_path  <- file.path(output_dir, "accounts_tgt_wat.csv")
   write.csv(formatted_data, accounts_data_path, row.names = FALSE)
 
   # Return

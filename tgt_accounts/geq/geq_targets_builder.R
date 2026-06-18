@@ -11,7 +11,7 @@
 #'
 #' output columns: serie_id, country, industry, year, value, flag, lastupdate
 
-build_target_geq <- function(
+build_geq_tgt_accounts <- function(
   years = 2010:2030,
   verbose = FALSE
 ) {
@@ -22,6 +22,8 @@ build_target_geq <- function(
 
   # -------------------------------------------------------------------
   # Metadata
+
+  if (verbose) cat("Loading metadata...\n")
 
   figaro_industries <- read_delim(
       "metadata/metadata_figaro_industries.csv",
@@ -44,15 +46,26 @@ build_target_geq <- function(
     ) %>%
     select(country)
 
+  if (verbose) cat("Metadata loaded\n")
+
   # -------------------------------------------------------------------
   # OBS Accounts
+
+  if (verbose) cat("Loading obs accounts data...\n")
 
   obs_accounts_path  <- file.path(output_dir, "accounts_obs_geq.csv")
 
   obs_data_raw <- read.csv(obs_accounts_path)
 
+  obs_data <- obs_data_raw %>%
+    select(year, country, industry, value, flag)
+
+  if (verbose) cat("obs data loaded\n")
+
   # -------------------------------------------------------------------
   # TRD Accounts
+
+  if (verbose) cat("Loading trd accounts data...\n")
 
   trd_accounts_path  <- file.path(output_dir, "accounts_trd_geq.csv")
 
@@ -62,12 +75,17 @@ build_target_geq <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
-  # -------------------------------------------------------------------
-  # TGT Accounts
+  if (verbose) cat("trd accounts data loaded\n")
 
-  last_year_obs = max(as.integer(obs_data_raw$year), na.rm = TRUE)
+  # -------------------------------------------------------------------
+  # Target years
+
+  last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
   tgt_years <- (last_year_obs + 1) : 2030
   n_years <- 2050 - tgt_years[1]
@@ -75,7 +93,7 @@ build_target_geq <- function(
   years <- tibble(year = as.character(tgt_years))
 
   # Start point
-  base_targets <- obs_data_raw %>%
+  base_targets <- obs_data %>%
     filter(year == last_year_obs) %>%
     rename(
       base_year = year,
@@ -95,17 +113,15 @@ build_target_geq <- function(
   targets_data <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    left_join(
-      base_targets
-    ) %>%
     # build raw fpt tgt --------------------------------
-    merge(target_coefs) %>%
+    left_join(base_targets) %>%
+    left_join(target_coefs) %>%
     mutate(
       n = as.integer(year) - as.integer(base_year),
       tgt_value = base_fpt * (coef_yearly^n)
     ) %>%
     # use trend for other countries --------------------
-    merge(trd_data) %>%
+    left_join(trd_data) %>%
     mutate(
       tgt_value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
@@ -117,10 +133,10 @@ build_target_geq <- function(
       tgt_value = cummin(tgt_value) # value < prev year value
     ) %>%
     ungroup() %>%
-    mutate(
+    # select -------------------------------------------
+    rename(
       value = tgt_value
     ) %>%
-    # select -------------------------------------------
     select(country, industry, year, value)
 
   # Check

@@ -15,7 +15,7 @@
 #'
 #' output columns: serie_id, country, industry, year, value, flag, lastupdate
 
-build_target_nrg <- function(
+build_nrg_tgt_accounts <- function(
   verbose = FALSE
 ) {
   # -------------------------------------------------------------------
@@ -69,6 +69,11 @@ build_target_nrg <- function(
 
   obs_data_raw <- read.csv(obs_accounts_path)
 
+  obs_data <- obs_data_raw %>%
+    select(year, country, industry, value, flag)
+
+  if (verbose) cat("obs data loaded\n")
+
   # -------------------------------------------------------------------
   # TRD Accounts
 
@@ -80,13 +85,16 @@ build_target_nrg <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   # -------------------------------------------------------------------
 
-  last_year_obs <- max(as.integer(obs_data_raw$year), na.rm = TRUE)
+  last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
-  tgt_years <- last_year_obs : 2030
+  tgt_years <- (last_year_obs + 1) : 2030
   n_years <- 2030 - tgt_years[1]
 
   years <- tibble(year = as.character(tgt_years))
@@ -94,8 +102,10 @@ build_target_nrg <- function(
   # -------------------------------------------------------------------
   # FIGARO Economic data
 
+  main_aggregates_years <- c(years$year, last_year_obs)
+
   main_aggregates_data_raw <- map_dfr(
-    years$year,
+    main_aggregates_years,
     load_local_figaro_main_aggregates
   )
 
@@ -108,7 +118,7 @@ build_target_nrg <- function(
   # -------------------------
   # Start point (base)
 
-  base_targets <- obs_data_raw %>%
+  base_targets <- obs_data %>%
     filter(year == "2023") %>%
     merge(main_aggregates_data) %>%
     mutate(
@@ -132,45 +142,50 @@ build_target_nrg <- function(
     ) %>%
     select(secteur_ppe,coef_yearly)
 
+  targets_raw_data_fr <- base_targets %>%
+    filter(country == "FR") %>%
+    crossing(years) %>%
+    left_join(ppe_correspondence_table_secteur) %>%
+    left_join(target_ppe_coefs) %>%
+    mutate(
+      n = as.integer(year) - as.integer(base_year),
+      tgt_value = round(base_impact * (coef_yearly^n), digits = 3)
+    ) %>%
+    select(country, industry, year, tgt_value)
+
+  # -------------------------
+
   targets_data <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    filter(year != last_year_obs) %>%
-    # build raw impact tgt -----------------------------
-    merge(base_targets) %>%
-    merge(ppe_correspondence_table_secteur) %>%
-    merge(target_ppe_coefs) %>%
+    # build accounts tgt data --------------------------
+    left_join(targets_raw_data_fr) %>%
+    left_join(trd_data) %>%
     mutate(
-      n = as.integer(year) - as.integer(base_year),
-      impact_tgt = ifelse(country == "FR", base_impact * (coef_yearly^n), NA)
-    ) %>%
-    # apply trend for other countries ------------------
-    merge(trd_data) %>%
-    mutate(
-      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
-    ) %>%
-    # build raw fpt tgt --------------------------------
-    merge(main_aggregates_data) %>%
-    mutate(
-      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA, 0)
+      tgt_value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
     # check decreasing fpt -----------------------------
+    left_join(base_targets) %>%
+    left_join(main_aggregates_data) %>%
+    mutate(
+      fpt_tgt = ifelse(NVA > 0, tgt_value / NVA, 0)
+    ) %>%
     arrange(year) %>%
     group_by(country, industry) %>%
     mutate(
       fpt_tgt = pmin(fpt_tgt, base_fpt),
       fpt_tgt = cummin(fpt_tgt),
-      impact_tgt = fpt_tgt * NVA
+      tgt_value = fpt_tgt * NVA
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
     rename(
-      value = impact_tgt
+      value = tgt_value
     ) %>%
     select(country, industry, year, value)
 
   # Check
-  size <- (nrow(years) - 1)*nrow(figaro_industries)*nrow(figaro_countries)
+  size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
     stop("ERROR - Wrong size for tgt accounts (NRG)")

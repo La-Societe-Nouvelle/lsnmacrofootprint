@@ -11,7 +11,7 @@
 #'
 #' output columns: serie_id, country, industry, year, value, flag, lastupdate
 
-build_target_knw <- function(
+build_knw_tgt_accounts <- function(
   verbose = FALSE
 ) {
   # -------------------------------------------------------------------
@@ -50,6 +50,11 @@ build_target_knw <- function(
 
   obs_data_raw <- read.csv(obs_accounts_path)
 
+  obs_data <- obs_data_raw %>%
+    select(year, country, industry, value, flag)
+
+  if (verbose) cat("obs data loaded\n")
+
   # -------------------------------------------------------------------
   # TRD Accounts
 
@@ -61,13 +66,16 @@ build_target_knw <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   # -------------------------------------------------------------------
 
-  last_year_obs <- max(as.integer(obs_data_raw$year), na.rm = TRUE)
+  last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
-  tgt_years <- last_year_obs : 2030
+  tgt_years <- (last_year_obs + 1) : 2030
   n_years <- 2030 - tgt_years[1]
 
   years <- tibble(year = as.character(tgt_years))
@@ -75,8 +83,10 @@ build_target_knw <- function(
   # -------------------------------------------------------------------
   # FIGARO Economic data
 
+  main_aggregates_years <- c(years$year, last_year_obs)
+
   main_aggregates_data_raw <- map_dfr(
-    years$year,
+    main_aggregates_years,
     load_local_figaro_main_aggregates
   )
 
@@ -89,7 +99,7 @@ build_target_knw <- function(
   # -------------------------
   # Starting point
 
-  base_targets <- obs_data_raw %>%
+  base_targets <- obs_data %>%
     filter(year == as.character(last_year_obs)) %>%
     merge(main_aggregates_data) %>%
     mutate(
@@ -136,7 +146,6 @@ build_target_knw <- function(
   targets_data <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    filter(year != last_year_obs) %>%
     # build raw fpt tgt --------------------------------
     left_join(base_targets) %>%
     left_join(target_coefs) %>%
@@ -145,33 +154,33 @@ build_target_knw <- function(
       fpt_tgt = ifelse(country == "FR", pmin(base_fpt * (coef_yearly^n), 100.0), NA)
     ) %>%
     # build raw impact_tgt -----------------------------
-    merge(main_aggregates_data) %>%
+    left_join(main_aggregates_data) %>%
     mutate(
-      impact_tgt = round(fpt_tgt * NVA / 100, 1)
+      tgt_value = round(fpt_tgt * NVA / 100, 1)
     ) %>%
     # use trend for other countries --------------------
-    merge(trd_data) %>%
+    left_join(trd_data) %>%
     mutate(
-      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
+      tgt_value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
     # check increasing fpt -----------------------------
     arrange(year) %>%
     group_by(country, industry) %>%
     mutate(
-      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA *100, 0),
+      fpt_tgt = ifelse(NVA > 0, tgt_value / NVA * 100, 0),
       fpt_tgt = pmax(fpt_tgt, base_fpt),
       fpt_tgt = cummax(fpt_tgt),
-      impact_tgt = fpt_tgt * NVA / 100
+      tgt_value = fpt_tgt * NVA / 100
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
     rename(
-      value = impact_tgt
+      value = tgt_value
     ) %>%
     select(country, industry, year, value)
 
   # Check
-  size <- (nrow(years)-1)*nrow(figaro_industries)*nrow(figaro_countries)
+  size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
     stop("ERROR - Wrong size for tgt accounts (KNW)")

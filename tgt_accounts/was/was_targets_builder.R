@@ -1,17 +1,19 @@
 # La Société Nouvelle
 
-#' TARGETS BUILDER - MAT
+#' TARGETS BUILDER - WAS
 #'
 #' Note :
-#'   Update target function for indic MAT
+#'   Update target function for indic WAS
 #'
 #' Targets :
-#'   - FRA : 30% increase in GDP per domestic material consumption ratio between 2010 and 2030
+#'   - FRA : French National Waste Prevention Plan (PNPD).
+#'       -> Reducing waste from economic activities per unit of value added by 5%, particularly in construction and public works, by 2030 compared to 2010
+#'       Source: https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000043974936/ AND "plan national de prévention des déchets (2021-2027)
 #'   - other countries : trend
 #'
 #' output columns: serie_id, country, industry, year, value, flag, lastupdate
 
-build_target_mat <- function(
+build_was_tgt_accounts <- function(
   verbose = FALSE
 ) {
   # -------------------------------------------------------------------
@@ -46,14 +48,19 @@ build_target_mat <- function(
   # -------------------------------------------------------------------
   # OBS Accounts
 
-  obs_accounts_path  <- file.path(output_dir, "accounts_obs_mat.csv")
+  obs_accounts_path  <- file.path(output_dir, "accounts_obs_was.csv")
 
   obs_data_raw <- read.csv(obs_accounts_path)
+
+  obs_data <- obs_data_raw %>%
+    select(year, country, industry, value, flag)
+
+  if (verbose) cat("obs data loaded\n")
 
   # -------------------------------------------------------------------
   # TRD Accounts
 
-  trd_accounts_path  <- file.path(output_dir, "accounts_trd_mat.csv")
+  trd_accounts_path  <- file.path(output_dir, "accounts_trd_was.csv")
 
   trd_data_raw <- read.csv(trd_accounts_path)
 
@@ -61,13 +68,16 @@ build_target_mat <- function(
     rename(
       trd_value = value,
       trd_flag = flag
+    ) %>%
+    mutate(
+      year = as.character(year)
     )
 
   # -------------------------------------------------------------------
 
-  last_year_obs = max(as.integer(obs_data_raw$year), na.rm = TRUE)
+  last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
-  tgt_years <- last_year_obs : 2030
+  tgt_years <- (last_year_obs + 1) : 2030
   n_years <- 2030 - tgt_years[1]
 
   years <- tibble(year = as.character(tgt_years))
@@ -75,7 +85,7 @@ build_target_mat <- function(
   # -------------------------------------------------------------------
   # FIGARO Economic data
 
-  main_aggregates_years <- c(years$year, "2010")
+  main_aggregates_years <- c(years$year, last_year_obs, "2010")
 
   main_aggregates_data_raw <- map_dfr(
     main_aggregates_years,
@@ -91,7 +101,7 @@ build_target_mat <- function(
   # -------------------------
   # Start point (base)
 
-  base_targets <- obs_data_raw %>%
+  base_targets <- obs_data %>%
     filter(year == last_year_obs) %>%
     merge(main_aggregates_data) %>%
     mutate(
@@ -99,28 +109,44 @@ build_target_mat <- function(
     ) %>%
     rename(base_year = year,
            base_fpt = fpt) %>%
-    select(country,industry,base_year,base_fpt)
+    select(country, industry, base_year, base_fpt)
 
   # -------------------------
   # Targets for 2030
 
-  targets_2030 <- obs_data_raw %>%
-    filter(year == "2010") %>%
+  targets_2030_fr <- obs_data %>%
+    filter(
+      country == "FR",
+      year == "2010"
+    ) %>%
     merge(main_aggregates_data) %>%
     mutate(
       fpt = if_else(NVA > 0, value / NVA, 0)
     ) %>%
     mutate(
-      tgt_2030 = ifelse(country == "FR", fpt / 1.3, NA)
+      tgt_2030 = value * 0.95
     ) %>%
     select(country, industry, tgt_2030)
 
-  target_coefs <- base_targets %>%
-    merge(targets_2030) %>%
+  target_coefs_fr <- base_targets %>%
+    merge(targets_2030_fr) %>%
     mutate(
-      coef_yearly = ifelse(is.na(tgt_2030) | base_fpt <= tgt_2030, 1.0, (tgt_2030 / base_fpt)^(1 / n_years)) # pas de réduction si objectif atteint
+      coef_yearly = ifelse(base_fpt <= tgt_2030, 1.0, (tgt_2030 / base_fpt)^(1 / n_years)) # pas d'augmentation si taux de contribution atteint
     ) %>%
     select(country, industry, tgt_2030, coef_yearly)
+
+  targets_raw_data_fr <- base_targets %>%
+    merge(target_coefs_fr) %>%
+    crossing(years) %>%
+    mutate(
+      n = as.integer(year) - as.integer(base_year),
+      fpt_tgt = base_fpt * (coef_yearly^n)
+    ) %>%
+    merge(main_aggregates_data) %>%
+    mutate(
+      tgt_value = fpt_tgt * NVA
+    ) %>%
+    select(country, industry, year, tgt_value)
 
   # -------------------------
   # Targets
@@ -128,48 +154,38 @@ build_target_mat <- function(
   targets_data <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    filter(year != last_year_obs) %>%
-    # build raw fpt tgt --------------------------------
-    merge(base_targets) %>%
-    merge(target_coefs) %>%
+    # build accounts tgt data --------------------------
+    left_join(targets_raw_data_fr) %>%
+    left_join(trd_data) %>%
     mutate(
-      n = as.integer(year) - as.integer(base_year),
-      fpt_tgt = base_fpt * (coef_yearly^n)
-    ) %>%
-    # build raw impact tgt -----------------------------
-    merge(main_aggregates_data) %>%
-    mutate(
-      impact_tgt = round(fpt_tgt * NVA, 1)
-    ) %>%
-    # apply trend for other countries ------------------
-    merge(trd_data) %>%
-    mutate(
-      impact_tgt = ifelse(country == "FR", impact_tgt, trd_value)
+      tgt_value = ifelse(country == "FR", tgt_value, trd_value)
     ) %>%
     # check decreasing fpt -----------------------------
+    left_join(base_targets) %>%
+    left_join(main_aggregates_data) %>%
     arrange(year) %>%
     group_by(country, industry) %>%
     mutate(
-      fpt_tgt = ifelse(NVA > 0, impact_tgt / NVA, 0),
+      fpt_tgt = ifelse(NVA > 0, tgt_value / NVA, 0),
       fpt_tgt = pmin(fpt_tgt, base_fpt),
       fpt_tgt = cummin(fpt_tgt),
-      impact_tgt = fpt_tgt * NVA
+      tgt_value = fpt_tgt * NVA
     ) %>%
     ungroup() %>%
     # select -------------------------------------------
     rename(
-      value = impact_tgt
+      value = tgt_value
     ) %>%
     select(country, industry, year, value)
 
   # Check
-  size <- (nrow(years) - 1)*nrow(figaro_industries)*nrow(figaro_countries)
+  size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(targets_data) != size) {
     error_data <<- targets_data
-    stop("ERROR - Wrong size for tgt accounts (MAT)")
+    stop("ERROR - Wrong size for tgt accounts (WAS)")
   } else if (any(is.na(targets_data$value))) {
     error_data <<- targets_data
-    stop("ERROR - NA values in tgt accounts (MAT)")
+    stop("ERROR - NA values in tgt accounts (WAS)")
   }
 
   # -------------------------------------------------------------------
@@ -177,7 +193,7 @@ build_target_mat <- function(
 
   formatted_data <- targets_data %>%
     mutate(
-      serie_id    = "mat_tgt",
+      serie_id    = "was_tgt",
       value       = round(value, digits = 0),
       flag        = "",
       lastupdate  = Sys.Date()
@@ -188,7 +204,7 @@ build_target_mat <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_tgt_mat.csv")
+  accounts_data_path  <- file.path(output_dir, "accounts_tgt_was.csv")
   write.csv(formatted_data, accounts_data_path, row.names = FALSE)
 
   # Return
