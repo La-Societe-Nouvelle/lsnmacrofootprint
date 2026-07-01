@@ -261,9 +261,10 @@ build_nrg_obs_accounts <- function(
     mutate(
       serie_id    = "nrg_obs",
       value       = round(value, digits = 0),
+      unit        = "GJ",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, country, industry, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
   if (verbose) print(formatted_data %>% as_tibble())

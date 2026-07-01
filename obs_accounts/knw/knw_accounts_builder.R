@@ -407,9 +407,10 @@ build_knw_obs_accounts <- function(
     mutate(
       serie_id    = "knw_obs",
       value       = round(value, digits = 3),
+      unit        = "MEUR",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, country, industry, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
   if (verbose) print(formatted_data %>% as_tibble())
