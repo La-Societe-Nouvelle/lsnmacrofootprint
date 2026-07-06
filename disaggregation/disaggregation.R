@@ -847,7 +847,7 @@ get_denmark_eeio_data <- function(year_i, verbose = T)
   # --------------------------------------------------
   # EEIO Data
 
-  url_eeio <- "https://www.dst.dk/ext/605229059660/0/inout/Excel-files-with-IO-data-for-the-period-2016-2025--zip"
+  url_eeio <- "https://www.dst.dk/ext/4764115610808/0/inout/Excel-files-with-IO-data-for-the-period-2016-2025--zip"
   filename_eeio <- paste0("InputOutput_en_", year_i, ".xlsx")
 
   file_eeio_data <- curl_download(url_eeio, tempfile(fileext = ".zip")) %>%
