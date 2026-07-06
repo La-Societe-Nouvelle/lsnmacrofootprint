@@ -8,15 +8,31 @@ download_figaro_file <- function(
   verbose = FALSE,
   data_dir = "data_figaro"
 ) {
-  url <- paste0("https://api.sinese.fr/v2/figarodata/", filename)
   filepath <- file.path(data_dir, filename)
+
+  endpoint <- paste0(
+    "https://api.sinese.fr/v2/figarodata/",
+    utils::URLencode(filename, reserved = TRUE)
+  )
+
+  response <- curl_fetch_memory(endpoint)
+
+  if (response$status_code < 200 || response$status_code >= 300) {
+    stop(
+      "Unable to get a download URL for ", filename,
+      " (HTTP ", response$status_code, ")."
+    )
+  }
+
+  response_data <- fromJSON(rawToChar(response$content))
+  download_url <- response_data$data$url
 
   if (verbose) {
     message("Downloading ", filename, "...")
   }
 
   curl_download(
-    url = url,
+    url = download_url,
     destfile = filepath,
     quiet = !verbose
   )

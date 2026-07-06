@@ -4,6 +4,7 @@
 #' Non-financial FIGARO accounts builder for craft production (ART)
 #'
 #' Main sources :
+#'   - FIGARO main aggregates data
 #'   - SIRENE data (historic)
 #'
 #' Nomenclature NAFA : "https://apiopendata.artisanat.fr/nafa"
@@ -264,9 +265,10 @@ build_art_obs_accounts <- function(
     mutate(
       serie_id    = "art_obs",
       value       = round(value, digits = 3),
+      unit        = "MEUR",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, country, industry, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
   if (verbose) print(formatted_data %>% as_tibble())

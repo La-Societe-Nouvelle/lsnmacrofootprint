@@ -6,7 +6,8 @@
 #' Main sources:
 #'   - FIGARO main aggregates data
 #'
-#' Unit: values are in CPMEUR
+#' Output data
+#'   Accounts are in millions of euros (current price)
 #'
 #' build_eco_obs_accounts()
 
@@ -110,9 +111,10 @@ build_eco_obs_accounts <- function(
     mutate(
       serie_id    = "eco_obs",
       value       = round(value, digits = 3),
+      unit        = "MEUR",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, country, industry, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, country, industry, year)
 
   # -------------------------------------------------------------------

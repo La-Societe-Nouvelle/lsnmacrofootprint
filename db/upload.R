@@ -25,11 +25,27 @@ read_output_files <- function(
 
   data <- purrr::map_dfr(
     files,
-    readr::read_csv,
-    col_types = readr::cols(
-      flag = readr::col_character()
-    ),
-    show_col_types = FALSE
+    function(file) {
+      column_names <- names(readr::read_csv(
+        file,
+        n_max = 0,
+        show_col_types = FALSE
+      ))
+      character_columns <- intersect(c("unit", "flag"), column_names)
+      column_types <- do.call(
+        readr::cols,
+        stats::setNames(
+          rep(list(readr::col_character()), length(character_columns)),
+          character_columns
+        )
+      )
+
+      readr::read_csv(
+        file,
+        col_types = column_types,
+        show_col_types = FALSE
+      )
+    }
   )
 
   return(data)
@@ -110,7 +126,16 @@ upload_accounts_data <- function(
     output_dir = output_dir,
     pattern = "^accounts_.*\\.csv$",
     verbose = verbose
-  )
+  ) |>
+    dplyr::select(
+      serie_id,
+      country,
+      industry,
+      year,
+      value,
+      flag,
+      lastupdate
+    )
 
   if (verbose) message("upload_table_data")
   upload_table_data(

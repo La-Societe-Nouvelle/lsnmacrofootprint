@@ -15,6 +15,7 @@ cran_packages <- c(
   "foreach",
   "doFuture",
   "future",
+  "jsonlite",
   "parallel",
   "progressr",
   "purrr",

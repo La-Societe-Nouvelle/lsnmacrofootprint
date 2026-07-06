@@ -4,9 +4,10 @@
 # Mise à jour des séries historiques
 
 update_obs_accounts <- function(
-  indics,
+  indics            = default_indics,
   do_clean_outliers = TRUE,
   do_update         = FALSE,
+  use_temp_data     = TRUE,
   verbose           = FALSE
 ) {
   # --------------------------------------------------
@@ -33,9 +34,9 @@ update_obs_accounts <- function(
     # Build accounts data
 
     accounts_data <<- obs_accounts_builder(
-      do_clean_outliers = TRUE,
-      use_temp_data = FALSE,
-      verbose = TRUE
+      do_clean_outliers = do_clean_outliers,
+      use_temp_data = use_temp_data,
+      verbose = verbose
     )
 
     # -------------------------
@@ -56,7 +57,7 @@ update_obs_accounts <- function(
 # Mise à jour des séries tendancielles
 
 update_trd_accounts <- function(
-  indics,
+  indics            = default_indics,
   do_update         = FALSE,
   verbose           = FALSE
 ) {
@@ -100,7 +101,7 @@ update_trd_accounts <- function(
 # Mise à jour des séries cibles
 
 update_tgt_accounts <- function(
-  indics,
+  indics            = default_tgt_indics,
   do_update         = FALSE,
   verbose           = TRUE
 ) {

@@ -24,6 +24,7 @@ required_packages <- c(
   "eurostat",
   "foreach",
   "future",
+  "jsonlite",
   "parallel",
   "progressr",
   "purrr",
