@@ -16,8 +16,9 @@
 # /!\ N80T82 -> link to 81/82 not 80 / R90T92 link to 90 & 91, not 92
 
 build_soc_obs_accounts <- function(
-  years = 2010:2023,
-  do_clean_outliers = TRUE,
+  years = 2010:2024, # URSSAF ESS dataset confirmed complete to 2024
+  detect_latest_year = FALSE, # if TRUE, probe the URSSAF ESS export beyond max(years) and extend if complete (see utils_source_years.R)
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; unused here anyway (SOC never calls clean_outliers())
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -26,6 +27,59 @@ build_soc_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_source_years.R")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable URSSAF ESS year beyond max(years)
+  #
+  # URSSAF's export has no year filter (one CSV, all years, "Année" column) -
+  # like UNEP mfa4, this downloads it once (memoised) and checks whether the
+  # next candidate year is present with a plausible row count/magnitude.
+  # No sector_col here: URSSAF's "Secteur NA88" granularity is the same
+  # every year by construction (fixed nomenclature), so a sector check would
+  # be redundant with the reporting-row-count check.
+
+  if (detect_latest_year) {
+    urssaf_probe_data <- NULL
+
+    fetch_urssaf_year <- function(year_i) {
+      if (is.null(urssaf_probe_data)) {
+        raw <- tryCatch(
+          read.csv(
+            "https://open.urssaf.fr/api/explore/v2.1/catalog/datasets/nombre-etab-effectifs-salaries-et-masse-salariale-ess-france-x-na88/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B",
+            sep = ";",
+            check.names = TRUE
+          ),
+          error = function(e) NULL
+        )
+        if (is.null(raw)) return(NULL)
+        urssaf_probe_data <<- raw
+      }
+
+      urssaf_probe_data %>%
+        filter(Année == year_i) %>%
+        transmute(
+          sector = sub(" .*", "", Secteur.NA88),
+          value  = Masse.salariale..brute.
+        ) %>%
+        filter(!is.na(value)) %>%
+        { if (nrow(.) == 0) NULL else . }
+    }
+
+    detected_max_year <- detect_max_usable_year(
+      source_name     = "SOC_URSSAF_ESS",
+      fetch_year_fn   = fetch_urssaf_year,
+      group_col       = "sector",
+      value_col       = "value",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("SOC: extending years to detected max usable URSSAF year ", detected_max_year)
+      years <- min(years):detected_max_year
+    }
+  }
 
   # -------------------------------------------------------------------
   # Metadata

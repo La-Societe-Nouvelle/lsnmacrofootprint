@@ -14,8 +14,9 @@
 #' build_mat_obs_accounts()
 
 build_mat_obs_accounts <- function(
-  years = 2010:2023,
-  do_clean_outliers = TRUE,
+  years = 2010:2024, # UNEP/IRP Global Material Flows DB confirmed complete to 2024
+  detect_latest_year = FALSE, # if TRUE, probe UNEP mfa4 beyond max(years) and extend if complete (see utils_source_years.R)
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -26,6 +27,61 @@ build_mat_obs_accounts <- function(
   source("utils/utils_figaro_data.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable UNEP mfa4 year beyond max(years)
+  #
+  # UNEP publishes one wide CSV (one column per year, no year filter in the
+  # URL) rather than a per-year endpoint - so the "probe" downloads it once
+  # (memoised across candidate years within this call) and checks whether the
+  # next year's column exists and is populated.
+
+  if (detect_latest_year) {
+    unep_probe_data <- NULL
+
+    fetch_unep_year <- function(year_i) {
+      if (is.null(unep_probe_data)) {
+        raw <- tryCatch(
+          read.csv("https://unep-irp.fineprint.global/mfa4/export?flowTypes[0]=DE"),
+          error = function(e) NULL
+        )
+        if (is.null(raw)) return(NULL)
+        unep_probe_data <<- raw
+      }
+
+      year_col <- paste0("X", year_i) # read.csv() prefixes numeric-only column names with "X"
+      if (!year_col %in% colnames(unep_probe_data)) return(NULL)
+
+      unep_probe_data %>%
+        filter(
+          Flow.code == "DE",
+          Flow.unit == "t",
+          Category %in% c("Biomass", "Fossil fuels", "Metal ores", "Non-metallic minerals")
+        ) %>%
+        transmute(
+          country = countrycode(Country, "country.name", "iso2c", nomatch = NULL),
+          sector  = Category,
+          value   = .data[[year_col]]
+        ) %>%
+        filter(!is.na(value))
+    }
+
+    detected_max_year <- detect_max_usable_year(
+      source_name     = "MAT_UNEP_MFA4",
+      fetch_year_fn   = fetch_unep_year,
+      group_col       = "country",
+      value_col       = "value",
+      sector_col      = "sector",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("MAT: extending years to detected max usable UNEP mfa4 year ", detected_max_year)
+      years <- min(years):detected_max_year
+    }
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -175,13 +231,15 @@ build_mat_obs_accounts <- function(
     select(year, country, industry, value, flag)
 
   # Clean outliers
-  figaro_mat_accounts <- figaro_mat_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_mat_accounts <- figaro_mat_accounts %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
+      clean_outliers(., serie_pkey = c("country", "industry")) %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)

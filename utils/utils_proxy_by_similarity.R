@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 # ----------------------------------------------------------------------------------------------------
 # proxy_missing_value_by_similarity

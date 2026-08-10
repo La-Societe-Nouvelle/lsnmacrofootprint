@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Société Nouvelle
 
 #' ----------------------------------------------------------------------------------------------------
 #' Environmental accounts builder for waste generation (WAS)
@@ -17,8 +17,9 @@
 #' to execute: build_was_obs_accounts()
 
 build_was_obs_accounts <- function(
-  years = seq(2010, 2022, 2),
-  do_clean_outliers = TRUE,
+  years = seq(2010, 2022, 2), # NB: 2024 not yet published by either Eurostat (env_wasgen) or OECD (DSD_WSECTOR) as of 2026-08 - biennial reporting lag
+  detect_latest_year = FALSE, # if TRUE, probe env_wasgen/DSD_WSECTOR beyond max(years) (step 2, biennial) and extend if complete
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -29,6 +30,73 @@ build_was_obs_accounts <- function(
   source("utils/utils_figaro_data.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable waste-generation year beyond max(years)
+  #
+  # Tries Eurostat env_wasgen first (priority source in production below),
+  # falls back to OECD DSD_WSECTOR for the completeness check if Eurostat has
+  # nothing for that candidate year - same source priority as the real
+  # extraction. step = 2 because this reporting is biennial: probing every
+  # single year would waste requests on years the source structurally never
+  # publishes, and (more importantly) detect_max_usable_year would stop at
+  # the very first odd year instead of reaching the next real one.
+
+  if (detect_latest_year) {
+    fetch_was_year <- function(year_i) {
+      url_eurostat <- paste0(
+        "https://ec.europa.eu/eurostat/api/dissemination/sdmx/3.0/data/dataflow/ESTAT/env_wasgen/1.0/*.*.*.*.*.*?",
+        "c[freq]=", "A",
+        "&c[hazard]=", "HAZ_NHAZ",
+        "&c[TIME_PERIOD]=", year_i,
+        "&compress=", "false",
+        "&format=", "csvdata"
+      )
+      eurostat_raw <- tryCatch(read.csv(url_eurostat), error = function(e) NULL)
+      eurostat_df <- NULL
+      if (!is.null(eurostat_raw) && nrow(eurostat_raw) > 0) {
+        eurostat_df <- eurostat_raw %>%
+          filter(freq == "A", unit == "T", hazard == "HAZ_NHAZ", waste == "PRIM") %>%
+          transmute(country = geo, sector = nace_r2, value = OBS_VALUE)
+      }
+
+      url_oecd <- paste0(
+        "https://sdmx.oecd.org/public/rest/data/OECD.ENV.EPI,DSD_WSECTOR@DF_WSECTOR,/.A.TOTAL.T.?",
+        "startPeriod=", year_i,
+        "&endPeriod=", year_i,
+        "&dimensionAtObservation=", "AllDimensions",
+        "&format=", "csvfilewithlabels"
+      )
+      oecd_raw <- tryCatch(read.csv(url_oecd), error = function(e) NULL)
+      oecd_df <- NULL
+      if (!is.null(oecd_raw) && nrow(oecd_raw) > 0) {
+        oecd_df <- oecd_raw %>%
+          filter(MEASURE == "TOTAL", ACTION == "I", FREQ == "A", UNIT_MEASURE == "TRUE") %>%
+          transmute(country = REF_AREA, sector = ACTIVITY, value = OBS_VALUE)
+      }
+
+      combined <- bind_rows(eurostat_df, oecd_df)
+      if (nrow(combined) == 0) return(NULL)
+      combined
+    }
+
+    detected_max_year <- detect_max_usable_year(
+      source_name     = "WAS_WASGEN_WSECTOR",
+      fetch_year_fn   = fetch_was_year,
+      group_col       = "country",
+      value_col       = "value",
+      sector_col      = "sector",
+      known_good_year = max(years),
+      step            = 2,
+      verbose         = verbose
+    )
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("WAS: extending years to detected max usable year ", detected_max_year)
+      years <- seq(min(years), detected_max_year, by = 2)
+    }
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -271,13 +339,15 @@ build_was_obs_accounts <- function(
     select(year, country, industry, value, flag)
 
   # Clean outliers
-  figaro_was_accounts <- figaro_was_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_was_accounts <- figaro_was_accounts %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
+      clean_outliers(., serie_pkey = c("country", "industry")) %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)

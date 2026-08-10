@@ -29,8 +29,9 @@
 #' build_geq_obs_accounts()
 
 build_geq_obs_accounts <- function(
-  years = 2016:2023,
-  do_clean_outliers = TRUE,
+  years = 2016:2024, # ILOSTAT uses nearest-available-year matching, safe to extend
+  detect_latest_year = FALSE, # if TRUE, probe ILOSTAT EAR_EHRA_SEX_ECO_CUR_NB_A beyond max(years) and extend if complete
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -41,6 +42,58 @@ build_geq_obs_accounts <- function(
   source("utils/utils_figaro_data.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable ILOSTAT year beyond max(years)
+  #
+  # get_ilostat() returns the indicator's full history in one call (no
+  # per-year endpoint), so the probe downloads it once (memoised) and
+  # filters by `time` for each candidate year, same as UNEP/URSSAF above.
+  # Note this is arguably not strictly necessary here: the production code
+  # already falls back to the nearest available ILOSTAT year for any target
+  # year, so an incomplete/missing latest year degrades gracefully on its
+  # own. Wiring it anyway keeps `years` honest about what's really new.
+
+  if (detect_latest_year) {
+    ilostat_probe_data <- NULL
+
+    fetch_ilostat_year <- function(year_i) {
+      if (is.null(ilostat_probe_data)) {
+        raw <- tryCatch(
+          get_ilostat("EAR_EHRA_SEX_ECO_CUR_NB_A", segment = "indicator", quiet = TRUE),
+          error = function(e) NULL
+        )
+        if (is.null(raw)) return(NULL)
+        ilostat_probe_data <<- raw
+      }
+
+      ilostat_probe_data %>%
+        filter(
+          time == year_i,
+          classif2 == "CUR_TYPE_PPP",
+          str_starts(classif1, "ECO_ISIC4_"),
+          sex %in% c("SEX_M", "SEX_F", "SEX_T")
+        ) %>%
+        select(ref_area, classif1, obs_value) %>%
+        { if (nrow(.) == 0) NULL else . }
+    }
+
+    detected_max_year <- detect_max_usable_year(
+      source_name     = "GEQ_ILOSTAT_EAR",
+      fetch_year_fn   = fetch_ilostat_year,
+      group_col       = "ref_area",
+      value_col       = "obs_value",
+      sector_col      = "classif1",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("GEQ: extending years to detected max usable ILOSTAT year ", detected_max_year)
+      years <- min(years):detected_max_year
+    }
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -328,9 +381,11 @@ build_geq_obs_accounts <- function(
     select(year, country, industry, value, flag)
 
   # Clean outliers
-  figaro_geq_accounts <- figaro_geq_accounts %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_geq_accounts <- figaro_geq_accounts %>%
+      clean_outliers(., serie_pkey = c("country", "industry")) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)

@@ -17,8 +17,14 @@
 #' build_art_obs_accounts()
 
 build_art_obs_accounts <- function(
-  years = 2010:2023,
-  do_clean_outliers = TRUE,
+  years = 2010:2024, # FIGARO ed26 (2024) - craft rate is applied uniformly across years, no external year dependency
+  # No detect_latest_year here: the only source with a year dimension is the local FIGARO cache
+  # (data_figaro/*.parquet), which has no metadata flag separating real observed years from
+  # internally-projected ones (values grow smoothly straight through 2030 in the local cache) -
+  # the completeness heuristics in utils_source_years.R can't tell those apart, so wiring this
+  # in would silently "validate" fabricated years. Bump the hardcoded year by hand once FIGARO
+  # publishes a new edition, as done above.
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; unused here anyway (ART never calls clean_outliers())
   use_temp_data = TRUE,
   verbose = FALSE
 ) {

@@ -16,7 +16,8 @@
 
 build_idr_obs_accounts <- function(
   years = 2016:2023,
-  do_clean_outliers = TRUE,
+  detect_latest_year = FALSE, # if TRUE, probe ILOSTAT LAP_2LID_QTL_RT_A beyond max(years) - but never past the last year with a BTS file id, see note below
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -27,13 +28,12 @@ build_idr_obs_accounts <- function(
   source("utils/utils_figaro_data.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
 
   # -------------------------------------------------------------------
   # Metadata
 
   if (verbose) cat("Loading metadata...\n")
-
-  years <- tibble(year = as.character(years))
 
   figaro_industries <- read_delim(
       "metadata/metadata_figaro_industries.csv",
@@ -56,8 +56,8 @@ build_idr_obs_accounts <- function(
     ) %>%
     select(country)
 
-  bts_files_ids <- read_delim(
-      "obs_accounts/idr/bts_files_ids.csv",
+  bts_files_idr <- read_delim(
+      "obs_accounts/idr/bts_files_idr.csv",
       delim = ";",
       show_col_types = FALSE
     ) %>%
@@ -69,6 +69,67 @@ build_idr_obs_accounts <- function(
     show_col_types = FALSE
   ) %>%
     select(TRNNETO, NETO)
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable ILOSTAT year beyond max(years)
+  #
+  # Only the international-coefficient half of IDR (ILOSTAT) can be
+  # detected this way - the France/branch half comes from BTS (Insee) via
+  # obs_accounts/idr/bts_files_idr.csv, a hand-curated list of file
+  # identifiers per year (see idr_accounts_builder.R BTS download loop
+  # below) that this mechanism cannot discover on its own. Extending
+  # `years` past the last year with a BTS entry would make that loop pull
+  # an empty file_id and fail, so the detected year is capped at
+  # max(bts_files_idr$year) regardless of what ILOSTAT itself supports.
+
+  if (detect_latest_year) {
+    ilostat_probe_data <- NULL
+
+    fetch_ilostat_year <- function(year_i) {
+      if (is.null(ilostat_probe_data)) {
+        raw <- tryCatch(
+          get_ilostat("LAP_2LID_QTL_RT_A", quiet = TRUE),
+          error = function(e) NULL
+        )
+        if (is.null(raw)) return(NULL)
+        ilostat_probe_data <<- raw
+      }
+
+      ilostat_probe_data %>%
+        filter(
+          time == year_i,
+          classif1 %in% c("DCL_DECILE_01", "DCL_DECILE_02", "DCL_DECILE_09", "DCL_DECILE_10")
+        ) %>%
+        select(ref_area, classif1, obs_value) %>%
+        { if (nrow(.) == 0) NULL else . }
+    }
+
+    detected_ilostat_year <- detect_max_usable_year(
+      source_name     = "IDR_ILOSTAT_LAP",
+      fetch_year_fn   = fetch_ilostat_year,
+      group_col       = "ref_area",
+      value_col       = "obs_value",
+      sector_col      = "classif1",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    bts_max_year <- max(bts_files_idr$year)
+    detected_max_year <- min(detected_ilostat_year, bts_max_year)
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("IDR: extending years to ", detected_max_year,
+                            " (ILOSTAT supports up to ", detected_ilostat_year,
+                            ", capped by last BTS file id year ", bts_max_year, ")")
+      years <- min(years):detected_max_year
+    } else if (verbose && detected_ilostat_year > bts_max_year) {
+      message("IDR: ILOSTAT has data up to ", detected_ilostat_year,
+              " but bts_files_idr.csv only goes to ", bts_max_year,
+              " - add a BTS entry manually to extend IDR further")
+    }
+  }
+
+  years <- tibble(year = as.character(years))
 
   # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
@@ -101,9 +162,9 @@ build_idr_obs_accounts <- function(
     if (verbose) cat(paste0("Année ", year_i, "\n"))
 
     # File ID
-    file_id <- bts_files_ids %>% filter(year == year_i) %>% pull(file_id)
-    zip_name <- bts_files_ids %>% filter(year == year_i) %>% pull(zip_name)
-    file_name <- bts_files_ids %>% filter(year == year_i) %>% pull(file_name)
+    file_id <- bts_files_idr %>% filter(year == year_i) %>% pull(file_id)
+    zip_name <- bts_files_idr %>% filter(year == year_i) %>% pull(zip_name)
+    file_name <- bts_files_idr %>% filter(year == year_i) %>% pull(file_name)
 
     url_bts_data <- paste0(base_url_bts_data, file_id, "/", zip_name)
 
@@ -274,9 +335,11 @@ build_idr_obs_accounts <- function(
     select(year, country, industry, value, flag)
 
   # Clean outliers
-  figaro_idr_accounts <- figaro_idr_accounts %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_idr_accounts <- figaro_idr_accounts %>%
+      clean_outliers(., serie_pkey = c("country", "industry")) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)

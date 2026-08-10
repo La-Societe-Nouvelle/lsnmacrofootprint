@@ -19,7 +19,8 @@
 
 build_knw_obs_accounts <- function(
   years = 2015:2020,
-  do_clean_outliers = TRUE,
+  detect_latest_year = FALSE, # if TRUE, probe ANBERD & STAN beyond max(years), extend to min of the two if both complete
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -31,6 +32,74 @@ build_knw_obs_accounts <- function(
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_monetary_conversion.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable year beyond max(years) for ANBERD
+  # and STAN (both merged on an exact year - unlike TRNG_CVT/CVTS, which
+  # already uses nearest-year matching and is left out of this check for
+  # that reason, and is anyway bound by its own 5-year survey cycle).
+  # years only extends to the *lower* of the two detected years, since KNW
+  # needs both components for a given year.
+
+  if (detect_latest_year) {
+    fetch_anberd_year <- function(year_i) {
+      url_probe <- paste0(
+        "https://sdmx.oecd.org/public/rest/data/OECD.STI.STP,DSD_ANBERD@DF_ANBERDi4,/.A.MA..USD_PPP.V.?",
+        "startPeriod=", year_i,
+        "&endPeriod=", year_i,
+        "&dimensionAtObservation=", "AllDimensions"
+      )
+      raw <- tryCatch(read_sdmx(url_probe), error = function(e) NULL)
+      if (is.null(raw) || nrow(raw) == 0) return(NULL)
+      raw %>%
+        filter(CRITERIA == "MA", FREQ == "A", MEASURE == "B", PRICE_BASE == "V", UNIT_MEASURE == "USD_PPP") %>%
+        select(REF_AREA, ACTIVITY, ObsValue)
+    }
+
+    fetch_stan_year <- function(year_i) {
+      url_probe <- paste0(
+        "https://sdmx.oecd.org/public/rest/data/OECD.STI.PIE,DSD_STAN@DF_STAN_2025,1.0/A...D11+B1G.V.?",
+        "startPeriod=", year_i,
+        "&endPeriod=", year_i,
+        "&dimensionAtObservation=", "AllDimensions",
+        "&format=csvfilewithlabels"
+      )
+      raw <- tryCatch(read.csv(url_probe), error = function(e) NULL)
+      if (is.null(raw) || nrow(raw) == 0) return(NULL)
+      raw %>%
+        filter(ACTION == "I", FREQ == "A", MEASURE %in% c("D11", "B1G"), PRICE_BASE == "V", UNIT_MEASURE == "XDC") %>%
+        select(REF_AREA, ACTIVITY, OBS_VALUE)
+    }
+
+    detected_anberd_year <- detect_max_usable_year(
+      source_name     = "KNW_ANBERD",
+      fetch_year_fn   = fetch_anberd_year,
+      group_col       = "REF_AREA",
+      value_col       = "ObsValue",
+      sector_col      = "ACTIVITY",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    detected_stan_year <- detect_max_usable_year(
+      source_name     = "KNW_STAN",
+      fetch_year_fn   = fetch_stan_year,
+      group_col       = "REF_AREA",
+      value_col       = "OBS_VALUE",
+      sector_col      = "ACTIVITY",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    detected_max_year <- min(detected_anberd_year, detected_stan_year)
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("KNW: extending years to detected max usable year ", detected_max_year,
+                            " (ANBERD=", detected_anberd_year, ", STAN=", detected_stan_year, ")")
+      years <- min(years):detected_max_year
+    }
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -377,16 +446,18 @@ build_knw_obs_accounts <- function(
     select(year, country, industry, value, flag)
 
   # Check max / Clean outliers
-  figaro_knw_accounts <- figaro_knw_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA * 100, 0)) %>%
-    # Clean outliers
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    # Check upper limit
-    mutate(value = pmin(value, 100.0)) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / 100 * NVA, 0)) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_knw_accounts <- figaro_knw_accounts %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value / NVA * 100, 0)) %>%
+      # Clean outliers
+      clean_outliers(., serie_pkey = c("country", "industry")) %>%
+      # Check upper limit
+      mutate(value = pmin(value, 100.0)) %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value / 100 * NVA, 0)) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)

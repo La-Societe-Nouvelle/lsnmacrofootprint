@@ -16,8 +16,9 @@
 #' build_wat_obs_accounts()
 
 build_wat_obs_accounts <- function(
-  years = 2010:2022, # OECD available since 1990
-  do_clean_outliers = TRUE,
+  years = 2010:2023, # OECD available since 1990. 2023: 32/36 countries vs 2022, median magnitude 0.76x - passes detect_max_usable_year() (0.8/0.75 thresholds) though it's a borderline call; 2024 (23 countries, median 0.49x) fails outright and is excluded
+  detect_latest_year = FALSE, # if TRUE, probe DSD_WATER_PSUT beyond max(years) and extend if complete (see utils_source_years.R)
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -28,6 +29,55 @@ build_wat_obs_accounts <- function(
   source("utils/utils_figaro_data.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable DSD_WATER_PSUT year beyond max(years)
+  #
+  # This is the source where the reporting-country count itself was already
+  # known to collapse (~47 -> ~23 countries by 2024) - the count floor alone
+  # (min_count_ratio, default 0.8) is expected to reject it on its own.
+
+  if (detect_latest_year) {
+    base_url_water_probe <- "https://sdmx.oecd.org/public/rest/data/OECD.ENV.EPI,DSD_WATER_PSUT@DF_WATER_PSUT,1.0/.A.SURFACE_GROUND..USE.SEC.?"
+
+    fetch_water_year <- function(year_i) {
+      url_probe <- paste0(base_url_water_probe,
+        "startPeriod=", year_i,
+        "&endPeriod=", year_i,
+        "&dimensionAtObservation=", "AllDimensions",
+        "&format=", "csvfilewithlabels"
+      )
+
+      raw <- tryCatch(read.csv(url_probe), error = function(e) NULL)
+      if (is.null(raw) || nrow(raw) == 0) return(NULL)
+
+      raw %>%
+        filter(
+          VARIABLE == "SEC",
+          SUPPLY_USE == "USE",
+          MEASURE == "SURFACE_GROUND",
+          FREQ == "A",
+          UNIT_MEASURE == "M3"
+        ) %>%
+        select(REF_AREA, ACTIVITY, OBS_VALUE)
+    }
+
+    detected_max_year <- detect_max_usable_year(
+      source_name     = "WAT_WATER_PSUT",
+      fetch_year_fn   = fetch_water_year,
+      group_col       = "REF_AREA",
+      value_col       = "OBS_VALUE",
+      sector_col      = "ACTIVITY",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("WAT: extending years to detected max usable DSD_WATER_PSUT year ", detected_max_year)
+      years <- min(years):detected_max_year
+    }
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -193,17 +243,19 @@ build_wat_obs_accounts <- function(
   if (verbose) cat("Cleaning outliers...\n")
 
   # Clean outliers
-  figaro_wat_accounts <- figaro_wat_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(
-      .,
-      serie_pkey = c("country", "industry"),
-      verbose = TRUE
-    ) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_wat_accounts <- figaro_wat_accounts %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
+      clean_outliers(
+        .,
+        serie_pkey = c("country", "industry"),
+        verbose = TRUE
+      ) %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)

@@ -12,8 +12,11 @@
 #' build_eco_obs_accounts()
 
 build_eco_obs_accounts <- function(
-  years = 2010:2023,
-  do_clean_outliers = TRUE,
+  years = 2010:2024, # FIGARO ed26
+  # No detect_latest_year here either - see art_accounts_builder.R for why: ECO's only source is
+  # the local FIGARO cache, which doesn't expose any signal distinguishing real observed years
+  # from internally-projected ones.
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; unused here anyway (ECO never calls clean_outliers())
   use_temp_data = TRUE,
   verbose = FALSE
 ) {

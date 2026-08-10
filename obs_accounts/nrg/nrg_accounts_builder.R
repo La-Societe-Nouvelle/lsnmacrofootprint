@@ -15,8 +15,9 @@
 #' build_nrg_obs_accounts()
 
 build_nrg_obs_accounts <- function(
-  years = 2014:2023,
-  do_clean_outliers = TRUE,
+  years = 2014:2023, # NB: env_ac_pefasu technically returns 2024 rows but only ~178 obs vs ~2800/year normally (most NACE/country detail missing) - not usable yet, keep at 2023 until full breakdown is published
+  detect_latest_year = FALSE, # if TRUE, probe env_ac_pefasu beyond max(years) and extend if complete (see utils_source_years.R) - this is the exact case that motivated per-country sector-density checking
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -27,6 +28,53 @@ build_nrg_obs_accounts <- function(
   source("utils/utils_figaro_data.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable env_ac_pefasu year beyond max(years)
+  #
+  # Checks reporting-country count AND median nace_r2 codes reported per
+  # country (sector_col) - the count alone is not enough here: 2024 has
+  # ~89% as many countries as 2023 (passes a naive floor) but each of them
+  # reports only a handful of the ~88 nace_r2 codes instead of the full
+  # breakdown, which the sector density check catches.
+
+  if (detect_latest_year) {
+    base_url_pefasu_probe <- "https://ec.europa.eu/eurostat/api/dissemination/sdmx/3.0/data/dataflow/ESTAT/env_ac_pefasu/1.0/*.*.*.*.*.*?"
+
+    fetch_pefasu_year <- function(year_i) {
+      url_probe <- paste0(base_url_pefasu_probe,
+        "c[freq]=", "A",
+        "&c[stk_flow]=", "SUP",
+        "&c[unit]=", "TJ",
+        "&c[TIME_PERIOD]=", year_i,
+        "&compress=", "false",
+        "&format=", "csvdata"
+      )
+
+      raw <- tryCatch(read.csv(url_probe), error = function(e) NULL)
+      if (is.null(raw) || nrow(raw) == 0) return(NULL)
+
+      raw %>%
+        filter(prod_nrg == "R30") %>%
+        select(geo, nace_r2, OBS_VALUE)
+    }
+
+    detected_max_year <- detect_max_usable_year(
+      source_name     = "NRG_PEFASU",
+      fetch_year_fn   = fetch_pefasu_year,
+      group_col       = "geo",
+      value_col       = "OBS_VALUE",
+      sector_col      = "nace_r2",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("NRG: extending years to detected max usable env_ac_pefasu year ", detected_max_year)
+      years <- min(years):detected_max_year
+    }
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -234,13 +282,15 @@ build_nrg_obs_accounts <- function(
     select(year, country, industry, value, flag)
 
   # Clean outliers
-  figaro_nrg_accounts <- figaro_nrg_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_nrg_accounts <- figaro_nrg_accounts %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
+      clean_outliers(., serie_pkey = c("country", "industry")) %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)

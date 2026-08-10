@@ -14,8 +14,9 @@
 #' build_haz_obs_accounts()
 
 build_haz_obs_accounts <- function(
-  years = 2010:2023,
-  do_clean_outliers = TRUE,
+  years = 2010:2024, # PRODCOM 2024 confirmed available (2025 not yet published as of 2026-08)
+  detect_latest_year = FALSE, # if TRUE, probe PRODCOM beyond max(years) and extend if complete (see utils_source_years.R)
+  do_clean_outliers = FALSE, # obs series treated as reliable by default; trd/tgt series keep outlier cleaning on
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -26,13 +27,12 @@ build_haz_obs_accounts <- function(
   source("utils/utils_figaro_data.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_source_years.R")
 
   # -------------------------------------------------------------------
   # Metadata
 
   if (verbose) cat("Loading metadata...\n")
-
-  years <- tibble(year = as.character(years))
 
   figaro_industries <- read_delim(
       "metadata/metadata_figaro_industries.csv",
@@ -71,6 +71,64 @@ build_haz_obs_accounts <- function(
 
   # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
+
+  # -------------------------------------------------------------------
+  # Optional: detect the latest usable PRODCOM year beyond max(years)
+  #
+  # Probes one year at a time (same filters as the real extraction below:
+  # QNTUNIT == "KG", product %in% haz_products) and only extends if the
+  # candidate year's reporting-country count, distinct-product count (proxy
+  # for sectoral breadth - catches a year where the same countries report but
+  # only a handful of hazardous PRODCOM codes instead of the full list), top-5
+  # and median all stay within tolerance of the last trusted year. This only
+  # changes which years get requested - the tibble built right after has the
+  # exact same shape (year/country/industry/value/flag) that
+  # proxy_missing_value_by_similarity() already expects, whatever years ends
+  # up containing.
+
+  if (detect_latest_year) {
+    base_url_prodcom_probe <- "https://ec.europa.eu/eurostat/api/comext/dissemination/sdmx/3.0/data/dataflow/ESTAT/ds-059358/1.0?"
+
+    fetch_prodcom_year <- function(year_i) {
+      url_probe <- paste0(base_url_prodcom_probe,
+        "format=", "csvdata",
+        "&c[freq]=", "A",
+        "&c[TIME_PERIOD]=", year_i,
+        "&c[indicators]=", "PRODQNT,QNTUNIT",
+        "&compressed=", "true"
+      )
+
+      raw <- tryCatch(fread(url_probe, colClasses = "character", sep = ","), error = function(e) NULL)
+      if (is.null(raw) || nrow(raw) == 0) return(NULL)
+
+      raw %>%
+        pivot_wider(names_from = indicators, values_from = OBS_VALUE) %>%
+        filter(
+          QNTUNIT == "KG",
+          product %in% haz_products$`PRODCOM Code`
+        ) %>%
+        mutate(PRODQNT = as.numeric(PRODQNT)) %>%
+        filter(!is.na(PRODQNT)) %>%
+        select(reporter, product, PRODQNT)
+    }
+
+    detected_max_year <- detect_max_usable_year(
+      source_name     = "HAZ_PRODCOM",
+      fetch_year_fn   = fetch_prodcom_year,
+      group_col       = "reporter",
+      value_col       = "PRODQNT",
+      sector_col      = "product",
+      known_good_year = max(years),
+      verbose         = verbose
+    )
+
+    if (detected_max_year > max(years)) {
+      if (verbose) message("HAZ: extending years to detected max usable PRODCOM year ", detected_max_year)
+      years <- min(years):detected_max_year
+    }
+  }
+
+  years <- tibble(year = as.character(years))
 
   # FIGARO Economic data
 
@@ -232,13 +290,15 @@ build_haz_obs_accounts <- function(
     select(year, country, industry, value, flag)
 
   # Clean outliers
-  figaro_haz_accounts <- figaro_haz_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
-    select(year, country, industry, value, flag)
+  if (do_clean_outliers) {
+    figaro_haz_accounts <- figaro_haz_accounts %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
+      clean_outliers(., serie_pkey = c("country", "industry")) %>%
+      merge(main_aggregates_data) %>%
+      mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
+      select(year, country, industry, value, flag)
+  }
 
   # Check
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
