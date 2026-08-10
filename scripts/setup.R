@@ -3,7 +3,7 @@
 # Setup for interactive use from the repository root.
 # This file sources the project functions without launching the full pipeline.
 
-setup_path <- normalizePath(sys.frame(1)$ofile, winslash = "/", mustWork = TRUE)
+setup_path <- normalizePath(this.path::this.path(), winslash = "/", mustWork = TRUE)
 project_root <- normalizePath(file.path(dirname(setup_path), ".."), winslash = "/", mustWork = TRUE)
 
 source_project_file <- function(path) {
@@ -76,6 +76,7 @@ source_project_file("utils/utils_figaro_data.R")
 source_project_file("utils/utils_monetary_conversion.R")
 source_project_file("utils/utils_outliers.R")
 source_project_file("utils/utils_proxy_by_similarity.R")
+source_project_file("utils/utils_source_years.R")
 
 # Trend accounts helpers.
 source_project_file("trd_accounts/utils_montecarlo_forecasts.R")
