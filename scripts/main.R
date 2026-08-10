@@ -15,7 +15,7 @@
 
 # Resolve the project root from this file location, then switch the working
 # directory to the repository root so relative paths remain stable.
-main_path <- normalizePath(sys.frame(1)$ofile, winslash = "/", mustWork = TRUE)
+main_path <- normalizePath(this.path::this.path(), winslash = "/", mustWork = TRUE)
 project_root <- normalizePath(file.path(dirname(main_path), ".."), winslash = "/", mustWork = TRUE)
 setwd(project_root)
 

@@ -156,6 +156,33 @@ Tables ciblees:
 - Si le fichier de cache existe, il est recharge au lieu de recalculer
   l'inverse.
 
+## Credits / Sources
+
+L'estimation des comptes GHG observes au-dela de la couverture d'Eurostat
+(`obs_accounts/ghg/ghg_accounts_extensions.R`) reprend la methodologie
+developpee par Eurostat pour les empreintes GES FIGARO, telle que repliquee et
+validee dans le projet [InseeFrLab/global-ghg-emissions](https://github.com/InseeFrLab/global-ghg-emissions)
+(Sylvain Larrieu, Insee) :
+
+- **Methodologie source** : Eurostat, *FIGARO – Greenhouse gas emission
+  estimates, Methodological note*, 18 novembre 2024. Document inclus dans le
+  depot InseeFrLab ci-dessus (`documentation/Methodological_Note_GHG_estimates_FIGARO.pdf`).
+- **Replication et validation initiales** : Sylvain Larrieu (Insee), projet
+  InseeFrLab/global-ghg-emissions.
+
+Sources de donnees utilisees par `ghg_accounts_extensions.R` : Eurostat (comptes
+d'emissions atmospheriques `env_ac_ainah_r2`, comptes physiques de flux
+d'energie `env_ac_pefasu`), [EDGAR](https://edgar.jrc.ec.europa.eu/) (JRC,
+Commission europeenne), l'OCDE (emissions CO2 du transport aerien et
+maritime), l'ONS (comptes d'emissions du Royaume-Uni) et l'OFS (comptes
+d'emissions de la Suisse).
+
+> **A noter** : pour les pays hors UE, EDGAR reprend des donnees IEA
+> (International Energy Agency), modifiees par le JRC, sous licence
+> **CC BY-NC-ND 4.0** (usage non commercial uniquement). Toute utilisation
+> commerciale de ces donnees pour ces pays necessite un accord prealable de
+> l'IEA (compliance@iea.org).
+
 ## Licence
 
 La licence est indiquee dans `DESCRIPTION`.
