@@ -220,16 +220,16 @@ get_uk_eeio = function(year_i, verbose = T)
 
   # Table 104x4 (Aggregates : PRD, IC, GVA, DF)
 
-  ghg_fpt = compute_ghg_fpt("GB", z, main_aggregates, emissions_data, correspondences_figaro, year_i)
+  pound_eur <- from_pound_to_euro(year_i) # 1 GBP = pound_eur EUR
+
+  ghg_fpt = compute_ghg_fpt("GB", z, main_aggregates, emissions_data, correspondences_figaro, year_i, pound_eur)
 
   # --------------------------------------------------
   # Monetary conversion
 
-  pound_eur <- from_pound_to_euro(year_i)
-
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*pound_eur,
+      fpt = fpt/pound_eur,
       unit = "GCO2E_EUR"
     ) %>%
     select(eeio_country, eeio_industry, aggregate, fpt, unit, year)
@@ -454,19 +454,18 @@ get_us_eeio_data = function(year_i, verbose = T)
 
   # Table 398x4 (Aggregates : PRD, IC, GVA, DF)
 
-  ghg_fpt <- compute_ghg_fpt("US", z, main_aggregates, emissions_data, correspondences_figaro, year_i)
+  usd_eur = from_usd_to_euro(YEAR) # 1 USD = usd_eur EUR
+
+  ghg_fpt <- compute_ghg_fpt("US", z, main_aggregates, emissions_data, correspondences_figaro, year_i, usd_eur)
 
   message("[INFO] Ok - Empreintes calculées")
 
   # --------------------------------------------------
   # Monetary conversion
 
-  usd_eur = from_usd_to_euro(YEAR) # coef 1 $ x usd_eur -> 1 €
-  # print(usd_eur)
-
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*usd_eur,
+      fpt = fpt/usd_eur,
       unit = "GCO2E_EUR"
     ) %>%
     select(eeio_country, eeio_industry, aggregate, fpt, unit, year)
@@ -738,16 +737,16 @@ get_canada_eeio_data = function(year_i, verbose = T)
 
   # Table 108x4 (Aggregates : PRD, IC, GVA, DF)
 
-  ghg_fpt <- compute_ghg_fpt("CA", z, main_aggregates, emissions_data, correspondences_figaro, year_i)
+  cad_eur = from_cad_to_euro(year_i) # 1 CAD = cad_eur EUR
+
+  ghg_fpt <- compute_ghg_fpt("CA", z, main_aggregates, emissions_data, correspondences_figaro, year_i, cad_eur)
 
   # --------------------------------------------------
   # Monetary conversion
 
-  cad_eur = from_cad_to_euro(year_i)
-
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*cad_eur,
+      fpt = fpt/cad_eur,
       unit = "GCO2E_EUR"
     ) %>%
     rename(
@@ -974,16 +973,16 @@ get_denmark_eeio_data <- function(year_i, verbose = T)
 
   # Table 117x4 (Aggregates : PRD, IC, GVA, DF)
 
-  ghg_fpt <- compute_ghg_fpt("DK", z, main_aggregates, emissions_data, correspondences_figaro, year_i)
+  dkk_eur <- from_dkk_to_euro(year_i) # 1 DKK = dkk_eur EUR
+
+  ghg_fpt <- compute_ghg_fpt("DK", z, main_aggregates, emissions_data, correspondences_figaro, year_i, dkk_eur)
 
   # --------------------------------------------------
   # Monetary conversion
 
-  dkk_eur <- from_dkk_to_euro(year_i)
-
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*dkk_eur,
+      fpt = fpt/dkk_eur,
       unit = "GCO2E_EUR"
     ) %>%
     select(eeio_country, eeio_industry, aggregate, fpt, unit, year)
@@ -1022,7 +1021,7 @@ get_denmark_eeio_data <- function(year_i, verbose = T)
 #   2- Construction des intensités directes
 #   3- Calcul des empreintes/facteurs par industrie
 
-compute_ghg_fpt = function(eeio_country, z, main_aggregates, emissions_data, correspondences_figaro, year_i)
+compute_ghg_fpt = function(eeio_country, z, main_aggregates, emissions_data, correspondences_figaro, year_i, local_to_eur)
 {
   # --------------------------------------------------
   # Metadata
@@ -1179,8 +1178,12 @@ compute_ghg_fpt = function(eeio_country, z, main_aggregates, emissions_data, cor
     select(eeio_industry, coef_corr)
 
   # GHG intensities by FIGARO industry
+  # main_aggregates$x is converted to EUR here so it's comparable to
+  # figaro_ghg_intensities below (EUR-denominated for every country in FIGARO),
+  # keeping coef_corr a small dimensionless correction rather than a disguised
+  # currency ratio.
   eeio_ghg_intensities <- emissions_data %>%
-    merge(main_aggregates) %>%
+    merge(main_aggregates %>% mutate(x = x * local_to_eur)) %>%
     merge(correspondence) %>%
     group_by(figaro_industry) %>%
     summarise(
