@@ -16,7 +16,7 @@ build_uk_eeio_footprints <<- function(year_i, verbose = TRUE)
   # ----------------------------------------------------------------------------------------------------
   # Metadata
 
-  eeio_size = 104
+  eeio_size <- 104
 
   eeio_industries <- read_delim(
       "disaggregation/eeio_uk/metadata_uk_eeio_industries.csv",
@@ -67,16 +67,16 @@ build_uk_eeio_footprints <<- function(year_i, verbose = TRUE)
   # ----------------------------------------------------------------------------------------------------
   # EEIO Data
 
-  url_sut = "https://www.ons.gov.uk/file?uri=/economy/nationalaccounts/supplyandusetables/datasets/inputoutputsupplyandusetables/current/supublicationtablesbb24.xlsx"
+  url_sut <- "https://www.ons.gov.uk/file?uri=/economy/nationalaccounts/supplyandusetables/datasets/inputoutputsupplyandusetables/current/supublicationtablesbb24.xlsx"
 
-  file_sut = curl_download(url_sut, tempfile())
+  file_sut <- curl_download(url_sut, tempfile())
 
   # --------------------------------------------------
   # Production (in GBP)
 
   # Table 104x1
 
-  x = suppressMessages(
+  x <- suppressMessages(
         read_xlsx(file_sut, sheet = paste0("Table 1 - Supply ", year_i), skip = 2)
       ) %>%
       filter(grepl('CPA',`...1`)) %>% # garde les lignes commençant par CPA_
@@ -102,7 +102,7 @@ build_uk_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   # Table IO 104x104
 
-  z = suppressMessages(
+  z <- suppressMessages(
       read_xlsx(file_sut, sheet = paste0("Table 2 - Int Con ", year_i), skip = 3)
     ) %>%
     rename(ons_uk_product = `...1`) %>%
@@ -161,11 +161,11 @@ build_uk_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   # Table 104x1
 
-  url_emissions_data = "https://www.ons.gov.uk/file?uri=/economy/environmentalaccounts/datasets/ukenvironmentalaccountsatmosphericemissionsgreenhousegasemissionsbyeconomicsectorandgasunitedkingdom/current/05atmoshpericemissionsghg.xlsx"
+  url_emissions_data <- "https://www.ons.gov.uk/file?uri=/economy/environmentalaccounts/datasets/ukenvironmentalaccountsatmosphericemissionsgreenhousegasemissionsbyeconomicsectorandgasunitedkingdom/current/05atmoshpericemissionsghg.xlsx"
 
-  file_emissions_ons_data = curl_download(url_emissions_data, tempfile())
+  file_emissions_ons_data <- curl_download(url_emissions_data, tempfile())
 
-  emissions_data = suppressMessages(
+  emissions_data <- suppressMessages(
       read_xlsx(file_emissions_ons_data, sheet = "GHG total", skip = 6, col_names = FALSE, col_types = "text")[,-c(1:26)]
     ) %>%
     {
@@ -209,7 +209,7 @@ build_uk_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   # Table 104x4 (Aggregates : PRD, IC, GVA, DF)
 
-  ghg_fpt = compute_ghg_fpt("GB", z, main_aggregates, emissions_data, correspondences_figaro, year_i)
+  ghg_fpt <- compute_ghg_fpt("GB", z, main_aggregates, emissions_data, correspondences_figaro, year_i)
 
   # --------------------------------------------------
   # Monetary conversion
@@ -218,7 +218,7 @@ build_uk_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*pound_eur,
+      fpt = fpt / pound_eur,
       unit = "GCO2E_EUR"
     ) %>%
     select(eeio_country, eeio_industry, aggregate, fpt, unit, year)

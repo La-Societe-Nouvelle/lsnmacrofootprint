@@ -16,7 +16,7 @@ build_us_eeio_footprints <<- function(year_i, verbose = TRUE)
   # --------------------------------------------------
   # Metadata
 
-  eeio_size = 398
+  eeio_size <- 398
 
   eeio_inudstries <- read_delim(
       "disaggregation/eeio_us/metadata_us_eeio_industries.csv",
@@ -59,10 +59,10 @@ build_us_eeio_footprints <<- function(year_i, verbose = TRUE)
   # --------------------------------------------------
   # EEIO Data
 
-  link = "https://pasteur.epa.gov/uploads/10.23719/1532178/USEEIOv2.5-catbird-22.xlsx"
+  link <- "https://pasteur.epa.gov/uploads/10.23719/1532178/USEEIOv2.5-catbird-22.xlsx"
 
   # downloading file
-  excel_file = link %>%
+  excel_file <- link %>%
     curl_download(destfile = tempfile())
 
   # --------------------------------------------------
@@ -209,12 +209,11 @@ build_us_eeio_footprints <<- function(year_i, verbose = TRUE)
   # --------------------------------------------------
   # Monetary conversion
 
-  usd_eur = from_usd_to_euro(YEAR) # coef 1 $ x usd_eur -> 1 €
-  # print(usd_eur)
+  usd_eur <- from_usd_to_euro(YEAR)
 
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*usd_eur,
+      fpt = fpt / usd_eur,
       unit = "GCO2E_EUR"
     ) %>%
     select(eeio_country, eeio_industry, aggregate, fpt, unit, year)

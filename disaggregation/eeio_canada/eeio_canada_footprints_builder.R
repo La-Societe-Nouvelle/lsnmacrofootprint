@@ -63,9 +63,9 @@ build_canada_eeio_footprints <<- function(year_i, verbose = TRUE)
   # --------------------------------------------------
   # EEIO Data
 
-  url_eeio = "https://www150.statcan.gc.ca/n1/tbl/csv/36100001-eng.zip"
+  url_eeio <- "https://www150.statcan.gc.ca/n1/tbl/csv/36100001-eng.zip"
 
-  file_eeio_data = curl_download(url_eeio, tempfile()) %>%
+  file_eeio_data <- curl_download(url_eeio, tempfile()) %>%
     unzip(exdir = tempdir()) %>%
     { .[basename(.) == "36100001.csv"] } %>%
     read.csv()
@@ -75,7 +75,7 @@ build_canada_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   # Table 234x1 -> 108x1
 
-  x = file_eeio_data %>%
+  x <- file_eeio_data %>%
     # parsing data
     mutate(
       Supply_Code  = sub(".*\\[([^]]+)\\]$", "\\1", Supply, perl=TRUE),
@@ -117,7 +117,7 @@ build_canada_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   # Table IO 234x234 -> 108x108
 
-  z = file_eeio_data %>%
+  z <- file_eeio_data %>%
     # parsing data
     mutate(
       Supply_Code  = sub(".*\\[([^]]+)\\]$", "\\1", Supply, perl=TRUE),
@@ -202,7 +202,7 @@ build_canada_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   # Table 108x1
 
-  url_emissions_data = "https://www150.statcan.gc.ca/n1/tbl/csv/38100097-eng.zip"
+  url_emissions_data <- "https://www150.statcan.gc.ca/n1/tbl/csv/38100097-eng.zip"
 
   file_emissions_ons_data = curl_download(url_emissions_data, tempfile()) %>%
     unzip(exdir = tempdir()) %>%
@@ -253,11 +253,11 @@ build_canada_eeio_footprints <<- function(year_i, verbose = TRUE)
   # --------------------------------------------------
   # Monetary conversion
 
-  cad_eur = from_cad_to_euro(year_i)
+  cad_eur <- from_cad_to_euro(year_i)
 
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*cad_eur,
+      fpt = fpt / cad_eur,
       unit = "GCO2E_EUR"
     ) %>%
     rename(

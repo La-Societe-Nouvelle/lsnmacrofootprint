@@ -201,7 +201,7 @@ build_dk_eeio_footprints <- function(year_i, verbose = TRUE)
 
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(
-      fpt = fpt*dkk_eur,
+      fpt = fpt / dkk_eur,
       unit = "GCO2E_EUR"
     ) %>%
     select(eeio_country, eeio_industry, aggregate, fpt, unit, year)

@@ -151,7 +151,7 @@ compute_ghg_fpt <<- function(eeio_country, z, main_aggregates, emissions_data, c
     select(year,figaro_industry,figaro_coef_corr)
 
   # -------------------------
-  # Coefficients correcteurs - Nomenclature EEIO
+  # Coefficients correcteurs (100% FIGARO data) - Nomenclature EEIO
 
   ghg_intensities_corr <- figaro_industries %>%
     merge(gap_ratio_by_industry) %>%
@@ -163,45 +163,48 @@ compute_ghg_fpt <<- function(eeio_country, z, main_aggregates, emissions_data, c
     ) %>%
     select(eeio_industry, coef_corr)
 
-  # GHG intensities by FIGARO industry
-  eeio_ghg_intensities <- emissions_data %>%
-    merge(main_aggregates) %>%
-    merge(correspondence) %>%
-    group_by(figaro_industry) %>%
-    summarise(
-      emissions = sum(emissions * share),
-      x = sum(x * share),
-      .groups = "drop"
-    ) %>%
-    mutate(
-      industry = figaro_industry,
-      eeio_ghg_intensity = if_else(x > 0, (emissions / x), 0)
-    ) %>%
-    select(industry,eeio_ghg_intensity)
+  # -------------------------
+  # Coefficients correcteurs (EEIO data / FIGARO data)
 
-  ghg_intensities_corr_bis <- figaro_ghg_intensities %>%
-    filter(country == "FR") %>%
-    merge(eeio_ghg_intensities) %>%
-    mutate(
-      figaro_industry = industry,
-      coef_corr = if_else(eeio_ghg_intensity > 0, ghg_intensity / eeio_ghg_intensity, 1.0)
-    ) %>%
-    select(figaro_industry,coef_corr) %>%
-    merge(correspondence) %>%
-    group_by(eeio_industry) %>%
-    summarise(
-      coef_corr = sum(coef_corr * share),
-      .groups = "drop"
-    ) %>%
-    # filter(is.finite(coef_corr)) %>%
-    select(eeio_industry, coef_corr)
+  # GHG intensities by FIGARO industry (/!\ main_aggregates in EEIO currency)
+  # eeio_ghg_intensities <- emissions_data %>%
+  #   merge(main_aggregates) %>%
+  #   merge(correspondence) %>%
+  #   group_by(figaro_industry) %>%
+  #   summarise(
+  #     emissions = sum(emissions * share),
+  #     x = sum(x * share),
+  #     .groups = "drop"
+  #   ) %>%
+  #   mutate(
+  #     industry = figaro_industry,
+  #     eeio_ghg_intensity = if_else(x > 0, (emissions / x), 0)
+  #   ) %>%
+  #   select(industry,eeio_ghg_intensity)
+
+  # ghg_intensities_corr_bis <- figaro_ghg_intensities %>%
+  #   filter(country == "FR") %>%
+  #   merge(eeio_ghg_intensities) %>%
+  #   mutate(
+  #     figaro_industry = industry,
+  #     coef_corr = if_else(eeio_ghg_intensity > 0, ghg_intensity / eeio_ghg_intensity, 1.0)
+  #   ) %>%
+  #   select(figaro_industry,coef_corr) %>%
+  #   merge(correspondence) %>%
+  #   group_by(eeio_industry) %>%
+  #   summarise(
+  #     coef_corr = sum(coef_corr * share),
+  #     .groups = "drop"
+  #   ) %>%
+  #   # filter(is.finite(coef_corr)) %>%
+  #   select(eeio_industry, coef_corr)
 
   # --------------------------------------------------
   # Calcul des intensités d'émission (avec corrections)
 
   direct_ghg_intensity <- emissions_data %>%
     merge(main_aggregates) %>%
-    left_join(ghg_intensities_corr_bis, by = "eeio_industry") %>%
+    left_join(ghg_intensities_corr, by = "eeio_industry") %>%
     mutate(
       coef_corr = coalesce(coef_corr, 1),
       ghg_intensity = if_else(x > 0, (emissions / x) * coef_corr, 0)
