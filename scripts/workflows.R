@@ -217,3 +217,40 @@ update_footprints <- function(
 
   # -------------------------------------------------------------------
 }
+
+# -----------------------------------------------------------------------------
+# Mise à jour des empreintes (désagrégation)
+
+update_disaggregated_footprints <- function(
+  year_i = 2022,
+  do_update = FALSE,
+  verbose   = TRUE
+) {
+  # --------------------------------------------------
+  # Source scripts
+
+  # EEIO Models
+  source("disaggregation/eeio_canada/eeio_canada_footprints_builder.R")
+  source("disaggregation/eeio_dk/eeio_dk_footprints_builder.R")
+  source("disaggregation/eeio_uk/eeio_uk_footprints_builder.R")
+  source("disaggregation/eeio_us/eeio_us_footprints_builder.R")
+
+  # -------------------------------------------------------------------
+  # 1- Build EEIO footprints
+
+  build_canada_eeio_footprints(year_i, verbose = verbose)
+  build_dk_eeio_footprints(year_i, verbose = verbose)
+  build_uk_eeio_footprints(year_i, verbose = verbose)
+  build_us_eeio_footprints(year_i, verbose = verbose)
+
+  # -------------------------------------------------------------------
+  # 2- Compile footprints data
+
+  build_disaggregated_footprints(
+    YEAR = year_i,
+    use_temp_data = FALSE,
+    do_update = TRUE
+  )
+
+  # -------------------------------------------------------------------
+}
