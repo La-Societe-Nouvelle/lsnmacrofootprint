@@ -16,7 +16,6 @@
 
 build_ghg_obs_accounts <- function(
   years = 2010:2023,
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -201,18 +200,6 @@ build_ghg_obs_accounts <- function(
   # Complete with similarity
   figaro_ghg_accounts <- figaro_ghg_accounts_raw %>%
     proxy_missing_value_by_similarity(., "GHG") %>%
-    select(year, country, industry, value, flag)
-
-  # Clean outliers
-  figaro_ghg_accounts <- figaro_ghg_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(
-      .,
-      serie_pkey = c("country", "industry")
-    ) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
     select(year, country, industry, value, flag)
 
   # Check

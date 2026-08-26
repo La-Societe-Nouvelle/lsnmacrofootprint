@@ -30,7 +30,6 @@
 
 build_geq_obs_accounts <- function(
   years = 2016:2023,
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -325,11 +324,6 @@ build_geq_obs_accounts <- function(
   # Complete with similarity
   figaro_geq_accounts <- figaro_geq_accounts_raw %>%
     proxy_missing_value_by_similarity(., "GEQ") %>%
-    select(year, country, industry, value, flag)
-
-  # Clean outliers
-  figaro_geq_accounts <- figaro_geq_accounts %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
     select(year, country, industry, value, flag)
 
   # Check

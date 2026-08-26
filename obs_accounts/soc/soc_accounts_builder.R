@@ -16,8 +16,7 @@
 # /!\ N80T82 -> link to 81/82 not 80 / R90T92 link to 90 & 91, not 92
 
 build_soc_obs_accounts <- function(
-  years = 2010:2023,
-  do_clean_outliers = TRUE,
+  years = 2010:2024,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {

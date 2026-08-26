@@ -19,7 +19,6 @@
 
 build_knw_obs_accounts <- function(
   years = 2015:2020,
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -376,12 +375,10 @@ build_knw_obs_accounts <- function(
     ) %>%
     select(year, country, industry, value, flag)
 
-  # Check max / Clean outliers
+  # Check max
   figaro_knw_accounts <- figaro_knw_accounts %>%
     merge(main_aggregates_data) %>%
     mutate(value = if_else(NVA > 0, value / NVA * 100, 0)) %>%
-    # Clean outliers
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
     # Check upper limit
     mutate(value = pmin(value, 100.0)) %>%
     merge(main_aggregates_data) %>%

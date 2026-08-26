@@ -18,7 +18,6 @@
 
 build_was_obs_accounts <- function(
   years = seq(2010, 2022, 2),
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -268,15 +267,6 @@ build_was_obs_accounts <- function(
   # Complete with similarity
   figaro_was_accounts <- figaro_was_accounts_raw %>%
     proxy_missing_value_by_similarity(., "WAS") %>%
-    select(year, country, industry, value, flag)
-
-  # Clean outliers
-  figaro_was_accounts <- figaro_was_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
     select(year, country, industry, value, flag)
 
   # Check

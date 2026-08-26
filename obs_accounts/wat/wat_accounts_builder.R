@@ -17,7 +17,6 @@
 
 build_wat_obs_accounts <- function(
   years = 2010:2022, # OECD available since 1990
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -188,21 +187,6 @@ build_wat_obs_accounts <- function(
   # Complete with similarity
   figaro_wat_accounts <- figaro_wat_accounts_raw %>%
     proxy_missing_value_by_similarity(., "WAT") %>%
-    select(year, country, industry, value, flag)
-
-  if (verbose) cat("Cleaning outliers...\n")
-
-  # Clean outliers
-  figaro_wat_accounts <- figaro_wat_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(
-      .,
-      serie_pkey = c("country", "industry"),
-      verbose = TRUE
-    ) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
     select(year, country, industry, value, flag)
 
   # Check
