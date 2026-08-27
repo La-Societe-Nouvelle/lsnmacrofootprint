@@ -76,7 +76,7 @@ update_trd_accounts <- function(
 
     accounts_data <<- build_trd_accounts(
       indic_i,
-      verbose = verbose
+      verbose = FALSE
     )
 
     # -------------------------
@@ -168,49 +168,46 @@ update_footprints <- function(
   series     <- c(series_obs, series_trd, series_tgt)
 
   # -------------------------------------------------------------------
-  # 2- Build footprints
+  # 2- Build footprints for each serie
 
-  macro_fpt_raw <<- build_footprints(series, verbose)
-
-  # -------------------------------------------------------------------
-  # 3- Format data
-
-  footprints_data <- macro_fpt_raw %>%
-    mutate(
-      flag       = ifelse(grepl("(_trd|_tgt)$", serie_id), 'f', ''), # flag 'f' for forecasted data
-      lastupdate = Sys.Date(),
-      indic      = str_sub(serie_id, 1, 3),
-      serie      = str_sub(serie_id, 5, 7)
-    ) %>%
-    select(serie_id, country, industry, year, aggregate, value, flag, lastupdate, indic, serie)
-
-  # -------------------------------------------------------------------
-  # 3- Detect outliers & replace
-
-  # Outliers handled in accounts builders
-
-  # -------------------------------------------------------------------
-  # 4- Storage
-
-  if (do_update)
+  for (serie_id in series)
   {
-    footprint_groups <- footprints_data %>%
-      group_by(serie, indic) %>%
-      group_split()
+    # -------------------------
+    # Build footprint
 
-    for (footprints_data_i in footprint_groups)
+    macro_fpt_raw <<- build_footprints(serie_id, verbose)
+
+    # -------------------------
+    # Format data
+
+    footprints_data <- macro_fpt_raw %>%
+      mutate(
+        flag       = ifelse(grepl("(_trd|_tgt)$", serie_id), 'f', ''), # flag 'f' for forecasted data
+        lastupdate = Sys.Date(),
+        indic      = str_sub(serie_id, 1, 3),
+        serie      = str_sub(serie_id, 5, 7)
+      ) %>%
+      select(serie_id, country, industry, year, aggregate, value, flag, lastupdate, indic, serie)
+
+    # -------------------------
+    # Local/Environment storage
+
+    if (do_update)
     {
-      serie_type <- unique(footprints_data_i$serie)
-      indic_i    <- unique(footprints_data_i$indic)
+      serie_type <- unique(footprints_data$serie)
+      indic_i    <- unique(footprints_data$indic)
 
       footprints_data_filename <- paste0("footprints", "_", serie_type, "_", tolower(indic_i), ".csv")
       footprints_data_path     <- file.path(output_dir, footprints_data_filename)
 
-      footprints_data_i <- footprints_data_i %>%
+      footprints_data <- footprints_data %>%
         select(-indic, -serie)
 
-      write.csv(footprints_data_i, footprints_data_path, row.names = FALSE)
+      write.csv(footprints_data, footprints_data_path, row.names = FALSE)
     }
+
+    # -> Next serie
+    # -------------------------
   }
 
   # -------------------------------------------------------------------
