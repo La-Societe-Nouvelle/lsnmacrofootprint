@@ -256,6 +256,9 @@ build_footprints <- function(
     # --------------------------------------------------------------------
     # Computing footprints
 
+    # --------------------------------------------------------------------
+    # Macro-coherent (MC) footprints
+
     # -------------------------
     # prd footprint
 
@@ -274,13 +277,10 @@ build_footprints <- function(
     ) %>%
       colSums(na.rm = TRUE)
 
-    prd_fpt <- case_when(
+    prd_mc_fpt <- case_when(
       x > 0 ~ fpt / x,
       TRUE  ~ 0
     )
-
-    # --------------------------------------------------------------------
-    # Macro-coherent (MC) footprints for derivated aggregates
 
     # -------------------------
     # ic contribution
@@ -328,7 +328,12 @@ build_footprints <- function(
     )
 
     # --------------------------------------------------------------------
-    # Micro-coherent (UC) footprints for derivated aggregates
+    # Micro-coherent (UC) footprints
+
+    # The micro-consistent production footprint is recalculated using the 
+    # micro-consistent footprints for intermediate consumption and 
+    # consumption of fixed capital, together with the macroeconomic footprint 
+    # of value added (derived from the direct impact accounts).
 
     # -------------------------
     # ic contribution
@@ -359,9 +364,7 @@ build_footprints <- function(
     # -------------------------
     # nva/gva contribution
 
-    contribution_nva_uc <- c / diag(l)
-
-    direct_impacts_nva_uc <- as.numeric(contribution_nva_uc) * as.numeric(x)
+    direct_impacts_nva_uc <- as.numeric(c) * as.numeric(x)
 
     nva_uc_fpt  <- case_when(
       nva > 0 ~ direct_impacts_nva_uc / nva,
@@ -372,7 +375,15 @@ build_footprints <- function(
       gva > 0 ~ (nva_uc_fpt * nva + cfc_uc_fpt * cfc) / gva,
       TRUE    ~ 0
     )
-    
+
+    # -------------------------
+    # prd footprint
+
+    prd_uc_fpt  <- case_when(
+      x > 0 ~ (ic_uc_fpt * ic + cfc_uc_fpt * cfc + nva_uc_fpt * nva) / x,
+      TRUE    ~ 0
+    )
+
     # --------------------------------------------------------------------
     # Binding
 
@@ -381,14 +392,14 @@ build_footprints <- function(
         indic    = indic_i,
         year     = year_i,
         id       = rownames(z),
-        # Production footprints
-        PRD      = as.numeric(prd_fpt),
         # Macro-coherent footprints
+        PRD_MC   = as.numeric(prd_mc_fpt),
         IC_MC    = as.numeric(ic_mc_fpt),
         CFC_MC   = as.numeric(cfc_mc_fpt),
         NVA_MC   = as.numeric(nva_mc_fpt),
         GVA_MC   = as.numeric(gva_mc_fpt),
         # Unit-coherent footprints
+        PRD_UC   = as.numeric(prd_uc_fpt),
         IC_UC    = as.numeric(ic_uc_fpt),
         CFC_UC   = as.numeric(cfc_uc_fpt),
         NVA_UC   = as.numeric(nva_uc_fpt),
@@ -456,7 +467,7 @@ build_footprints <- function(
       select(serie_id, indic, country, industry, year, aggregate, value, flag, lastupdate)
 
     # if (verbose) print(macro_fpt %>% as_tibble())
-    if (verbose) print(macro_fpt %>% filter(country == "FR", aggregate == "PRD") %>% arrange(industry) %>% as_tibble())
+    if (verbose) print(macro_fpt %>% filter(country == "FR", aggregate %in% c("PRD_MC", "PRD_UC")) %>% arrange(aggregate, industry) %>% as_tibble())
 
     footprints_data <- rbind(footprints_data, macro_fpt)
   }
