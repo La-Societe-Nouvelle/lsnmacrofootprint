@@ -209,7 +209,7 @@ build_us_eeio_footprints <<- function(year_i, verbose = TRUE)
   # --------------------------------------------------
   # Monetary conversion
 
-  usd_eur <- from_usd_to_euro(YEAR)
+  usd_eur <- from_usd_to_euro(year_i)
 
   ghg_fpt_eur <- ghg_fpt %>%
     mutate(

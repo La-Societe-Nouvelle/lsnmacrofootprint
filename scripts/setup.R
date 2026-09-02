@@ -74,6 +74,7 @@ source_project_file("db/upload.R")
 # Common utilities.
 source_project_file("utils/utils_figaro_data.R")
 source_project_file("utils/utils_monetary_conversion.R")
+source_project_file("utils/utils_imputations.R")
 source_project_file("utils/utils_outliers.R")
 source_project_file("utils/utils_proxy_by_similarity.R")
 

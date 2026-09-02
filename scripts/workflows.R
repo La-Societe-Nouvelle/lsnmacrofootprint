@@ -224,6 +224,8 @@ update_disaggregated_footprints <- function(
   # --------------------------------------------------
   # Source scripts
 
+  source("disaggregation/disaggregation.R")
+
   # EEIO Models
   source("disaggregation/eeio_canada/eeio_canada_footprints_builder.R")
   source("disaggregation/eeio_dk/eeio_dk_footprints_builder.R")

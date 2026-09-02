@@ -1,142 +1,127 @@
-#' exports
+# La Societe Nouvelle
 
-from_pound_to_euro = function(year,update = F,verbose = T)
-{
+get_oecd_exchange_rates <- function(cache_key, url, update = FALSE, verbose = TRUE) {
+  cache_dir <- file.path("data_temp", "monetary_conversion")
+  cache_file <- file.path(cache_dir, paste0(cache_key, ".csv"))
 
-  if(!update)
-  {
-    files = list.files(dirname(tempdir()),recursive = T,pattern = paste0('OECD_POUND-',format.Date(Sys.Date(),"%Y-%m")),full.names = T)
+  if (!update && file.exists(cache_file)) {
+    if (verbose) message("Cached OECD data used: ", cache_file)
+    return(read.csv(cache_file))
+  }
 
-    if(length(files) == 1){
+  dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
 
-      FROM_POUND_TO_EURO = read_parquet(files)
+  tmp_file <- tempfile(fileext = ".csv")
+  download_error <- NULL
 
-      message("Cached data used")
+  for (attempt in 1:3) {
+    download_error <- tryCatch(
+      {
+        handle <- curl::new_handle(timeout = 180, connecttimeout = 30)
+        curl::curl_download(url, tmp_file, quiet = !verbose, handle = handle)
+        NULL
+      },
+      error = function(e) e
+    )
 
-    }else{
-      unlink(files,recursive = T)
+    if (is.null(download_error)) {
+      data <- read.csv(tmp_file)
+      write.csv(data, cache_file, row.names = FALSE)
+      if (verbose) message("OECD data cached: ", cache_file)
+      return(data)
     }
+
+    if (verbose) {
+      message(
+        "OECD download failed for ", cache_key,
+        " (attempt ", attempt, "/3): ", conditionMessage(download_error)
+      )
+    }
+    Sys.sleep(attempt)
   }
 
-  if(!exists('FROM_POUND_TO_EURO',envir = environment(),inherits = F))
-  {
-    FROM_POUND_TO_EURO = read.csv("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.GBR+EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels")
-
-    write_parquet(FROM_POUND_TO_EURO,
-                  tempfile(pattern = paste0('OECD_POUND-',format.Date(Sys.Date(),"%Y-%m"))))
-
-    if(verbose) message("Data cached")
+  if (file.exists(cache_file)) {
+    warning(
+      "OECD download failed for ", cache_key,
+      "; using existing cache: ", cache_file,
+      call. = FALSE
+    )
+    return(read.csv(cache_file))
   }
 
-  FROM_POUND_TO_EURO =
-    FROM_POUND_TO_EURO %>%
-    filter(TIME_PERIOD == year) %>%
-    summarise(value = OBS_VALUE[REF_AREA == 'EU27_2020'] / OBS_VALUE[REF_AREA == 'GBR']) %>%
-    pull(value)
-
-  return(FROM_POUND_TO_EURO)
+  stop(
+    "Unable to download OECD exchange-rate data for ", cache_key,
+    " and no cache is available at ", cache_file, ". Last error: ",
+    conditionMessage(download_error),
+    call. = FALSE
+  )
 }
 
-from_usd_to_euro = function(year, update = F, verbose = F)
-{
-  if(!update)
-  {
-    files = list.files(dirname(tempdir()),recursive = T,pattern = paste0('OECD_DOLLAR-',format.Date(Sys.Date(),"%Y-%m")),full.names = T)
+from_pound_to_euro <- function(year, update = FALSE, verbose = TRUE) {
+  from_pound_to_euro_data <- get_oecd_exchange_rates(
+    cache_key = "OECD_POUND",
+    url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.GBR+EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
+    update = update,
+    verbose = verbose
+  )
 
-    if (length(files) == 1) {
-      FROM_DOLLAR_TO_EURO = read_parquet(files)
-      message("Cached data used")
-    } else {
-      unlink(files,recursive = T)
-    }
-  }
+  from_pound_to_euro_data %>%
+    filter(TIME_PERIOD == year) %>%
+    summarise(value = OBS_VALUE[REF_AREA == "EU27_2020"] / OBS_VALUE[REF_AREA == "GBR"]) %>%
+    pull(value)
+}
 
-  if (!exists('FROM_DOLLAR_TO_EURO', envir = environment(), inherits = F))
-  {
-    FROM_DOLLAR_TO_EURO = read.csv("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels")
-    write_parquet(FROM_DOLLAR_TO_EURO,
-                  tempfile(pattern = paste0('OECD_DOLLAR-',format.Date(Sys.Date(),"%Y-%m"))))
-    if (verbose) message("Data cached")
-  }
+from_usd_to_euro <- function(year, update = FALSE, verbose = FALSE) {
+  from_usd_to_euro_data <- get_oecd_exchange_rates(
+    cache_key = "OECD_DOLLAR",
+    url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
+    update = update,
+    verbose = verbose
+  )
 
-  FROM_DOLLAR_TO_EURO =
-    FROM_DOLLAR_TO_EURO %>%
+  from_usd_to_euro_data %>%
     filter(TIME_PERIOD == year) %>%
     pull(OBS_VALUE)
-
-  return(FROM_DOLLAR_TO_EURO)
 }
 
-from_cad_to_euro = function(year,update = F,verbose = T)
-{
+from_cad_to_euro <- function(year, update = FALSE, verbose = TRUE) {
+  from_cad_to_euro_data <- get_oecd_exchange_rates(
+    cache_key = "OECD_CDOLLAR",
+    url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.EU27_2020+CAN...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
+    update = update,
+    verbose = verbose
+  )
 
-  if(!update)
-  {
-    files = list.files(dirname(tempdir()),recursive = T,pattern = paste0('OECD_CDOLLAR-',format.Date(Sys.Date(),"%Y-%m")),full.names = T)
-
-    if(length(files) == 1){
-
-      FROM_CDOLLAR_TO_EURO = read_parquet(files)
-
-      message("Cached data used")
-
-    }else{
-      unlink(files,recursive = T)
-    }
-  }
-
-  if(!exists('FROM_DOLLAR_TO_EURO',envir = environment(),inherits = F))
-  {
-    FROM_CDOLLAR_TO_EURO = read.csv("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.EU27_2020+CAN...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels")
-
-    write_parquet(FROM_CDOLLAR_TO_EURO,
-                  tempfile(pattern = paste0('OECD_CDOLLAR-',format.Date(Sys.Date(),"%Y-%m"))))
-
-    if(verbose) message("Data cached")
-  }
-
-  FROM_CDOLLAR_TO_EURO =
-    FROM_CDOLLAR_TO_EURO %>%
+  from_cad_to_euro_data %>%
     filter(TIME_PERIOD == year) %>%
-    summarise(OBS_VALUE = OBS_VALUE[REF_AREA == "EU27_2020"] / OBS_VALUE[REF_AREA == "CAN"]) %>%
-    pull(OBS_VALUE)
-
-  return(FROM_CDOLLAR_TO_EURO)
-}
-
-from_dkk_to_euro = function(year,update = F,verbose = T)
-{
-
-  if(!update)
-  {
-    files = list.files(dirname(tempdir()),recursive = T,pattern = paste0('OECD_DKK-',format.Date(Sys.Date(),"%Y-%m")),full.names = T)
-
-    if(length(files) == 1){
-
-      FROM_DKK_TO_EURO = read_parquet(files)
-
-      message("Cached data used")
-
-    }else{
-      unlink(files,recursive = T)
-    }
-  }
-
-  if(!exists('FROM_DKK_TO_EURO',envir = environment(),inherits = F))
-  {
-    FROM_DKK_TO_EURO = read.csv("https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.DNK+EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels")
-
-    write_parquet(FROM_DKK_TO_EURO,
-                  tempfile(pattern = paste0('OECD_DKK-',format.Date(Sys.Date(),"%Y-%m"))))
-
-    if(verbose) message("Data cached")
-  }
-
-  FROM_DKK_TO_EURO =
-    FROM_DKK_TO_EURO %>%
-    filter(TIME_PERIOD == year) %>%
-    summarise(value = OBS_VALUE[REF_AREA == 'EU27_2020'] / OBS_VALUE[REF_AREA == 'DNK']) %>%
+    summarise(value = OBS_VALUE[REF_AREA == "EU27_2020"] / OBS_VALUE[REF_AREA == "CAN"]) %>%
     pull(value)
+}
 
-  return(FROM_DKK_TO_EURO)
+from_dkk_to_euro <- function(year, update = FALSE, verbose = TRUE) {
+  from_dkk_to_euro_data <- tryCatch(
+    get_oecd_exchange_rates(
+      cache_key = "OECD_DKK",
+      url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.DNK+EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
+      update = update,
+      verbose = verbose
+    ),
+    error = function(e) {
+      warning(
+        "OECD DKK/EUR download unavailable; using fixed ERM II parity 1 / 7.46038. ",
+        "Original error: ", conditionMessage(e),
+        call. = FALSE
+      )
+      NULL
+    }
+  )
+
+  if (is.null(from_dkk_to_euro_data)) {
+    return(1 / 7.46038)
+  }
+
+  from_dkk_to_euro_data %>%
+    filter(TIME_PERIOD == year) %>%
+    summarise(value = OBS_VALUE[REF_AREA == "EU27_2020"] / OBS_VALUE[REF_AREA == "DNK"]) %>%
+    pull(value)
 }

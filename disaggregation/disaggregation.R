@@ -27,7 +27,7 @@ build_disaggregated_footprints <<- function(
   data_canada_eeio <- read_delim("disaggregation/data_temp/footprints_canada_eeio.csv", delim = ",", show_col_types = FALSE)
 
   # Fetching DENMARK data
-  data_denmark_eeio <- read_delim("disaggregation/data_temp/data_denmark_eeio.csv", delim = ",", show_col_types = FALSE)
+  data_denmark_eeio <- read_delim("disaggregation/data_temp/footprints_dk_eeio.csv", delim = ",", show_col_types = FALSE)
 
   # Fetching FIGARO data
   data_figaro <<- fetch_figaro_data(YEAR)

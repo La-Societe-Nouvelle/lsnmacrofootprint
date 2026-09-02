@@ -64,17 +64,10 @@ update_tgt_accounts(
 # 3. Footprint data
 # -----------------------------------------------------------------------------
 
-# Build the list of direct-impact series that will be converted into footprints.
 if (verbose) message("Building footprint data")
-footprint_series <- c(
-  paste0(tolower(indics), "_obs"),
-  paste0(tolower(indics), "_trd"),
-  paste0(tolower(tgt_indics), "_tgt")
-)
-
-# Compute and write footprint files in data_output.
-footprints_data <- build_footprints(
-  series = footprint_series,
+update_footprints(
+  indics = indics,
+  do_update = do_update,
   verbose = verbose
 )
 

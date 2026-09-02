@@ -501,11 +501,13 @@ fetch_figaro_data <<- function(year_i)
   figaro_macro_fpt <- figaro_macro_fpt_raw_data %>%
     filter(
       year == year_i,
-      country == "FR"
+      country == "FR",
+      str_detect(aggregate, "^[A-Z]*_UC$")
     ) %>%
-    rename(
-      fpt = value,
-      figaro_industry = industry
+    mutate(
+      figaro_industry = industry,
+      aggregate = str_extract(aggregate, "^[^_]+"),
+      fpt = value
     ) %>%
     select(country, figaro_industry, aggregate, year, fpt)
 
