@@ -38,6 +38,7 @@ build_geq_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
 
@@ -323,7 +324,8 @@ build_geq_obs_accounts <- function(
 
   # Complete with similarity
   figaro_geq_accounts <- figaro_geq_accounts_raw %>%
-    proxy_missing_value_by_similarity(., "GEQ") %>%
+    complete_series(min_value = 0) %>%
+    proxy_missing_value_by_similarity(., "GEQ", min_value = 0) %>%
     select(year, country, industry, value, flag)
 
   # Check

@@ -1,4 +1,4 @@
-﻿# La Société Nouvelle
+# La Societe Nouvelle
 
 # ----------------------------------------------------------------------------------------------------
 # proxy_missing_value_by_similarity
@@ -23,6 +23,8 @@ proxy_missing_value_by_similarity = function(
   year_basis = 2018,
   parallelize = TRUE,
   proxy = "VAFC",
+  min_value = -Inf,
+  max_value = Inf,
   verbose = TRUE
 ) {
   # --------------------------------------------------
@@ -221,7 +223,9 @@ proxy_missing_value_by_similarity = function(
           type = type,
           index = i,
           oecd_sbs_data = oecd_sbs_data,
-          figaro_main_aggregates_data = figaro_main_aggregates_data
+          figaro_main_aggregates_data = figaro_main_aggregates_data,
+          min_value = min_value,
+          max_value = max_value
         )
         # check if error
         if (is.na(proxy_data$value)) {
@@ -268,7 +272,9 @@ proxy_missing_value_by_similarity = function(
           type = type,
           index = i,
           oecd_sbs_data = oecd_sbs_data,
-          figaro_main_aggregates_data = figaro_main_aggregates_data
+          figaro_main_aggregates_data = figaro_main_aggregates_data,
+          min_value = min_value,
+          max_value = max_value
         )
         # check if error
         if (is.na(proxy_data$value)) {
@@ -322,6 +328,8 @@ get_proxy_value_by_similarity = function(
   oecd_sbs_data,
   figaro_main_aggregates_data,
   num_proxy = 5,
+  min_value = -Inf,
+  max_value = Inf,
   verbose = TRUE
 ) {
   # --------------------------------------------------
@@ -336,6 +344,23 @@ get_proxy_value_by_similarity = function(
 
   # --------------------------------------------------
   # Impacts data for industry
+
+  countries_with_data_over_period <- raw_vector %>%
+    filter(
+      !is.na(value),
+      industry == industry_i,
+      country != country_i
+    ) %>%
+    pull(country) %>%
+    unique()
+
+  period_sectoral_vector <- raw_vector %>%
+    filter(
+      !is.na(value),
+      industry == industry_i,
+      country != country_i
+    ) %>%
+    select(year,country,industry,value)
 
   sectoral_vector <- raw_vector %>%
     filter(
@@ -367,7 +392,7 @@ get_proxy_value_by_similarity = function(
     filter(industry == industry_i, country == country_i)
 
   sbs_subset_candidates <- oecd_sbs_data %>%
-    filter(industry == industry_i, country %in% sectoral_vector$country)
+    filter(industry == industry_i, country %in% countries_with_data_over_period)
 
   use_sbs_data <-
     nrow(sbs_subset) > 0 &&
@@ -398,53 +423,12 @@ get_proxy_value_by_similarity = function(
 
   else if (use_sbs_data)
   {
-    # -------------------------
-    # Target shares
-
-    ref_sbs_shares <- oecd_sbs_data %>%
-      filter(
-        industry == industry_i,
-        country == country_i
-      ) %>%
-      transmute(nace_level, nace_code, target_share = share)
-
-    # -------------------------
-    # Ranking countries
-
-    similar_countries <- oecd_sbs_data %>%
-      filter(
-        industry == industry_i,
-        country %in% sectoral_vector$country
-      ) %>%
-      select(country, nace_level, nace_code, share) %>%
-      # merge target sahres & compute distance with targets
-      merge(ref_sbs_shares) %>%
-      mutate(
-        distance = abs(coalesce(share, 0) - coalesce(target_share, 0))
-      ) %>%
-      # compute distance at the NACE level
-      group_by(country, nace_level) %>%
-      summarise(
-        distance = sum(distance),
-        .groups = "drop"
-      ) %>%
-      # compute distance at the country level (priority for the more granular level)
-      group_by(country) %>%
-      summarise(
-        level_rank = case_when(
-          any(nace_level == "nace_niv5") ~ "nace_niv5",
-          any(nace_level == "nace_niv4") ~ "nace_niv4",
-          any(nace_level == "nace_niv3") ~ "nace_niv3",
-          any(nace_level == "nace_niv2") ~ "nace_niv2"
-        ),
-        distance = distance[nace_level == level_rank][1],
-        similarity_score = 1 / (1e-6 + distance),
-        .groups = "drop"
-      ) %>%
-      # Keep only few similar countries
-      arrange(desc(similarity_score)) %>%
-      head(num_proxy) %>%
-      select(country, similarity_score)
+    similar_countries <- get_similar_countries_sbs(
+      country_i = country_i,
+      industry_i = industry_i,
+      candidate_countries = countries_with_data_over_period,
+      oecd_sbs_data = oecd_sbs_data
+    )
 
     # print(similar_countries %>% as_tibble())
   }
@@ -455,43 +439,12 @@ get_proxy_value_by_similarity = function(
 
   else
   {
-    # -------------------------
-    # Target industry GDP Share
-
-    ref_industry_gdp_share <- figaro_main_aggregates_data %>%
-      filter(
-        year == year_i,
-        country == country_i
-      ) %>%
-      mutate(
-        gdp_share = NVA / sum(NVA)
-      ) %>%
-      filter(industry == industry_i) %>%
-      pull(gdp_share)
-
-    # -------------------------
-    # Ranking countries
-
-    similar_countries <- figaro_main_aggregates_data %>%
-      filter(year == year_i) %>%
-      group_by(country) %>%
-      mutate(
-        gdp_share = NVA / sum(NVA)
-      ) %>%
-      ungroup() %>%
-      filter(
-        industry == industry_i,
-        country %in% sectoral_vector$country,
-        gdp_share > 0
-      ) %>%
-      mutate(
-        distance = abs(gdp_share - ref_industry_gdp_share),
-        similarity_score = 1 / (1e-6 + distance)
-      ) %>%
-      # Keep only few similar countries
-      arrange(desc(similarity_score)) %>%
-      head(num_proxy) %>%
-      select(country, similarity_score)
+    similar_countries <- get_similar_countries_figaro(
+      country_i = country_i,
+      industry_i = industry_i,
+      candidate_countries = countries_with_data_over_period,
+      figaro_main_aggregates_data = figaro_main_aggregates_data
+    )
 
     # print(similar_countries %>% as_tibble())
   }
@@ -502,46 +455,178 @@ get_proxy_value_by_similarity = function(
   # print(type)
   # print(similar_countries)
 
+  similar_countries <- similar_countries %>%
+    filter(country %in% period_sectoral_vector$country) %>%
+    head(num_proxy)
+
+  if (nrow(similar_countries) == 0) {
+    similar_countries <- get_similar_countries_figaro(
+      country_i = country_i,
+      industry_i = industry_i,
+      candidate_countries = countries_with_data_over_period,
+      figaro_main_aggregates_data = figaro_main_aggregates_data
+    ) %>%
+      filter(country %in% period_sectoral_vector$country) %>%
+      head(num_proxy)
+  }
+
+  if (nrow(similar_countries) == 0 && nrow(sectoral_vector) > 0) {
+    similar_countries <- data.frame(
+      country = sectoral_vector$country,
+      similarity_score = 1
+    )
+  }
+
+  if (nrow(similar_countries) == 0 && nrow(period_sectoral_vector) > 0) {
+    similar_countries <- data.frame(
+      country = unique(period_sectoral_vector$country),
+      similarity_score = 1
+    ) %>%
+      head(num_proxy)
+  }
+
   if (type == "intensity")
   {
-    proxy_value <- sectoral_vector %>%
-      merge(similar_countries) %>% # by country
+    proxy_source <- period_sectoral_vector %>%
+      merge(similar_countries)
+
+    proxy_value <- proxy_source %>%
       merge(figaro_main_aggregates_data) %>% # by year, country, industry
       mutate(
         ratio = value / NVA
       ) %>%
+      filter(is.finite(ratio), is.finite(similarity_score)) %>%
       summarise(
         value = sum(ratio * similarity_score) / sum(similarity_score),
-        .groups= 'drop'
+        .groups = "drop"
       ) %>%
       pull(value)
+
+    if (length(proxy_value) == 0 || !is.finite(proxy_value)) {
+      proxy_value <- if (is.finite(min_value)) min_value else 0
+    }
 
     proxy_data <- figaro_main_aggregates_data %>%
       filter(year == year_i, country == country_i, industry == industry_i) %>%
       mutate(
-        value = proxy_value * NVA,
+        value = pmin(pmax(proxy_value * NVA, min_value), max_value),
         flag = "e"
       ) %>%
       select(year, country, industry, value, flag)
   }
   else
   {
-    proxy_value <- sectoral_vector %>%
-      merge(similar_countries) %>% # by country
+    proxy_source <- period_sectoral_vector %>%
+      merge(similar_countries)
+
+    proxy_value <- proxy_source %>%
+      filter(is.finite(value), is.finite(similarity_score)) %>%
       summarise(
         value = sum(value * similarity_score) / sum(similarity_score),
         .groups= 'drop'
       ) %>%
       pull(value)
 
+    if (length(proxy_value) == 0 || !is.finite(proxy_value)) {
+      proxy_value <- if (is.finite(min_value)) min_value else 0
+    }
+
     proxy_data <- figaro_main_aggregates_data %>%
       filter(year == year_i, country == country_i, industry == industry_i) %>%
       mutate(
-        value = proxy_value,
+        value = pmin(pmax(proxy_value, min_value), max_value),
         flag = "e"
       ) %>%
       select(year, country, industry, value, flag)
   }
 
   return(proxy_data)
+}
+
+get_similar_countries_sbs <- function(
+  country_i,
+  industry_i,
+  candidate_countries,
+  oecd_sbs_data
+) {
+  ref_sbs_shares <- oecd_sbs_data %>%
+    filter(
+      industry == industry_i,
+      country == country_i
+    ) %>%
+    transmute(nace_level, nace_code, target_share = share)
+
+  oecd_sbs_data %>%
+    filter(
+      industry == industry_i,
+      country %in% candidate_countries
+    ) %>%
+    select(country, nace_level, nace_code, share) %>%
+    merge(ref_sbs_shares) %>%
+    mutate(
+      distance = abs(coalesce(share, 0) - coalesce(target_share, 0))
+    ) %>%
+    group_by(country, nace_level) %>%
+    summarise(
+      distance = sum(distance),
+      .groups = "drop"
+    ) %>%
+    group_by(country) %>%
+    summarise(
+      level_rank = case_when(
+        any(nace_level == "nace_niv5") ~ "nace_niv5",
+        any(nace_level == "nace_niv4") ~ "nace_niv4",
+        any(nace_level == "nace_niv3") ~ "nace_niv3",
+        any(nace_level == "nace_niv2") ~ "nace_niv2"
+      ),
+      distance = distance[nace_level == level_rank][1],
+      similarity_score = 1 / (1e-6 + distance),
+      .groups = "drop"
+    ) %>%
+    arrange(desc(similarity_score)) %>%
+    select(country, similarity_score)
+}
+
+get_similar_countries_figaro <- function(
+  country_i,
+  industry_i,
+  candidate_countries,
+  figaro_main_aggregates_data
+) {
+  figaro_gdp_shares <- figaro_main_aggregates_data %>%
+    group_by(year, country) %>%
+    mutate(
+      gdp_total = sum(NVA, na.rm = TRUE),
+      gdp_share = if_else(gdp_total != 0, NVA / gdp_total, NA_real_)
+    ) %>%
+    ungroup() %>%
+    filter(
+      industry == industry_i,
+      country %in% c(country_i, candidate_countries),
+      gdp_share > 0
+    ) %>%
+    select(year, country, gdp_share)
+
+  ref_industry_gdp_share <- figaro_gdp_shares %>%
+    filter(country == country_i) %>%
+    select(year, target_gdp_share = gdp_share)
+
+  figaro_gdp_shares %>%
+    filter(country %in% candidate_countries) %>%
+    merge(ref_industry_gdp_share, by = "year") %>%
+    mutate(
+      distance = abs(gdp_share - target_gdp_share)
+    ) %>%
+    group_by(country) %>%
+    summarise(
+      distance = mean(distance, na.rm = TRUE),
+      n_years = n(),
+      .groups = "drop"
+    ) %>%
+    filter(is.finite(distance), n_years > 0) %>%
+    mutate(
+      similarity_score = 1 / (1e-6 + distance)
+    ) %>%
+    arrange(desc(similarity_score)) %>%
+    select(country, similarity_score)
 }

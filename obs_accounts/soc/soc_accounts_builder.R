@@ -159,7 +159,7 @@ build_soc_obs_accounts <- function(
     ) %>%
     left_join(soc_accounts_fr) %>%
     mutate(
-      value = if_else(country == "FR", NVA * rate_ess, 0),
+      value = if_else(country == "FR" & NVA > 0, NVA * rate_ess, 0),
       flag = ""
     ) %>%
     select(year, country, industry, value, flag)

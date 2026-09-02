@@ -25,6 +25,7 @@ build_wat_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
 
@@ -168,6 +169,7 @@ build_wat_obs_accounts <- function(
       value = round(water_withdrawal * share_oecd_industry * coef_consumption, digits = 0),
       flag = "",
     ) %>%
+    filter(value >= 0) %>%
     select(year, country, industry, value, flag)
 
   # -------------------------
@@ -186,7 +188,8 @@ build_wat_obs_accounts <- function(
 
   # Complete with similarity
   figaro_wat_accounts <- figaro_wat_accounts_raw %>%
-    proxy_missing_value_by_similarity(., "WAT") %>%
+    complete_series(min_value = 0) %>%
+    proxy_missing_value_by_similarity(., "WAT", min_value = 0) %>%
     select(year, country, industry, value, flag)
 
   # Check

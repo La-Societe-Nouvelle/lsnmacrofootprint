@@ -84,8 +84,8 @@ build_eco_obs_accounts <- function(
     ) %>%
     mutate(
       value = case_when(
-        country == "FR" ~ NVA,
-        TRUE            ~ 0
+        country == "FR" & NVA > 0 ~ NVA,
+        TRUE                      ~ 0
       ),
       flag = ""
     ) %>%

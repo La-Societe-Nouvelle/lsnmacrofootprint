@@ -238,8 +238,8 @@ build_art_obs_accounts <- function(
     ) %>%
     mutate(
       value = case_when(
-        country == "FR" ~ round(NVA * crafts_rate_fr, digits = 3),
-        TRUE            ~ 0
+        country == "FR" & NVA > 0 ~ round(NVA * crafts_rate_fr, digits = 3),
+        TRUE                      ~ 0
       ),
       flag = ""
     ) %>%

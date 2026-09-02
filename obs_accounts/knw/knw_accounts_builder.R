@@ -27,6 +27,7 @@ build_knw_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_monetary_conversion.R")
   source("utils/utils_outliers.R")
@@ -298,7 +299,8 @@ build_knw_obs_accounts <- function(
       research_contributions_raw,
       by = c("year", "country", "industry")
     ) %>%
-    proxy_missing_value_by_similarity(., "KNW") %>%
+    complete_series(min_value = 0, max_value = 100) %>%
+    proxy_missing_value_by_similarity(., "KNW", min_value = 0, max_value = 100) %>%
     rename(
       research_value = value,
       research_flag = flag
@@ -339,7 +341,8 @@ build_knw_obs_accounts <- function(
       training_contributions_raw,
       by = c("year", "country", "industry")
     ) %>%
-    proxy_missing_value_by_similarity(., "KNW") %>%
+    complete_series(min_value = 0, max_value = 100, verbose = verbose) %>%
+    proxy_missing_value_by_similarity(., "KNW", min_value = 0, max_value = 100) %>%
     rename(
       training_value = value,
       training_flag = flag

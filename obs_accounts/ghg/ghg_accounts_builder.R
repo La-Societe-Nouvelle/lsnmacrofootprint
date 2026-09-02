@@ -24,6 +24,7 @@ build_ghg_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
 
@@ -123,6 +124,7 @@ build_ghg_obs_accounts <- function(
       na_item == "TOTAL",
       c_dest == "WORLD"
     ) %>%
+    filter(values >= 0) %>%
     merge(eurostat_correspondence_table_nace_r2) %>%
     merge(eurostat_correspondence_table_c_orig) %>%
     mutate(
@@ -199,7 +201,8 @@ build_ghg_obs_accounts <- function(
 
   # Complete with similarity
   figaro_ghg_accounts <- figaro_ghg_accounts_raw %>%
-    proxy_missing_value_by_similarity(., "GHG") %>%
+    complete_series(min_value = 0) %>%
+    proxy_missing_value_by_similarity(., "GHG", min_value = 0) %>%
     select(year, country, industry, value, flag)
 
   # Check

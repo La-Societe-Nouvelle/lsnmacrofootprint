@@ -23,6 +23,7 @@ build_mat_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
 
@@ -132,6 +133,7 @@ build_mat_obs_accounts <- function(
     summarise(
       value = sum(value, na.rm = TRUE), .groups = "drop"
     ) %>%
+    filter(value >= 0) %>%
     select(year, country, sector, value)
 
   # use VA to split impacts between FIGARO industries
@@ -170,7 +172,8 @@ build_mat_obs_accounts <- function(
 
   # Complete with similarity
   figaro_mat_accounts <- figaro_mat_accounts_raw %>%
-    proxy_missing_value_by_similarity(., "MAT") %>%
+    complete_series(min_value = 0) %>%
+    proxy_missing_value_by_similarity(., "MAT", min_value = 0) %>%
     select(year, country, industry, value, flag)
 
   # Check
