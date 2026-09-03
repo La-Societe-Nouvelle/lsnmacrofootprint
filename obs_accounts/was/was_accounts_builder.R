@@ -18,7 +18,6 @@
 
 build_was_obs_accounts <- function(
   years = seq(2010, 2022, 2),
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -27,6 +26,7 @@ build_was_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
 
@@ -218,6 +218,7 @@ build_was_obs_accounts <- function(
       eurostat_value = waste_generation * share_nace_r2,
       eurostat_flag = ""
     ) %>%
+    filter(eurostat_value >= 0) %>%
     select(year, country, industry, eurostat_value, eurostat_flag)
 
   # -------------------------
@@ -242,6 +243,7 @@ build_was_obs_accounts <- function(
     group_by(year, country, industry) %>%
     slice_min(oecd_activity_level, n = 1, with_ties = FALSE) %>%
     ungroup() %>%
+    filter(oecd_value >= 0) %>%
     select(year, country, industry, oecd_value, oecd_flag)
 
   # -------------------------
@@ -267,16 +269,8 @@ build_was_obs_accounts <- function(
 
   # Complete with similarity
   figaro_was_accounts <- figaro_was_accounts_raw %>%
-    proxy_missing_value_by_similarity(., "WAS") %>%
-    select(year, country, industry, value, flag)
-
-  # Clean outliers
-  figaro_was_accounts <- figaro_was_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
+    complete_series(min_value = 0) %>%
+    proxy_missing_value_by_similarity(., "WAS", min_value = 0) %>%
     select(year, country, industry, value, flag)
 
   # Check

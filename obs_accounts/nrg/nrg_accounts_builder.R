@@ -16,7 +16,6 @@
 
 build_nrg_obs_accounts <- function(
   years = 2014:2023,
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -25,6 +24,7 @@ build_nrg_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
 
@@ -204,6 +204,7 @@ build_nrg_obs_accounts <- function(
   # Accounts data based on Eurostat data
 
   eurostat_nrg_accounts <- eurostat_data %>%
+    filter(nrg_use >= 0) %>%
     mutate(
       eurostat_value = nrg_use,
       eurostat_flag = ""
@@ -230,16 +231,8 @@ build_nrg_obs_accounts <- function(
 
   # Complete with similarity
   figaro_nrg_accounts <- figaro_nrg_accounts_raw %>%
-    proxy_missing_value_by_similarity(., "NRG") %>%
-    select(year, country, industry, value, flag)
-
-  # Clean outliers
-  figaro_nrg_accounts <- figaro_nrg_accounts %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value / NVA, 0)) %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
-    merge(main_aggregates_data) %>%
-    mutate(value = if_else(NVA > 0, value * NVA, 0)) %>%
+    complete_series(min_value = 0) %>%
+    proxy_missing_value_by_similarity(., "NRG", min_value = 0) %>%
     select(year, country, industry, value, flag)
 
   # Check

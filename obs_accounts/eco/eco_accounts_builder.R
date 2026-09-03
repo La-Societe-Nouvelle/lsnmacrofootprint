@@ -12,8 +12,7 @@
 #' build_eco_obs_accounts()
 
 build_eco_obs_accounts <- function(
-  years = 2010:2023,
-  do_clean_outliers = TRUE,
+  years = 2010:2024,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -85,8 +84,8 @@ build_eco_obs_accounts <- function(
     ) %>%
     mutate(
       value = case_when(
-        country == "FR" ~ NVA,
-        TRUE            ~ 0
+        country == "FR" & NVA > 0 ~ NVA,
+        TRUE                      ~ 0
       ),
       flag = ""
     ) %>%

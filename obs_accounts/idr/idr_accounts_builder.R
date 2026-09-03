@@ -16,7 +16,6 @@
 
 build_idr_obs_accounts <- function(
   years = 2016:2023,
-  do_clean_outliers = TRUE,
   use_temp_data = TRUE,
   verbose = FALSE
 ) {
@@ -25,6 +24,7 @@ build_idr_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
 
@@ -270,12 +270,8 @@ build_idr_obs_accounts <- function(
 
   # Complete with similarity
   figaro_idr_accounts <- figaro_idr_accounts_raw %>%
-    proxy_missing_value_by_similarity(., "IDR") %>%
-    select(year, country, industry, value, flag)
-
-  # Clean outliers
-  figaro_idr_accounts <- figaro_idr_accounts %>%
-    clean_outliers(., serie_pkey = c("country", "industry")) %>%
+    complete_series(min_value = 1) %>%
+    proxy_missing_value_by_similarity(., "IDR", min_value = 1) %>%
     select(year, country, industry, value, flag)
 
   # Check

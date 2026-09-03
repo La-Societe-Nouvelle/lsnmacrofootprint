@@ -11,6 +11,7 @@ data_raw/*
 data_temp/*
 data_output/*
 data_figaro/*
+disaggregation/data_temp/*
 .positai
 
 .env

@@ -121,9 +121,9 @@ detect_outlier_fbi <- function(
       interquartile_range = Q3 - Q1,
       range_values = max(value, na.rm = TRUE) - min(value, na.rm = TRUE),
       relative_range = range_values / if_else(median == 0, 1, median),
-      is_outlier = (relative_range >= tolerance)
+      is_outlier = value < 0 | ((relative_range >= tolerance)
         & (interquartile_range > 0)
-        & (abs(value - median) > (10 * interquartile_range))
+        & (abs(value - median) > (10 * interquartile_range)))
     ) %>%
     ungroup()
 

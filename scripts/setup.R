@@ -7,7 +7,7 @@ setup_path <- normalizePath(sys.frame(1)$ofile, winslash = "/", mustWork = TRUE)
 project_root <- normalizePath(file.path(dirname(setup_path), ".."), winslash = "/", mustWork = TRUE)
 
 source_project_file <- function(path) {
-  source(file.path(project_root, path), encoding = "UTF-8")
+  source(file.path(project_root, path), encoding = "UTF-8-BOM")
 }
 
 # Local project configuration.
@@ -74,6 +74,7 @@ source_project_file("db/upload.R")
 # Common utilities.
 source_project_file("utils/utils_figaro_data.R")
 source_project_file("utils/utils_monetary_conversion.R")
+source_project_file("utils/utils_imputations.R")
 source_project_file("utils/utils_outliers.R")
 source_project_file("utils/utils_proxy_by_similarity.R")
 
