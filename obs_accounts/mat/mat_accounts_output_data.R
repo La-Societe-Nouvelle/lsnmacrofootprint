@@ -83,7 +83,7 @@ check_mat_obs_accounts_output_data <- function(
   ensure_file(
     unep_file_path,
     {
-      url_unep_data <- "https://unep-irp.fineprint.global/mfa4/export?flowTypes[0]=DE"
+      url_unep_data <- "https://unep-irp-resourcepanel.resource-use.global/mfa4/export?flowTypes[0]=DE"
       write.csv(read.csv(url_unep_data), unep_file_path, row.names = FALSE)
     }
   )
