@@ -24,21 +24,6 @@ check_haz_obs_accounts_output_data <- function(
     )
   }
 
-  ensure_file <- function(file_path, download_expr) {
-    if (!dir.exists(dirname(file_path))) dir.create(dirname(file_path), recursive = TRUE)
-
-    if (!file.exists(file_path) || !use_temp_data) {
-      tryCatch(
-        suppressMessages(suppressWarnings(force(download_expr))),
-        error = function(e) {
-          if (verbose) message("Unable to refresh ", file_path)
-        }
-      )
-    }
-
-    file.exists(file_path)
-  }
-
   check_country_only <- function(data) {
     n_countries <- nrow(figaro_countries)
     n_row_countries <- n_countries - 1
@@ -86,23 +71,27 @@ check_haz_obs_accounts_output_data <- function(
   # -------------------------------------------------------------------
   # PRODCOM data (Eurostat)
 
+  base_url_prodcom_data <- "https://ec.europa.eu/eurostat/api/comext/dissemination/sdmx/3.0/data/dataflow/ESTAT/ds-059358/1.0?"
   prodcom_file_path <- file.path(download_dir, "ds-059358.csv")
-  ensure_file(
-    prodcom_file_path,
-    {
-      base_url_prodcom_data <- "https://ec.europa.eu/eurostat/api/comext/dissemination/sdmx/3.0/data/dataflow/ESTAT/ds-059358/1.0?"
+
+  if (!file.exists(prodcom_file_path) || !use_temp_data) {
+    if (verbose) cat("Downloading PRODCOM data...\n")
+
+    prodcom_raw_data <- map_dfr(years, function(year) {
+      if (verbose) cat(paste0("\t", year, "\n"))
+
       url_prodcom_data <- paste0(
         base_url_prodcom_data,
         "format=csvdata",
         "&c[freq]=A",
-        "&c[TIME_PERIOD]=", paste(years, collapse = ","),
+        "&c[TIME_PERIOD]=", year,
         "&c[indicators]=PRODQNT,QNTUNIT",
         "&compressed=true"
       )
       suppressMessages(
         suppressWarnings(
           capture.output(
-            prodcom_raw_data <- fread(
+            year_data <- fread(
               url_prodcom_data,
               colClasses = "character",
               sep = ",",
@@ -112,9 +101,13 @@ check_haz_obs_accounts_output_data <- function(
           )
         )
       )
-      write.csv(prodcom_raw_data, prodcom_file_path, row.names = FALSE)
-    }
-  )
+
+      year_data
+    })
+
+    if (verbose) cat("PRODCOM data downloaded\n")
+    write.csv(prodcom_raw_data, prodcom_file_path, row.names = FALSE)
+  }
 
   prodcom_data <- if (file.exists(prodcom_file_path)) {
     read.csv(prodcom_file_path) %>%

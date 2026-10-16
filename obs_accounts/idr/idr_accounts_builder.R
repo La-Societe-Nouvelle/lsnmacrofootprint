@@ -4,7 +4,9 @@
 #' Non-financial FIGARO accounts builder for pay gap index (IDR)
 #'
 #' Main sources :
-#'   -
+#'   - Base Tous Salariés (BTS, Insee)
+#'
+#' Disposinibilité des données BTS : https://www.insee.fr/fr/recherche/recherche-statistiques?q=base+tous+salari%C3%A9s&debut=0&idprec=8730395&categorie=1&collection=4
 #'
 #' Output data
 #'   No unit (ratio greater than 1)

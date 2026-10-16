@@ -147,16 +147,13 @@ build_footprints <- function(
       column_to_rownames("resource_id") %>%
       as.matrix()
 
-    # Final demand (D)
-    d <- main_aggregates %>%
-      filter(aggregate == "D") %>%
+    # Production (X)
+    x <- main_aggregates %>%
+      filter(aggregate == "PRD") %>%
       select(id, amount) %>%
       arrange(id) %>%
       column_to_rownames("id") %>%
-      as.matrix()
-
-    # Production (X)
-    x <- rowSums(z) + d
+      pull(amount)
     x[x < 0 | is.na(x)] <- 0
 
     # Intermediates consumptions

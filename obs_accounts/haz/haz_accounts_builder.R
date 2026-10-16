@@ -93,55 +93,54 @@ build_haz_obs_accounts <- function(
 
   if (verbose) cat("Loading FIGARO chemicals inputs data...\n")
 
-  load_figaro_chemicals_inputs <- function(
-    year_i
-  ) {
-    if (verbose) cat(paste0("\t", year_i, "\n"))
-
-    intermediate_inputs_filename <- paste0("figaro_intermediate_inputs_", year_i, ".parquet")
-    intermediate_inputs_filepath <- file.path("data_figaro/", intermediate_inputs_filename)
-
-    intermediate_inputs <- read_parquet(intermediate_inputs_filepath) %>%
-      filter(resource_industry == "C20") %>%
-      mutate(
-        year = year_i,
-      ) %>%
-      select(year, use_country, use_industry, resource_country, resource_industry, value)
-  }
-
   intermediate_inputs_c20_data_raw <- map_dfr(
     years$year,
-    load_figaro_chemicals_inputs
+    load_local_figaro_intermediate_inputs
   )
 
   figaro_resource_c20 <- intermediate_inputs_c20_data_raw %>%
+    filter(resource_industry == "C20") %>%
     select(year, use_country, use_industry, resource_country, resource_industry, value)
 
   # -------------------------------------------------------------------
   # PRODCOM data (Eurostat)
 
   base_url_prodcom_data <- "https://ec.europa.eu/eurostat/api/comext/dissemination/sdmx/3.0/data/dataflow/ESTAT/ds-059358/1.0?"
-  url_prodcom_data = paste0(base_url_prodcom_data,
-    "format=","csvdata",
-    "&c[freq]=","A",
-    "&c[TIME_PERIOD]=",paste(years$year, collapse = ","),
-    "&c[indicators]=","PRODQNT,QNTUNIT",
-    "&compressed=","true"
+  url_prodcom_data <- paste0(
+    base_url_prodcom_data,
+    "format=", "csvdata",
+    "&c[freq]=", "A",
+    "&c[TIME_PERIOD]=", years$year,
+    "&c[indicators]=", "PRODQNT,QNTUNIT",
+    "&compressed=", "true"
   )
-
   prodcom_file_path  <- file.path(download_dir, "ds-059358.csv")
 
   if (!file.exists(prodcom_file_path) || !use_temp_data)
   {
-    if (verbose) print("Téléchargement données PRODCOM...")
+    if (verbose) cat("Téléchargement données PRODCOM...\n")
 
-    prodcom_raw_data <- fread(
-      url_prodcom_data,
-      colClasses = "character",
-      sep = ","
-    )
+    prodcom_raw_data <- map2_dfr(years$year, url_prodcom_data, function(year, url) {
+      if (verbose) cat(paste0("\t", year, "\n"))
 
-    if (verbose) print("Données PRODCOM téléchargées")
+      suppressMessages(
+        suppressWarnings(
+          capture.output(
+            year_data <- fread(
+              url,
+              colClasses = "character",
+              sep = ",",
+              showProgress = FALSE
+            ),
+            type = "message"
+          )
+        )
+      )
+
+      year_data
+    })
+
+    if (verbose) cat("Données PRODCOM téléchargées\n")
     write.csv(prodcom_raw_data, prodcom_file_path, row.names = FALSE)
   }
 
