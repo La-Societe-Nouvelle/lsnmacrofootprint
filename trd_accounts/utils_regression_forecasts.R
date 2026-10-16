@@ -34,15 +34,15 @@ run_regression_forecasts <- function(
   historical_values <- data$value
   names(historical_values) <- data$year
 
-  zscore <- scale(historical_values)
+  zscore <- as.vector(scale(historical_values))
 
   covid_years <- names(historical_values) %in% c("2020", "2021")
   historical_values_no_covid <- historical_values[!covid_years]
-  zscore_covid <- scale(
+  zscore_covid <- as.vector(scale(
     historical_values,
     center = mean(historical_values_no_covid, na.rm = TRUE),
     scale  = sd(historical_values_no_covid, na.rm = TRUE)
-  )
+  ))
 
   non_outlier_years <- !(covid_years & abs(zscore_covid) > 1 & abs(zscore) < 2)
 

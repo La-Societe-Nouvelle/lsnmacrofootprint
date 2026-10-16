@@ -66,8 +66,7 @@ build_canada_eeio_footprints <<- function(year_i, verbose = TRUE)
   url_eeio <- "https://www150.statcan.gc.ca/n1/tbl/csv/36100001-eng.zip"
 
   file_eeio_data <- curl_download(url_eeio, tempfile()) %>%
-    unzip(exdir = tempdir()) %>%
-    { .[basename(.) == "36100001.csv"] } %>%
+    unzip(files = "36100001.csv", exdir = tempdir()) %>%
     read.csv()
 
   # --------------------------------------------------
@@ -204,9 +203,8 @@ build_canada_eeio_footprints <<- function(year_i, verbose = TRUE)
 
   url_emissions_data <- "https://www150.statcan.gc.ca/n1/tbl/csv/38100097-eng.zip"
 
-  file_emissions_ons_data = curl_download(url_emissions_data, tempfile()) %>%
-    unzip(exdir = tempdir()) %>%
-    { .[basename(.) == "38100097.csv"] } %>%
+  file_emissions_ons_data <- curl_download(url_emissions_data, tempfile()) %>%
+    unzip(files = "38100097.csv", exdir = tempdir()) %>%
     read.csv()
 
   emissions_data = file_emissions_ons_data %>%

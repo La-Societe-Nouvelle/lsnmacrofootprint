@@ -165,7 +165,13 @@ update_footprints <- function(
   } else {
     character(0)
   }
-  series     <- c(series_obs, series_trd, series_tgt)
+  series <- c(series_obs, series_trd, series_tgt)
+  series <- series[
+    order(
+      str_sub(series, 1, 3),
+      match(str_sub(series, 5, 7), c("obs", "trd", "tgt"))
+    )
+  ]
 
   # -------------------------------------------------------------------
   # 2- Build footprints for each serie

@@ -77,8 +77,8 @@ build_mat_obs_accounts <- function(
   # -------------------------------------------------------------------
   # UNEP data
 
-  base_url_unep_data = "https://unep-irp.fineprint.global/mfa4/export?"
-  url_unep_data = paste0(base_url_unep_data,
+  base_url_unep_data <- "https://unep-irp-resourcepanel.resource-use.global/mfa4/export?"
+  url_unep_data <- paste0(base_url_unep_data,
     "flowTypes[0]=","DE" # DE Domestic Extraction
   )
 

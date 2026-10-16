@@ -77,7 +77,7 @@ build_trd_accounts <- function(
 
   main_aggregates_data <- main_aggregates_data_raw %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    select(year, country, industry, NVA)
+    select(year, country, industry, NVA, PRD)
 
   # -------------------------------------------------------------------
   # OBS Accounts
@@ -101,7 +101,7 @@ build_trd_accounts <- function(
         # indexes
         metadata_indic$type == "index" ~ value,
         # intensities
-        metadata_indic$type == "intensity" ~ ifelse(NVA > 0, value / NVA, 0)
+        metadata_indic$type == "intensity" ~ ifelse(PRD > 0, value / PRD, 0)
         # -------------------------
       )) %>%
     select(year, country, industry, value, flag) %>%
@@ -157,7 +157,7 @@ build_trd_accounts <- function(
         # indexes
         metadata_indic$type == "index" ~ value,
         # intensities
-        metadata_indic$type == "intensity" ~ value * NVA
+        metadata_indic$type == "intensity" ~ value * PRD
         # -------------------------
       ),
       flag = "f"
