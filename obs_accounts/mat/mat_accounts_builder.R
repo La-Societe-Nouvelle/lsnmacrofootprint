@@ -70,7 +70,7 @@ build_mat_obs_accounts <- function(
   main_aggregates_data <- main_aggregates_data_raw %>%
     filter(industry != "TOTAL") %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    select(country, industry, year, NVA)
+    select(country, industry, year, PRD)
 
   if (verbose) cat("FIGARO data loaded\n")
 
@@ -136,12 +136,12 @@ build_mat_obs_accounts <- function(
     filter(value >= 0) %>%
     select(year, country, sector, value)
 
-  # use VA to split impacts between FIGARO industries
-  va_distribution_sectors <- main_aggregates_data %>%
+  # use production to split impacts between FIGARO industries
+  production_distribution_sectors <- main_aggregates_data %>%
     merge(figaro_industries) %>%
     group_by(year, country, sector) %>%
     mutate(
-      share_sector = NVA / sum(NVA, na.rm = TRUE), # /!\ if VA < 0 !
+      share_sector = PRD / sum(PRD, na.rm = TRUE),
     ) %>%
     ungroup() %>%
     select(year, country, industry, share_sector)
@@ -151,7 +151,7 @@ build_mat_obs_accounts <- function(
 
   raw_mat_accounts <- sector_extraction %>%
     merge(figaro_industries) %>% # by sector
-    merge(va_distribution_sectors) %>% # by year, country, industry
+    merge(production_distribution_sectors) %>% # by year, country, industry
     mutate(
       value = value * share_sector,
       flag = ""
