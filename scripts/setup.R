@@ -3,7 +3,10 @@
 # Setup for interactive use from the repository root.
 # This file sources the project functions without launching the full pipeline.
 
-setup_path <- normalizePath(sys.frame(1)$ofile, winslash = "/", mustWork = TRUE)
+setup_path <- vapply(sys.frames(), function(frame) {
+  if (is.null(frame$ofile)) "" else frame$ofile
+}, character(1))
+setup_path <- normalizePath(tail(setup_path[nzchar(setup_path)], 1L), winslash = "/", mustWork = TRUE)
 project_root <- normalizePath(file.path(dirname(setup_path), ".."), winslash = "/", mustWork = TRUE)
 
 source_project_file <- function(path) {

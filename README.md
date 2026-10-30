@@ -80,8 +80,8 @@ Les principaux parametres sont dans `config/config.R`:
 | `default_indics` | Indicateurs traites par defaut. |
 | `default_tgt_indics` | Indicateurs avec trajectoires cibles. |
 | `install_missing_packages` | Installe les packages R manquants si `TRUE`. |
-| `do_update` | Active les ecritures en base dans les scripts d'orchestration. |
-| `do_clean_outliers` | Active le nettoyage des valeurs atypiques. |
+| `write_output` | Ecrit les CSV de resultats locaux (defaut: `TRUE`), sans export en base. |
+| `do_clean_outliers` | Active le nettoyage des valeurs atypiques dans les tendances. |
 | `verbose` | Affiche les logs de progression. |
 
 ## Utilisation
@@ -99,35 +99,59 @@ source("scripts/setup.R")
 
 update_obs_accounts(
   indics = default_indics,
-  do_clean_outliers = do_clean_outliers,
-  do_update = FALSE,
+  write_output = TRUE,
   verbose = TRUE
 )
 
 update_trd_accounts(
   indics = default_indics,
-  do_update = FALSE,
+  do_clean_outliers = do_clean_outliers,
+  write_output = TRUE,
   verbose = TRUE
 )
 
 update_tgt_accounts(
   indics = default_tgt_indics,
-  do_update = FALSE,
+  write_output = TRUE,
   verbose = TRUE
 )
 
-build_footprints(
-  series = c("ghg_obs", "ghg_trd", "ghg_tgt"),
+update_footprints(
+  indics = default_indics,
+  write_output = TRUE,
   verbose = TRUE
 )
 ```
 
-Les builders ecrivent les fichiers dans `data_output`:
+Les builders de comptes et l'orchestrateur des footprints ecrivent les fichiers
+dans `output_dir` (par defaut `data_output`):
 
 - `accounts_obs_<indic>.csv`
 - `accounts_trd_<indic>.csv`
 - `accounts_tgt_<indic>.csv`
 - `footprints_<serie>_<indic>.csv`
+
+`write_output` remplace l'ancien argument `do_update`. Avec `FALSE`, les calculs
+sont effectues sans ecrire ni remplacer les CSV de resultats. Les caches de
+sources et de modeles peuvent toujours etre ecrits. Les etapes suivantes lisent
+les CSV existants: conserver `TRUE` pour enchainer une production complete avec
+les nouveaux comptes. Pour un calcul isole sans sauvegarde, les fichiers amont
+doivent deja exister.
+
+Le nettoyage est transmis a `update_trd_accounts()` et `build_trd_accounts()`;
+avec `do_clean_outliers = FALSE`, `clean_outliers()` n'est pas appelee. Pour
+charger le setup sans la dependance `fbi`, regler aussi cette option a `FALSE`
+dans `config/config.R`.
+
+Pour calculer une seule empreinte en memoire:
+
+```r
+footprints <- build_footprints(serie_id = "ghg_obs", verbose = TRUE)
+```
+
+`update_disaggregated_footprints(write_output = FALSE)` desactive la sauvegarde
+du resultat final `nace_a732_fpt.csv`; les CSV intermediaires EEIO restent
+necessaires a la compilation. Aucun de ces lancements n'exporte en PostgreSQL.
 
 ## Upload en base
 

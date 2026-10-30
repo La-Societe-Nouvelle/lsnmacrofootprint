@@ -13,7 +13,8 @@
 
 build_geq_tgt_accounts <- function(
   years = 2010:2030,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -165,8 +166,11 @@ build_geq_tgt_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_tgt_geq.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_tgt_geq.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

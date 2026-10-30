@@ -16,7 +16,8 @@
 build_mat_obs_accounts <- function(
   years = 2010:2024,
   use_temp_data = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   if (verbose) message("Build MAT accounts for observed data")
   # -------------------------------------------------------------------
@@ -206,8 +207,11 @@ build_mat_obs_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_obs_mat.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_obs_mat.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

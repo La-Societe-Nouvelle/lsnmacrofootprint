@@ -17,7 +17,8 @@
 build_nrg_obs_accounts <- function(
   years = 2014:2023,
   use_temp_data = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   if (verbose) message("Build NRG accounts for observed data")
   # -------------------------------------------------------------------
@@ -265,8 +266,11 @@ build_nrg_obs_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_obs_nrg.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_obs_nrg.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

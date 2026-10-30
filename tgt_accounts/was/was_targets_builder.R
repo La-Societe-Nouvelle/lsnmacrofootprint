@@ -14,7 +14,8 @@
 #' output columns: serie_id, country, industry, year, value, flag, lastupdate
 
 build_was_tgt_accounts <- function(
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -204,8 +205,11 @@ build_was_tgt_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_tgt_was.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_tgt_was.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

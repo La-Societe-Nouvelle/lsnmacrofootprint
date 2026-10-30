@@ -41,8 +41,8 @@ Les parametres modifiables sont centralises dans `config/config.R`.
 | `default_indics` | Indicateurs traites par defaut. |
 | `default_tgt_indics` | Indicateurs pour lesquels une cible est construite. |
 | `install_missing_packages` | Si `TRUE`, installe les packages R manquants. |
-| `do_update` | Active les ecritures en base dans les scripts d'orchestration. |
-| `do_clean_outliers` | Active le nettoyage des outliers. |
+| `write_output` | Ecrit les CSV de resultats locaux (defaut: `TRUE`), sans export en base. |
+| `do_clean_outliers` | Active le nettoyage des outliers dans les tendances. |
 | `verbose` | Active les logs de progression. |
 
 Les secrets de connexion ne doivent pas etre mis dans `config/config.R`.
@@ -174,13 +174,38 @@ source("scripts/setup.R")
 
 update_obs_accounts(
   indics = default_indics,
-  do_clean_outliers = TRUE,
-  do_update = FALSE,
+  write_output = TRUE,
+  verbose = TRUE
+)
+update_trd_accounts(
+  indics = default_indics,
+  do_clean_outliers = do_clean_outliers,
+  write_output = TRUE,
   verbose = TRUE
 )
 ```
 
-`do_update = FALSE` permet de produire les fichiers sans ecriture en base.
+`write_output` remplace `do_update` et controle uniquement les CSV de resultats.
+Les builders de comptes enregistrent eux-memes leurs sorties une seule fois;
+`update_footprints()` enregistre les empreintes. Avec `FALSE`, les calculs se
+poursuivent sans sauvegarder les resultats. Les caches de sources et de modeles
+restent independants de cette option.
+
+Les tendances, cibles et footprints lisent les CSV amont dans `output_dir`:
+conserver `write_output = TRUE` pour une production complete utilisant les
+nouveaux comptes. Pour un calcul isole avec `FALSE`, ces entrees doivent deja
+exister et correspondent aux dernieres sorties enregistrees.
+
+`do_clean_outliers` est transmis uniquement aux tendances. Avec `FALSE`, le
+nettoyage FBI est ignore. Regler aussi cette option dans `config/config.R`
+avant le setup pour ne pas exiger la dependance `fbi`.
+
+`update_disaggregated_footprints()` transmet `write_output` a la compilation
+finale, qui retourne la table et n'ecrit `nace_a732_fpt.csv` que si l'option est
+activee. Les CSV intermediaires EEIO restent necessaires a cette compilation.
+
+Les exports PostgreSQL utilisent les commandes distinctes `upload_*()`;
+aucun workflow de calcul ne les appelle implicitement.
 
 ## Donnees FIGARO
 
@@ -205,14 +230,14 @@ peut lancer des traitements d'export.
 La fonction principale est:
 
 ```r
-build_footprints(series, verbose = FALSE)
+build_footprints(serie_id, verbose = FALSE)
 ```
 
 Exemple:
 
 ```r
-build_footprints(
-  series = c("ghg_obs", "ghg_trd", "ghg_tgt"),
+footprints <- build_footprints(
+  serie_id = "ghg_obs",
   verbose = TRUE
 )
 ```
@@ -224,7 +249,14 @@ Pour chaque annee, `build_footprints()`:
 3. calcule ou recharge l'inverse de Leontief;
 4. applique les vecteurs d'impacts directs;
 5. produit les footprints par pays, branche et agregat;
-6. ecrit les CSV dans `data_output`.
+6. retourne les footprints en memoire.
+
+Pour calculer et enregistrer les series observees, tendancielles et cibles
+disponibles d'un indicateur:
+
+```r
+update_footprints(indics = "GHG", write_output = TRUE, verbose = TRUE)
+```
 
 L'inverse de Leontief est cachee dans:
 

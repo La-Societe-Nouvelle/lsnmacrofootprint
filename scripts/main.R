@@ -15,7 +15,11 @@
 
 # Resolve the project root from this file location, then switch the working
 # directory to the repository root so relative paths remain stable.
-main_path <- normalizePath(sys.frame(1)$ofile, winslash = "/", mustWork = TRUE)
+# Find the innermost source() frame, including when called from a function.
+main_path <- vapply(sys.frames(), function(frame) {
+  if (is.null(frame$ofile)) "" else frame$ofile
+}, character(1))
+main_path <- normalizePath(tail(main_path[nzchar(main_path)], 1L), winslash = "/", mustWork = TRUE)
 project_root <- normalizePath(file.path(dirname(main_path), ".."), winslash = "/", mustWork = TRUE)
 setwd(project_root)
 
@@ -39,8 +43,7 @@ tgt_indics <- default_tgt_indics
 if (verbose) message("Building observed accounts")
 update_obs_accounts(
   indics = indics,
-  do_clean_outliers = do_clean_outliers,
-  do_update = do_update,
+  write_output = write_output,
   verbose = verbose
 )
 
@@ -48,7 +51,8 @@ update_obs_accounts(
 if (verbose) message("Building trend accounts")
 update_trd_accounts(
   indics = indics,
-  do_update = do_update,
+  write_output = write_output,
+  do_clean_outliers = do_clean_outliers,
   verbose = verbose
 )
 
@@ -56,7 +60,7 @@ update_trd_accounts(
 if (verbose) message("Building target accounts")
 update_tgt_accounts(
   indics = tgt_indics,
-  do_update = do_update,
+  write_output = write_output,
   verbose = verbose
 )
 
@@ -67,7 +71,7 @@ update_tgt_accounts(
 if (verbose) message("Building footprint data")
 update_footprints(
   indics = indics,
-  do_update = do_update,
+  write_output = write_output,
   verbose = verbose
 )
 
