@@ -129,6 +129,21 @@ Les builders ecrivent les fichiers dans `data_output`:
 - `accounts_tgt_<indic>.csv`
 - `footprints_<serie>_<indic>.csv`
 
+Les colonnes des comptes sont toujours dans l'ordre suivant:
+
+```text
+serie_id,country,industry,year,value,unit,flag,lastupdate
+```
+
+Les footprints ajoutent `aggregate` entre `year` et `value`:
+
+```text
+serie_id,country,industry,year,aggregate,value,unit,flag,lastupdate
+```
+
+Les comptes cibles et tendanciels reprennent l'unite des comptes observes.
+Les footprints utilisent l'unite de `metadata/metadata_indics.csv`.
+
 ## Upload en base
 
 Les fonctions d'upload lisent les CSV deja produits dans `data_output` et les

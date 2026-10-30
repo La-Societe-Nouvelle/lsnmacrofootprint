@@ -193,7 +193,7 @@ update_footprints <- function(
         indic      = str_sub(serie_id, 1, 3),
         serie      = str_sub(serie_id, 5, 7)
       ) %>%
-      select(serie_id, country, industry, year, aggregate, value, flag, lastupdate, indic, serie)
+      select(serie_id, country, industry, year, aggregate, value, unit, flag, lastupdate, indic, serie)
 
     # -------------------------
     # Local/Environment storage

@@ -34,7 +34,7 @@ build_footprints <- function(
       show_col_types = FALSE
     ) %>%
     rename(indic = code) %>%
-    select(indic,type,defaultprecision,min,max)
+    select(indic, unit, type, defaultprecision, min, max)
 
   # FIGARO - Industries
   figaro_industries = read_delim(
@@ -461,7 +461,7 @@ build_footprints <- function(
         value = round(value, digits = defaultprecision),
         lastupdate = Sys.Date()
       ) %>%
-      select(serie_id, indic, country, industry, year, aggregate, value, flag, lastupdate)
+      select(serie_id, country, industry, year, aggregate, value, unit, flag, lastupdate, indic)
 
     # if (verbose) print(macro_fpt %>% as_tibble())
     if (verbose) print(macro_fpt %>% filter(country == "FR", aggregate %in% c("PRD_MC", "PRD_UC")) %>% arrange(aggregate, industry) %>% as_tibble())

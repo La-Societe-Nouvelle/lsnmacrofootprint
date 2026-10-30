@@ -9,7 +9,7 @@
 #'   - FRA : < 1.0 % in 2050
 #'   - other countries : trend
 #'
-#' output columns: serie_id, country, industry, year, value, flag, lastupdate
+#' output columns: serie_id, country, industry, year, value, unit, flag, lastupdate
 
 build_geq_tgt_accounts <- function(
   years = 2010:2030,
@@ -156,10 +156,11 @@ build_geq_tgt_accounts <- function(
     mutate(
       serie_id    = "geq_tgt",
       value       = round(value, digits = 1),
+      unit        = unique(obs_data_raw$unit),
       flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, industry, country, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, industry, country, year)
 
   # -------------------------------------------------------------------
