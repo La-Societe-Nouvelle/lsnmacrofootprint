@@ -145,7 +145,7 @@ build_soc_obs_accounts <- function(
     ) %>%
     mutate(
       year = as.character(annee),
-      rate_ess = if_else(masse_salariale > 0, masse_salariale_ess / masse_salariale, 6) # coef entre 0 et 1
+      rate_ess = if_else(masse_salariale > 0, masse_salariale_ess / masse_salariale, 0) # coef entre 0 et 1
     ) %>%
     arrange(year, industry)
 

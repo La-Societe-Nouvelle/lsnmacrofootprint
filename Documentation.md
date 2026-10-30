@@ -157,6 +157,24 @@ Les sorties sont ecrites dans:
 accounts_tgt_<indic>.csv
 ```
 
+Les coefficients annuels des cibles MAT/WAS (2030) et GEQ/SOC (2050) utilisent
+la duree entre la derniere annee observee et l'annee objectif. Par exemple, une
+base 2024 et une cible 2030 representent six periodes annuelles, de 2025 a 2030.
+La cible WAS vaut 95 % de l'intensite de 2010 (`value / NVA`), puis les intensites
+projetees sont reconverties en volumes avec la NVA de chaque annee.
+
+Apres reprise des tendances pour les pays etrangers, les contraintes de
+monotonie (`cummin`/`cummax`) et les bornes par rapport a la base s'appliquent
+encore a ces pays. Le resultat final peut donc differer de la tendance.
+
+Pour les comptes SOC observes, une masse salariale totale nulle ou negative
+donne une part ESS de zero.
+
+Les comptes WAT observes sont exprimes en milliers de metres cubes (`THS_M3`).
+`estimate_ghg_from_edgar()` retourne des milliers de tonnes equivalent CO2
+(`THS_TCO2E`); le builder GHG multiplie ces valeurs par 1 000 pour produire les
+comptes observes en tonnes equivalent CO2 (`TCO2E`).
+
 ## Orchestration
 
 Les fonctions d'orchestration sont dans `scripts/workflows.R`:

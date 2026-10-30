@@ -212,7 +212,7 @@ build_wat_obs_accounts <- function(
     mutate(
       serie_id    = "wat_obs",
       value       = round(value, digits = 0),
-      unit        = "M3",
+      unit        = "THS_M3",
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%

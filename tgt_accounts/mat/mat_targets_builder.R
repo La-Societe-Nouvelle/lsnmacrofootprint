@@ -77,7 +77,7 @@ build_mat_tgt_accounts <- function(
   last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
   tgt_years <- (last_year_obs + 1) : 2030
-  n_years <- 2030 - tgt_years[1]
+  n_years <- 2030 - last_year_obs
 
   years <- tibble(year = as.character(tgt_years))
 

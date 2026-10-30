@@ -216,7 +216,7 @@ build_ghg_obs_accounts <- function(
   estimated_ghg_accounts_data <- estimated_ghg_accounts_raw_data %>%
     mutate(
       year = as.character(year),
-      eurostat_ghg_emissions = value * 1e3, # kT -> T
+      eurostat_ghg_emissions = value * 1e3, # THS_TCO2E -> TCO2E
       unit = "TCO2E"
     ) %>%
     filter(year %in% years$year) %>%
