@@ -1,12 +1,12 @@
-Package: lsnmacrofootprint
-Type: Package
+Project: lsnmacrofootprint
+Type: Project
 Title: Computing FIGARO footprints for SINESE
 Version: 0.1.0
 Author: La Société Nouvelle
 Maintainer: La Société Nouvelle <contact@lasocietenouvelle.org>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: EUPL
+Description: R scripts to build observed, trend and target direct impact accounts
+    and macroeconomic footprints using FIGARO input-output tables.
+    Run from the repository root with source("scripts/setup.R"); this project
+    is not an installable R package.
+License: EUPL-1.2
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.3.2

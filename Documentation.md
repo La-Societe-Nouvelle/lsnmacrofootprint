@@ -8,8 +8,11 @@ des statisticiens; il n'est pas structure comme un package R formel.
 
 Depuis la racine du projet:
 
+Sur un nouveau poste, regler `install_missing_packages <- TRUE` dans
+`config/config.R` avant le chargement pour installer les dependances manquantes.
+
 ```r
-source("scripts/setup.R")
+source("scripts/setup.R", encoding = "UTF-8")
 ```
 
 `scripts/setup.R`:
@@ -20,7 +23,27 @@ source("scripts/setup.R")
 4. charge les packages;
 5. source les fonctions du projet.
 
-Pour lancer le pipeline principal:
+`scripts/setup.R` regroupe le registre des dependances, leur verification et
+les fonctions d'installation.
+Les packages CRAN incluent `readsdmx`, `Rilostat` et `rvest`. Avec
+`do_clean_outliers <- TRUE`, `fbi` est requis et installe depuis
+[`cykbennie/fbi`](https://github.com/cykbennie/fbi) via `remotes`, ajoute si
+necessaire. Avec `FALSE`, `fbi` n'est ni installe ni exige. Le setup attache les
+packages CRAN; les appels a `fbi` utilisent explicitement son namespace.
+
+Regler `config/config.R` avant de charger le setup, qui relit ce fichier.
+Une affectation dans la console avant le setup ne remplace donc pas la
+configuration. Le setup installe les dependances manquantes seulement si
+`install_missing_packages <- TRUE`; avec `FALSE`, il les signale sans installation.
+L'installation verifie ensuite que tous les packages selectionnes sont charges
+par `requireNamespace()` et signale ceux qui restent manquants.
+
+`DESCRIPTION` contient les metadonnees d'un projet de scripts (`Type: Project`).
+Le depot ne se charge pas avec `library(lsnmacrofootprint)` et ne propose pas
+de commande de construction ou d'installation de package.
+
+Preparer les fichiers publics decrits dans [Donnees FIGARO](#donnees-figaro),
+puis lancer le pipeline principal:
 
 ```r
 source("scripts/main.R")
@@ -36,8 +59,8 @@ Les parametres modifiables sont centralises dans `config/config.R`.
 | --- | --- |
 | `download_dir` | Dossier de cache et telechargement local. |
 | `output_dir` | Dossier des CSV produits par les builders. |
-| `figaro_data_dir` | Dossier des fichiers FIGARO Parquet. |
-| `default_years` | Annees traitees par defaut. |
+| `figaro_data_dir` | Dossier FIGARO cree par le lancement; plusieurs lecteurs utilisent encore le chemin fixe `data_figaro`. |
+| `default_years` | Plage de reference; les builders conservent leurs propres annees par defaut. |
 | `default_indics` | Indicateurs traites par defaut. |
 | `default_tgt_indics` | Indicateurs pour lesquels une cible est construite. |
 | `install_missing_packages` | Si `TRUE`, installe les packages R manquants. |
@@ -78,7 +101,7 @@ Tous les chemins sourcees dans les scripts sont en minuscules.
 
 Les fonctions de comptes observes suivent le format:
 
-```r
+```text
 build_<indic>_obs_accounts()
 ```
 
@@ -141,8 +164,8 @@ simulations Monte Carlo, regressions et fallbacks de croissance.
 
 Les fonctions cibles suivent le format:
 
-```r
-build_target_<indic>()
+```text
+build_<indic>_tgt_accounts()
 ```
 
 Indicateurs cibles actuellement geres:
@@ -229,19 +252,35 @@ aucun workflow de calcul ne les appelle implicitement.
 
 Les donnees FIGARO locales sont chargees depuis `data_figaro`.
 
+Avant la premiere execution, creer les dossiers et utiliser le telechargement
+public. Les annees ci-dessous couvrent les valeurs par defaut des builders:
+
+```r
+for (path in c(download_dir, output_dir, figaro_data_dir, "data_temp")) {
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
+}
+load_figaro_data_from_remote(years = 2010:2030, verbose = TRUE)
+```
+
+`load_figaro_data_from_remote()` obtient les liens de telechargement depuis
+`https://api.sinese.fr/v2/figarodata/`. Pour chaque annee, il telecharge les
+agregats principaux, consommations intermediaires et consommations de capital,
+puis le fichier commun `figaro_na_prices.parquet`. Il ecrit dans `data_figaro`
+et remplace les fichiers demandes s'ils existent deja. Aucun acces PostgreSQL
+n'est necessaire. Un sous-ensemble d'annees suffit pour un calcul isole, comme
+l'exemple ECO 2024 du README; les tendances necessitent aussi les annees futures.
+
 Fonctions principales:
 
 | Fonction | Role |
 | --- | --- |
+| `load_figaro_data_from_remote(years, verbose)` | Telecharge les fichiers FIGARO publics. |
 | `load_local_figaro_main_aggregates(year_i)` | Charge les agregats principaux FIGARO. |
 | `load_local_figaro_intermediate_inputs(year_i)` | Charge les consommations intermediaires FIGARO. |
-| `get_figaro_main_aggregates(con, year_i, data_dir)` | Extrait et prepare les agregats depuis PostgreSQL. |
-| `get_figaro_intermediate_inputs(con, year_i)` | Extrait les consommations intermediaires. |
-| `get_figaro_capital_use(con, year_i)` | Extrait les consommations de capital fixe. |
+| `load_local_figaro_capital_use(year_i)` | Charge les consommations de capital fixe. |
 
-Le script `utils/utils_figaro_data_files.R` sert a generer les fichiers Parquet
-FIGARO locaux. Il n'est pas source automatiquement par `scripts/setup.R`, car il
-peut lancer des traitements d'export.
+Le telechargement public ci-dessus prepare les fichiers utilises par les
+lecteurs et les builders du depot.
 
 ## Footprints
 
@@ -303,6 +342,9 @@ Colonnes principales des footprints:
 
 ## Upload PostgreSQL
 
+Les identifiants proviennent des variables d'environnement `STATSDB_DATABASE`,
+`STATSDB_HOST`, `STATSDB_PORT`, `STATSDB_USER` et `STATSDB_PASSWORD`.
+
 La connexion est creee par:
 
 ```r
@@ -313,18 +355,45 @@ Les fonctions d'upload sont dans `db/upload.R` et sont chargees par
 `scripts/setup.R`.
 
 ```r
-upload_accounts_data(verbose = TRUE)
-upload_footprints_data(verbose = TRUE)
+upload_accounts_data(output_dir = output_dir, verbose = TRUE)
+upload_footprints_data(output_dir = output_dir, verbose = TRUE)
 ```
 
 | Fonction | Source | Table cible |
 | --- | --- | --- |
-| `upload_accounts_data()` | `data_output/accounts_*.csv` | `impacts.directs_impacts` |
+| `upload_accounts_data()` | `data_output/accounts_*.csv` | `impacts.direct_impacts` |
 | `upload_footprints_data()` | `data_output/footprints_*.csv` | `macrodata.macro_fpt` |
 
 Les colonnes des fichiers sont supposees identiques aux colonnes des tables.
-Les fonctions utilisent `DBI::dbWriteTable(..., append = TRUE)` et ne suppriment
-pas les donnees existantes.
+Pour chaque `serie_id` present dans les donnees a exporter, les fonctions
+suppriment toutes les lignes existantes de cette serie, puis inserent les lignes
+des CSV avec `DBI::dbWriteTable(..., append = TRUE)`. Il faut donc fournir des
+series completes: un extrait remplace lui aussi toute la serie correspondante.
+Les series absentes des fichiers restent en base. La suppression et l'insertion
+ne sont pas encore englobees dans une transaction commune (correction CT8).
+`upload_footprints_data(series = ...)` permet de selectionner les series a
+remplacer. Ces fonctions lisent `data_output` par defaut; passer `output_dir`
+explicitement si la configuration utilise un autre dossier.
+
+## Desagregation A*732
+
+`update_disaggregated_footprints(year_i = 2022, write_output = TRUE)` prepare
+les modeles EEIO, puis appelle `build_disaggregated_footprints()`. Le resultat
+final est enregistre dans `disaggregation/data_temp/nace_a732_fpt.csv`.
+Le dossier `disaggregation/data_temp` doit exister avant le lancement.
+
+La compilation utilise les poids suivants selon `accuracy_mapping_a732`:
+
+| Niveau | Poids |
+| --- | --- |
+| 1 | 8 |
+| 2 | 5 |
+| 3 | 2 |
+| 4 (FIGARO) | 1 |
+
+Les niveaux 5 et suivants sont exclus. L'empreinte agregee et la precision
+rapportee utilisent ces memes poids. Les contraintes de millesime restent
+propres aux modeles; le traitement conserve notamment une annee de prix 2022.
 
 ## Fonctions utiles
 
@@ -334,7 +403,7 @@ pas les donnees existantes.
 | Configuration | `config/config.R` |
 | Observations | `build_<indic>_obs_accounts()` |
 | Tendances | `build_trd_accounts()` |
-| Cibles | `build_target_<indic>()` |
+| Cibles | `build_<indic>_tgt_accounts()` |
 | Orchestration | `update_obs_accounts()`, `update_trd_accounts()`, `update_tgt_accounts()` |
 | Footprints | `build_footprints()` |
 | Base | `get_connection_db()`, `upload_accounts_data()`, `upload_footprints_data()` |
@@ -346,7 +415,7 @@ pas les donnees existantes.
 - Les dossiers et chemins du projet sont en minuscules.
 - Les scripts supposent un lancement depuis la racine du projet ou via
   `scripts/main.R`, qui repositionne le working directory.
-- Les fonctions d'upload ajoutent les donnees; elles ne font pas de
-  remplacement automatique.
+- Les fonctions d'upload remplacent les series selectionnees apres suppression
+  de leurs anciennes lignes; fournir des series completes.
 - Les gros calculs de footprints dependent fortement du cache FIGARO et du
   cache de l'inverse de Leontief.
