@@ -64,6 +64,11 @@ load_figaro_data_from_remote(years = 2010:2030, verbose = TRUE)
 source("scripts/main.R", encoding = "UTF-8")
 ```
 
+Si les fichiers FIGARO d'une annee ont ete remplaces, supprimer avant le calcul
+des empreintes le cache `data_temp/figaro_inverse_leontief_<annee>.parquet`
+correspondant pour qu'il soit recalcule. Le remplacement des fichiers FIGARO
+n'invalide pas automatiquement ce cache.
+
 Les comptes sont enregistres dans `output_dir` (par defaut `data_output`) sous
 `accounts_<obs|trd|tgt>_<indic>.csv`, les empreintes sous
 `footprints_<obs|trd|tgt>_<indic>.csv`. Les autres sources sont chargees par les

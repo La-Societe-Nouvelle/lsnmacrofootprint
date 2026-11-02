@@ -210,6 +210,11 @@ la couverture etrangere reste structurellement complete puisque leurs comptes
 sont fixes a zero hors France. Le diagnostic JRC de NRG reste charge par son
 builder mais son coefficient n'est pas applique au resultat.
 
+Le controle IDR ne verifie pas encore la presence des quatre deciles francais
+requis comme reference pour chaque annee : un statut `OK` peut donc preceder un
+echec du builder. La synthese KNW verifie les sources separement et ne garantit
+pas leur intersection sur les memes cles `(year, country, industry)`.
+
 Les chargeurs et les controles sont charges par `scripts/setup.R` pour les douze
 indicateurs. Les calculs de repartition, de trajectoire et d'imputation restent
 dans les builders et leurs utilitaires.
@@ -405,6 +410,11 @@ Logique de cache:
 1. si le fichier n'existe pas, la matrice est calculee puis enregistree;
 2. dans tous les cas, la matrice est ensuite rechargee depuis le fichier.
 
+Si les fichiers FIGARO d'une annee ont ete remplaces, supprimer avant le calcul
+des empreintes le cache `data_temp/figaro_inverse_leontief_<annee>.parquet`
+correspondant pour qu'il soit recalcule. Le remplacement des fichiers FIGARO
+n'invalide pas automatiquement ce cache.
+
 Colonnes principales des footprints:
 
 | Colonne | Description |
@@ -444,7 +454,9 @@ upload_footprints_data(output_dir = output_dir, verbose = TRUE)
 | `upload_accounts_data()` | `data_output/accounts_*.csv` | `impacts.direct_impacts` |
 | `upload_footprints_data()` | `data_output/footprints_*.csv` | `macrodata.macro_fpt` |
 
-Les colonnes des fichiers sont supposees identiques aux colonnes des tables.
+`upload_accounts_data()` retire `unit` avant l'insertion.
+`upload_footprints_data()` retire `unit` et ajoute `currency = "CPEUR"`.
+Chaque fonction selectionne ensuite les colonnes destinees a sa table cible.
 Pour chaque `serie_id` present dans les donnees a exporter, les fonctions
 suppriment toutes les lignes existantes de cette serie, puis inserent les lignes
 des CSV avec `DBI::dbWriteTable(..., append = TRUE)`. Il faut donc fournir des

@@ -21,12 +21,10 @@ Flags :
 
 ## Accuracy mapping
 
-|--------|----------------------------------|-------------|
-| Niveau | Description                      | Pondération |
-|--------|----------------------------------|-------------|
-| "1"    | Association exacte/très proche   | 5           |
-| "2"    | Assocation proche                | 3           |
-| "3"    | Granularité supérieure à FIGARO  | 2           |
-| "4"    | Granularité équivalente à FIGARO | 1           |
-| "5"    | Granularité inférieure à FIGARO  | NULL        |
-|--------|----------------------------------|-------------|
+| Niveau | Description | Pondération |
+| --- | --- | --- |
+| 1 | Association exacte/très proche | 8 |
+| 2 | Association proche | 5 |
+| 3 | Granularité supérieure à FIGARO | 2 |
+| 4 | Granularité équivalente à FIGARO | 1 |
+| 5 et suivants | Granularité inférieure à FIGARO | Exclus |
