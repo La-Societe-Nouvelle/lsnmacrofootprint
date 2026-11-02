@@ -185,9 +185,10 @@ build_trd_accounts <- function(
     mutate(
       serie_id    = paste0(tolower(indic_i), "_trd"),
       value       = round(value, digits = metadata_indic$defaultprecision),
+      unit        = unique(obs_data_raw$unit),
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, industry, country, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, industry, country, year)
 
   # -------------------------------------------------------------------

@@ -13,7 +13,7 @@
 #' Ce taux est appliqué à la dernière année observée (impacts bruts).
 #' L'empreinte doit obligatoirement diminuer.
 #'
-#' output columns: serie_id, country, industry, year, value, flag, lastupdate
+#' output columns: serie_id, country, industry, year, value, unit, flag, lastupdate
 
 build_nrg_tgt_accounts <- function(
   verbose = FALSE
@@ -201,10 +201,11 @@ build_nrg_tgt_accounts <- function(
     mutate(
       serie_id    = "nrg_tgt",
       value       = round(value, digits = 0),
+      unit        = unique(obs_data_raw$unit),
       flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, industry, country, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, industry, country, year)
 
   # -------------------------------------------------------------------

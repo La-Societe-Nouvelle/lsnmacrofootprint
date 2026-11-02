@@ -9,7 +9,7 @@
 #'   - FRA : 30% increase in GDP per domestic material consumption ratio between 2010 and 2030
 #'   - other countries : trend
 #'
-#' output columns: serie_id, country, industry, year, value, flag, lastupdate
+#' output columns: serie_id, country, industry, year, value, unit, flag, lastupdate
 
 build_mat_tgt_accounts <- function(
   verbose = FALSE
@@ -186,10 +186,11 @@ build_mat_tgt_accounts <- function(
     mutate(
       serie_id    = "mat_tgt",
       value       = round(value, digits = 0),
+      unit        = unique(obs_data_raw$unit),
       flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, industry, country, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, industry, country, year)
 
   # -------------------------------------------------------------------

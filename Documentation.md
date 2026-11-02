@@ -112,6 +112,7 @@ Colonnes attendues:
 | `industry` | Branche FIGARO. |
 | `year` | Annee. |
 | `value` | Valeur de l'indicateur. |
+| `unit` | Unite de la valeur. |
 | `flag` | Origine ou qualite de la valeur. |
 | `lastupdate` | Date de production. |
 
@@ -242,14 +243,15 @@ Colonnes principales des footprints:
 | Colonne | Description |
 | --- | --- |
 | `serie_id` | Serie source, par exemple `ghg_obs`. |
-| `indic` | Indicateur. |
 | `country` | Code pays FIGARO. |
 | `industry` | Branche FIGARO ou `TOTAL`. |
 | `year` | Annee. |
 | `aggregate` | Agregat economique. |
 | `value` | Valeur de footprint. |
+| `unit` | Unite definie dans `metadata/metadata_indics.csv`. |
 | `flag` | Flag de qualite. |
 | `lastupdate` | Date de production. |
+| `indic` | Indicateur conserve en fin de tableau par le builder, absent des CSV. |
 
 ## Upload PostgreSQL
 
