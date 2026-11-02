@@ -54,6 +54,9 @@ check_workflow_options <- function() {
     tibble(year = as.character(year), country = "FR", industry = industry,
            aggregate = c("NVA", "PRD"), value = c(100, 200))
   }
+  fixture$load_figaro_eco_source <- function(years, ...) {
+    map_dfr(as.character(years), fixture$load_local_figaro_main_aggregates)
+  }
   writes <- character()
   fixture$write.csv <- function(x, file, ...) {
     writes <<- c(writes, basename(file))

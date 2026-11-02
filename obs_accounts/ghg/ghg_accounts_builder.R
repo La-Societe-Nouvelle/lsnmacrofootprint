@@ -5,7 +5,7 @@
 #'
 #' Main sources :
 #'   - Greenhouse gas emission footprints (in CO2 equivalent, FIGARO application) - EUROSTAT
-#'   - Air Emissions Accounts - OECD
+#'   - Extension EDGAR / AEA selon la methode FIGARO, puis Air Emissions Accounts - OECD
 #'
 #' Output data
 #'   Accounts are in tonnes of CO2e
@@ -28,7 +28,8 @@ build_ghg_obs_accounts <- function(
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
-  source("obs_accounts/ghg/extended-eurostat-ghg-accounts/ghg_accounts_extensions.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/ghg/ghg_accounts_sources.R", encoding = "UTF-8-BOM")
 
   # -------------------------------------------------------------------
   # Metadata
@@ -58,30 +59,6 @@ build_ghg_obs_accounts <- function(
     ) %>%
     select(country)
 
-  eurostat_correspondence_table_nace_r2 <- read_delim(
-      "obs_accounts/ghg/eurostat_correspondence_table_nace_r2.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, nace_r2)
-
-  eurostat_correspondence_table_c_orig <- read_delim(
-      "obs_accounts/ghg/eurostat_correspondence_table_c_orig.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = figaro_country) %>%
-    select(country, c_orig)
-
-  oecd_correspondence_table_activity <- read_delim(
-      "obs_accounts/ghg/oecd_correspondence_table_activity.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, oecd_activity)
-
   # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
 
@@ -102,158 +79,21 @@ build_ghg_obs_accounts <- function(
   if (verbose) cat("FIGARO data loaded\n")
 
   # -------------------------------------------------------------------
-  # Eurostat data - Greenhouse gas emission footprints (in CO2 equivalent, FIGARO application)
+  # Shared sources: Eurostat, EDGAR / AEA extension, OECD (all in TCO2E).
 
-  eurostat_file_path  <- file.path(download_dir, "env_ac_ghgfp.csv")
-
-  if (!file.exists(eurostat_file_path) | !use_temp_data)
-  {
-    eurostat_raw_data <- get_eurostat(
-      "env_ac_ghgfp",
-      filters = list(time = years$year, na_item = "TOTAL", c_dest = "WORLD"),
-      cache   = FALSE
-    )
-
-    write.csv(eurostat_raw_data, eurostat_file_path, row.names = FALSE)
-  }
-
-  eurostat_raw_data <- read.csv(eurostat_file_path)
-
-  eurostat_data <- eurostat_raw_data %>%
-    filter(
-      freq == "A",
-      unit == "THS_T",
-      na_item == "TOTAL",
-      c_dest == "WORLD"
-    ) %>%
-    filter(values >= 0) %>%
-    merge(eurostat_correspondence_table_nace_r2) %>%
-    merge(eurostat_correspondence_table_c_orig) %>%
-    mutate(
-      year = substring(as.character(time), 1, 4),
-      eurostat_ghg_emissions = values * 1e3,
-      unit = "TCO2E"
-    ) %>%
-    select(year, country, industry, eurostat_ghg_emissions, unit)
+  eurostat_data <- load_eurostat_ghg_source(years$year, use_temp_data, verbose)
+  estimated_data <- load_estimated_ghg_source(years$year, use_temp_data, verbose)
+  oecd_data <- load_oecd_ghg_source(years$year, use_temp_data, verbose)
+  selected_data <- select_ghg_accounts_sources(eurostat_data, estimated_data, oecd_data)
 
   # -------------------------------------------------------------------
-  # OECD data
-
-  base_url_oecd_data <- paste0(
-    "https://sdmx.oecd.org/public/rest/data/",
-    "OECD.SDD.NAD.SEEA,DSD_AEA@DF_AEA,1.2/..EMISSIONS.T_CO2E+T...GHG...?"
-  )
-  url_oecd_data <- paste0(base_url_oecd_data,
-    "startPeriod=",min(years$year),
-    "&endPeriod=",max(years$year),
-    "&dimensionAtObservation=","AllDimensions",
-    "&format=","csvfilewithlabels"
-  )
-
-  oecd_file_path <- file.path(
-    download_dir,
-    paste0("oecd_aea_", min(years$year), "_", max(years$year), ".csv")
-  )
-
-  if (!file.exists(oecd_file_path) | !use_temp_data)
-  {
-    dir.create(download_dir, recursive = TRUE, showWarnings = FALSE)
-    curl_download(url_oecd_data, oecd_file_path, quiet = !verbose)
-  }
-
-  oecd_raw_data <- read.csv(oecd_file_path)
-
-  oecd_data <- oecd_raw_data %>%
-    filter(
-      MEASURE == "EMISSIONS",
-      POLLUTANT == "GHG",
-      METHODOLOGY == "EMISSIONS_SEEA",
-      ACTION == "I",
-      FREQ == "A",
-      UNIT_MEASURE == "T_CO2E", # TONNES
-      SOURCE == "REPORTED",
-      ACTIVITY_SCOPE == "RES",
-      ADJUSTMENT == "N"
-    ) %>%
-    mutate(
-      REF_AREA = countrycode(REF_AREA, 'iso3c', 'iso2c', nomatch = NULL)
-    ) %>%
-    # format
-    mutate(
-      year = as.character(TIME_PERIOD),
-      country = REF_AREA,
-      oecd_activity = ACTIVITY,
-      oecd_ghg_emissions = OBS_VALUE,
-      unit = "TCO2E",
-    ) %>%
-    merge(oecd_correspondence_table_activity) %>%
-    select(year,country,industry,oecd_ghg_emissions,unit)
-
-  # -------------------------------------------------------------------
-  # Estimated GHG accounts (from EDGAR, using the FIGARO methodology)
-
-  estimated_ghg_accounts_file_path <- file.path(download_dir, "estimated_ghg_accounts.csv")
-
-  if (!file.exists(estimated_ghg_accounts_file_path) | !use_temp_data)
-  {
-    estimated_ghg_accounts_raw_data <- estimate_ghg_from_edgar(
-      years = "2024",
-      use_temp_data = use_temp_data,
-      verbose = verbose
-    )
-
-    write.csv(
-      estimated_ghg_accounts_raw_data,
-      estimated_ghg_accounts_file_path,
-      row.names = FALSE
-    )
-  }
-
-  estimated_ghg_accounts_raw_data <- read.csv(
-    estimated_ghg_accounts_file_path
-  )
-
-  estimated_ghg_accounts_data <- estimated_ghg_accounts_raw_data %>%
-    mutate(
-      year = as.character(year),
-      eurostat_ghg_emissions = value * 1e3, # THS_TCO2E -> TCO2E
-      unit = "TCO2E"
-    ) %>%
-    filter(year %in% years$year) %>%
-    mutate(
-      estimated_ghg_accounts_ghg_emissions = eurostat_ghg_emissions
-    ) %>%
-    select(year, country, industry, estimated_ghg_accounts_ghg_emissions, unit)
-
-  # -------------------------------------------------------------------
-  # Building FIGARO accounts
-
-  if (verbose) cat("Building FIGARO accounts...\n")
+  # Building FIGARO accounts: Eurostat, then extension, then OECD per row.
 
   figaro_ghg_accounts_raw <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    mutate(unit = "TCO2E") %>%
-    left_join(
-      eurostat_data,
-      by = c("year", "country", "industry", "unit")
-    ) %>%
-    left_join(
-      oecd_data,
-      by = c("year", "country", "industry", "unit")
-    ) %>%
-    left_join(
-      estimated_ghg_accounts_data,
-      by = c("year", "country", "industry", "unit")
-    ) %>%
-    mutate(
-      value = case_when(
-        !is.na(eurostat_ghg_emissions) ~ eurostat_ghg_emissions,
-        !is.na(estimated_ghg_accounts_ghg_emissions) ~ estimated_ghg_accounts_ghg_emissions,
-        !is.na(oecd_ghg_emissions) ~ oecd_ghg_emissions
-      ),
-      flag = ""
-    ) %>%
+    left_join(selected_data, by = c("year", "country", "industry")) %>%
+    mutate(flag = "") %>%
     select(year, country, industry, value, flag)
 
   # Complete with similarity

@@ -27,6 +27,8 @@ build_art_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/art/art_accounts_sources.R", encoding = "UTF-8-BOM")
 
   # -------------------------------------------------------------------
   # Metadata
@@ -101,46 +103,7 @@ build_art_obs_accounts <- function(
 
   if (verbose) cat("Loading SIRENE data - StockEtablissement...\n")
 
-  base_url_stock_etablissement <- "https://www.data.gouv.fr/api/1/datasets/r/a29c1297-1f92-4e2a-8f6b-8c902ce96c5f"
-
-  stock_etablissement_file_path  <- file.path(download_dir, "StockEtablissements.parquet")
-
-  if (!file.exists(stock_etablissement_file_path) || !use_temp_data)
-  {
-    curl_download(
-      url = base_url_stock_etablissement,
-      destfile = stock_etablissement_file_path,
-      quiet = FALSE
-    )
-  }
-
-  stock_etablissements <- open_dataset(stock_etablissement_file_path, format = "parquet")
-
-  # dénombrement des établissements artisanaux (situation en cours)
-  etablissements_artisanaux <- stock_etablissements %>%
-    select(
-      nomenclatureActivitePrincipaleEtablissement,
-      activitePrincipaleEtablissement,
-      activitePrincipaleRegistreMetiersEtablissement,
-      etatAdministratifEtablissement
-    ) %>%
-    filter(
-      etatAdministratifEtablissement == "A",
-      nomenclatureActivitePrincipaleEtablissement == "NAFRev2",
-      activitePrincipaleEtablissement != "00.00Z"
-    ) %>%
-    group_by(activitePrincipaleEtablissement) %>%
-    summarise(
-      n_ets = n(),
-      n_ets_artisanaux = sum(
-        activitePrincipaleRegistreMetiersEtablissement != "",
-        na.rm = TRUE
-      ),
-      .groups = "drop"
-    ) %>%
-    collect() %>%
-    select(activitePrincipaleEtablissement, n_ets, n_ets_artisanaux) %>%
-    arrange(activitePrincipaleEtablissement)
+  etablissements_artisanaux <- load_sirene_art_stock_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("SIRENE data - StockEtablissement loaded\n")
 
@@ -149,45 +112,7 @@ build_art_obs_accounts <- function(
 
   if (verbose) cat("Loading SIRENE data - StockEtablissementHistorique...\n")
 
-  base_url_sirene_data <- "https://www.data.gouv.fr/api/1/datasets/r/2b3a0c79-f97b-46b8-ac02-8be6c1f01a8c"
-
-  sirene_file_path  <- file.path(download_dir, "StockEtablissementsHistorique.parquet")
-
-  if (!file.exists(sirene_file_path) || !use_temp_data)
-  {
-    curl_download(
-      url = base_url_sirene_data,
-      destfile = sirene_file_path,
-      quiet = FALSE
-    )
-  }
-
-  stock_etablissements_historique <- open_dataset(sirene_file_path, format = "parquet")
-
-  etablissements <- map_dfr(years$year, function(y)
-  {
-    # dénombrement des établissements par année
-    stock_etablissements_historique %>%
-      select(
-        nomenclatureActivitePrincipaleEtablissement,
-        activitePrincipaleEtablissement,
-        dateDebut,
-        dateFin,
-        etatAdministratifEtablissement
-      ) %>%
-      filter(
-        etatAdministratifEtablissement == "A",
-        nomenclatureActivitePrincipaleEtablissement == "NAFRev2",
-        activitePrincipaleEtablissement != "00.00Z",
-        dateDebut <= as.Date(paste0(y, "-01-01")),
-        is.na(dateFin) | dateFin >= as.Date(paste0(y, "-01-01"))
-      ) %>%
-      group_by(activitePrincipaleEtablissement) %>%
-      count(name = "n_ets") %>%
-      collect() %>%
-      mutate(year = y)
-  }) %>%
-    arrange(year, activitePrincipaleEtablissement, n_ets)
+  etablissements <- load_sirene_art_history_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("SIRENE data - StockEtablissementHistorique loaded\n")
 

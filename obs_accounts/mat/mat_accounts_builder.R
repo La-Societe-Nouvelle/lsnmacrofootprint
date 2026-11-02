@@ -24,6 +24,8 @@ build_mat_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/mat/mat_accounts_sources.R", encoding = "UTF-8-BOM")
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
@@ -78,44 +80,7 @@ build_mat_obs_accounts <- function(
   # -------------------------------------------------------------------
   # UNEP data
 
-  base_url_unep_data <- "https://unep-irp-resourcepanel.resource-use.global/mfa4/export?"
-  url_unep_data <- paste0(base_url_unep_data,
-    "flowTypes[0]=","DE" # DE Domestic Extraction
-  )
-
-  unep_file_path  <- file.path(download_dir, "mfa4.csv")
-
-  if (!file.exists(unep_file_path) | !use_temp_data)
-  {
-    if (verbose) print("Téléchargement des données UNEP...")
-
-    unep_raw_data <- read.csv(url_unep_data)
-
-    write.csv(unep_raw_data, unep_file_path, row.names = FALSE)
-  }
-
-  unep_raw_data <- read.csv(unep_file_path)
-
-  unep_data <- unep_raw_data %>%
-    pivot_longer(
-      6:ncol(.),
-      names_to = "year",
-      values_to = "value"
-    ) %>%
-    filter(
-      Flow.code == "DE",
-      Flow.unit == "t",
-      Category %in% c("Biomass", "Fossil fuels", "Metal ores", "Non-metallic minerals")
-    ) %>%
-    mutate(
-      year = sub("^X", "", year),
-      country = countrycode(Country, 'country.name', 'iso2c', nomatch = NULL),
-      flow = Flow.code,
-      category = Category,
-      unit = "T"
-    ) %>%
-    filter(year %in% years$year) %>%
-    select(year, country, flow, category, value, unit)
+  unep_data <- load_unep_mat_source(years$year, use_temp_data, verbose)
 
   # -------------------------------------------------------------------
   # Building MAT impact vector & Fill missing values by similarity

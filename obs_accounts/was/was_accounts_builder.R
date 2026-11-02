@@ -30,6 +30,8 @@ build_was_obs_accounts <- function(
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/was/was_accounts_sources.R", encoding = "UTF-8-BOM")
 
   # -------------------------------------------------------------------
   # Metadata
@@ -58,14 +60,6 @@ build_was_obs_accounts <- function(
       country = code
     ) %>%
     select(country)
-
-  eurostat_correspondence_table_geo <- read_delim(
-      "obs_accounts/was/eurostat_correspondence_table_geo.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = figaro_country) %>%
-    select(country, geo)
 
   eurostat_correspondence_table_nace_r2 <- read_delim(
       "obs_accounts/was/eurostat_correspondence_table_nace_r2.csv",
@@ -111,86 +105,12 @@ build_was_obs_accounts <- function(
 
   if (verbose) print("Load EUROSTAT data")
 
-  base_url_eurostat_data = "https://ec.europa.eu/eurostat/api/dissemination/sdmx/3.0/data/dataflow/ESTAT/env_wasgen/1.0/*.*.*.*.*.*?"
-  url_eurostat_data = paste0(base_url_eurostat_data,
-   "c[freq]=","A",
-   "&c[hazard]=","HAZ_NHAZ",
-   "&c[TIME_PERIOD]=",paste0(years$year, collapse = ","),
-   "&compress=","false",
-   "&format=","csvdata"
-  )
-
-  eurostat_file_path  <- file.path(download_dir, "env_wasgen.csv")
-
-  if (!file.exists(eurostat_file_path) | !use_temp_data)
-  {
-    eurostat_raw_data <- read.csv(url_eurostat_data)
-
-    write.csv(eurostat_raw_data, eurostat_file_path, row.names = FALSE)
-  }
-
-  eurostat_raw_data <- read.csv(eurostat_file_path)
-
-  eurostat_data <- eurostat_raw_data %>%
-    filter(
-      freq == "A",
-      unit == "T",
-      hazard == "HAZ_NHAZ",
-      waste == "PRIM"
-    ) %>%
-    merge(eurostat_correspondence_table_geo) %>%
-    mutate(
-      year = as.character(TIME_PERIOD),
-      waste_generation = round(OBS_VALUE, digits = 0),
-    ) %>%
-    select(year, country, nace_r2, waste_generation, unit)
+  eurostat_data <- load_eurostat_was_source(years$year, use_temp_data, verbose)
 
   # -------------------------------------------------------------------
   # OECD data
 
-  if (verbose) print("Load OECD data")
-
-  base_url_oecd_data = "https://sdmx.oecd.org/public/rest/data/OECD.ENV.EPI,DSD_WSECTOR@DF_WSECTOR,/.A.TOTAL.T.?"
-  url_oecd_data = paste0(base_url_oecd_data,
-    "startPeriod=",min(years$year),
-    "&endPeriod=",max(years$year),
-    "&dimensionAtObservation=","AllDimensions",
-    "&format=","csvfilewithlabels"
-  )
-
-  oecd_file_path  <- file.path(download_dir, "DSD_WSECTOR.csv")
-
-  if (!file.exists(oecd_file_path) | !use_temp_data)
-  {
-    if (verbose) print("Téléchargement des données OCDE...")
-
-    oecd_raw_data <- read.csv(url_oecd_data)
-
-    write.csv(oecd_raw_data, oecd_file_path, row.names = FALSE)
-  }
-
-  oecd_raw_data <- read.csv(oecd_file_path)
-
-  oecd_data <- oecd_raw_data %>%
-    filter(
-      MEASURE == "TOTAL",
-      ACTION == "I",
-      FREQ == "A",
-      UNIT_MEASURE == "TRUE", # TONNES
-      UNIT_MULT == 3 #
-    ) %>%
-    mutate(
-      REF_AREA = countrycode(REF_AREA, 'iso3c', 'iso2c', nomatch = NULL)
-    ) %>%
-    # format
-    mutate(
-      year = as.character(TIME_PERIOD),
-      country = REF_AREA,
-      oecd_activity = ACTIVITY,
-      waste_generation = round(OBS_VALUE * 1e3, digits = 0),
-      unit = "T",
-    ) %>%
-    select(year,country,oecd_activity,waste_generation,unit)
+  oecd_data <- load_oecd_was_source(years$year, use_temp_data, verbose)
 
   # -------------------------------------------------------------------
   # Building WAS impact vector

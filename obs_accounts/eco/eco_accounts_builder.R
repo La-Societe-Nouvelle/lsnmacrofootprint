@@ -22,6 +22,8 @@ build_eco_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/eco/eco_accounts_sources.R", encoding = "UTF-8-BOM")
 
   # -------------------------------------------------------------------
   # Metadata
@@ -58,10 +60,7 @@ build_eco_obs_accounts <- function(
 
   if (verbose) cat("Loading FIGARO data...\n")
 
-  main_aggregates_data_raw <- map_dfr(
-    years$year,
-    load_local_figaro_main_aggregates
-  )
+  main_aggregates_data_raw <- load_figaro_eco_source(years$year, use_temp_data, verbose)
 
   main_aggregates_data <- main_aggregates_data_raw %>%
     filter(industry != "TOTAL") %>%

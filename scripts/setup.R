@@ -135,6 +135,7 @@ source_project_file("utils/utils_monetary_conversion.R")
 source_project_file("utils/utils_imputations.R")
 source_project_file("utils/utils_outliers.R")
 source_project_file("utils/utils_proxy_by_similarity.R")
+source_project_file("utils/utils_accounts_sources.R")
 
 # --- Comptes tendanciels ------------------------------------------------------
 # Charger les modeles de prevision avant le builder qui les utilise.
@@ -143,7 +144,20 @@ source_project_file("trd_accounts/utils_regression_forecasts.R")
 source_project_file("trd_accounts/trend_accounts_builder.R")
 
 # --- Comptes observes et controles de disponibilite des sources ----------------
-# Pour chaque indicateur : builder, puis fonctions de controle des sources.
+# Charger les sources partagees, puis les builders et les controles par indicateur.
+source_project_file("obs_accounts/art/art_accounts_sources.R")
+source_project_file("obs_accounts/eco/eco_accounts_sources.R")
+source_project_file("obs_accounts/geq/geq_accounts_sources.R")
+source_project_file("obs_accounts/haz/haz_accounts_sources.R")
+source_project_file("obs_accounts/idr/idr_accounts_sources.R")
+source_project_file("obs_accounts/knw/knw_accounts_sources.R")
+source_project_file("obs_accounts/mat/mat_accounts_sources.R")
+source_project_file("obs_accounts/soc/soc_accounts_sources.R")
+source_project_file("obs_accounts/wat/wat_accounts_sources.R")
+source_project_file("obs_accounts/nrg/nrg_accounts_sources.R")
+source_project_file("obs_accounts/was/was_accounts_sources.R")
+source_project_file("obs_accounts/ghg/ghg_accounts_sources.R")
+
 source_project_file("obs_accounts/art/art_accounts_builder.R")
 source_project_file("obs_accounts/art/art_accounts_output_data.R")
 source_project_file("obs_accounts/eco/eco_accounts_builder.R")

@@ -27,6 +27,8 @@ build_idr_obs_accounts <- function(
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/idr/idr_accounts_sources.R", encoding = "UTF-8-BOM")
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
@@ -59,20 +61,6 @@ build_idr_obs_accounts <- function(
     ) %>%
     select(country)
 
-  bts_files_ids <- read_delim(
-      "obs_accounts/idr/bts_files_ids.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    select(year, file_id, zip_name, file_name)
-
-  metadata_trnneto <- read_delim(
-    "obs_accounts/idr/metadata_trnneto.csv",
-    delim = ";",
-    show_col_types = FALSE
-  ) %>%
-    select(TRNNETO, NETO)
-
   # -------------------------------------------------------------------
   if (verbose) cat("Metadata loaded\n")
 
@@ -97,77 +85,7 @@ build_idr_obs_accounts <- function(
 
   if (verbose) cat("Loading BTS data...\n")
 
-  base_url_bts_data <- "https://www.insee.fr/fr/statistiques/fichier/"
-
-  bts_raw_data <- lapply(years$year, function(year_i)
-  {
-    if (verbose) cat(paste0("Année ", year_i, "\n"))
-
-    # File ID
-    file_id <- bts_files_ids %>% filter(year == year_i) %>% pull(file_id)
-    zip_name <- bts_files_ids %>% filter(year == year_i) %>% pull(zip_name)
-    file_name <- bts_files_ids %>% filter(year == year_i) %>% pull(file_name)
-
-    url_bts_data <- paste0(base_url_bts_data, file_id, "/", zip_name)
-
-    zip_path <- file.path(download_dir, zip_name)
-    file_path  <- file.path(download_dir, file_name)
-
-    # Téléchargement des données (download & unzip)
-
-    if (!file.exists(file_path) || !use_temp_data)
-    {
-      if (verbose) cat("Downloading BTS data\n")
-      if (verbose) cat(paste0(url_bts_data,"\n"))
-
-      curl_download(
-        url = url_bts_data,
-        destfile = zip_path,
-        quiet = !verbose
-      )
-
-      if (!file.exists(zip_path) || file.info(zip_path)$size == 0) {
-        stop(sprintf("Téléchargement échoué pour les données \"Base Tous Salariés\" : %s", url_bts_data))
-      }
-
-      bts_files <- unzip(
-        zipfile = zip_path,
-        exdir = download_dir,
-        overwrite = TRUE
-      )
-
-      fd_file <- bts_files[grepl("^FD", basename(bts_files), ignore.case = TRUE)]
-
-      # Supprimer les autres fichiers extraits
-      other_files <- setdiff(bts_files, fd_file)
-      if (length(other_files) > 0) {
-        file.remove(other_files)
-      }
-    }
-
-    bts_raw_data_year <- read.csv(
-      file_path,
-      sep = ";"
-    ) %>%
-      mutate(year = year_i)
-
-    return(bts_raw_data_year)
-  }) %>%
-    bind_rows()
-
-  bts_data <- bts_raw_data %>%
-    merge(metadata_trnneto) %>%
-    # Format
-    mutate(
-      country = "FR",
-      branch = A38,
-      working_hours = NBHEUR_TOT,
-      net_pay = NETO # Milieu de la tranche de rémunération nette
-    ) %>%
-    filter(
-      branch %in% figaro_industries$branch
-    ) %>%
-    select(year, country, branch, working_hours, net_pay)
+  bts_data <- load_bts_idr_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("BTS data loaded\n")
 
@@ -176,41 +94,7 @@ build_idr_obs_accounts <- function(
 
   if (verbose) cat("Loading ILOSTAT data...\n")
 
-  ilostat_path  <- file.path(download_dir, "LAP_2LID_QTL_RT_A.csv")
-
-  if (!file.exists(ilostat_path) | !use_temp_data)
-  {
-    if (verbose) print("Téléchargement des données ILOSTAT...")
-
-    ilostat_raw_data <- get_ilostat(
-      "LAP_2LID_QTL_RT_A",
-      quiet = TRUE
-    )
-
-    write.csv(ilostat_raw_data, ilostat_path, row.names = FALSE)
-  }
-
-  ilostat_raw_data <- read.csv(ilostat_path)
-
-  ilostat_data <- ilostat_raw_data %>%
-    filter(
-      classif1 %in% c("DCL_DECILE_01", "DCL_DECILE_02", "DCL_DECILE_09", "DCL_DECILE_10")
-    ) %>%
-    crossing(years) %>%
-    mutate(
-      time_num = as.integer(time),
-      ecart = abs(time_num - as.integer(year))
-    ) %>%
-    group_by(year) %>%
-    filter(ecart == min(ecart, na.rm = TRUE)) %>%
-    ungroup() %>%
-    mutate(
-      year = time,
-      country = countrycode(ref_area, "iso3c", "iso2c", nomatch = NULL),
-      decile = classif1,
-      value = obs_value
-    ) %>%
-    select(year, country, decile, value)
+  ilostat_data <- load_ilostat_idr_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("ILOSTAT data loaded\n")
 

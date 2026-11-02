@@ -14,6 +14,8 @@ check_target_calculations <- function() {
                  local = fixture, encoding = "UTF-8-BOM")
   }
   base::source("obs_accounts/soc/soc_accounts_builder.R", local = fixture, encoding = "UTF-8-BOM")
+  base::source("utils/utils_accounts_sources.R", local = fixture, encoding = "UTF-8-BOM")
+  base::source("obs_accounts/soc/soc_accounts_sources.R", local = fixture, encoding = "UTF-8-BOM")
   fixture$source <- function(...) invisible(NULL)
   fixture$output_dir <- "unused-output"
   fixture$download_dir <- "unused-cache"

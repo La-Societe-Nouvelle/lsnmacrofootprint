@@ -1,172 +1,77 @@
-﻿# La Societe Nouvelle
+# La Societe Nouvelle
 
+# Controle des donnees partagees avec le producteur, avant imputation.
+# Les caches sont consultes localement ; refresh_sources autorise leur acquisition.
 check_wat_obs_accounts_output_data <- function(
   years = 2010:2025,
-  use_temp_data = FALSE,
-  verbose = FALSE
+  use_temp_data = TRUE,
+  verbose = FALSE,
+  refresh_sources = FALSE
 ) {
-  if (verbose) message("Check output data for WAT accounts (observed data)")
-  # -------------------------------------------------------------------
-  # Utils
 
-  format_percent <- function(x) round(100 * x, digits = 1)
+  # --- Sources et perimetre --------------------------------------------------
 
-  section_title <- function(title) {
-    cat("\n", strrep("-", 80), "\n", title, "\n", strrep("-", 80), "\n", sep = "")
-  }
-  empty_check <- function(years) {
-    tibble(
-      year = as.character(years),
-      status = "NOK",
-      available_data_fr = 0,
-      available_data_row = 0,
-      available_data_countries = 0
-    )
-  }
-
-  ensure_file <- function(file_path, download_expr) {
-    if (!dir.exists(dirname(file_path))) dir.create(dirname(file_path), recursive = TRUE)
-
-    if (!file.exists(file_path) || !use_temp_data) {
-      tryCatch(
-        suppressMessages(suppressWarnings(force(download_expr))),
-        error = function(e) {
-          if (verbose) message("Unable to refresh ", file_path, ": ", conditionMessage(e))
-        }
-      )
-    }
-
-    file.exists(file_path)
-  }
-
-  check_country_industry <- function(data) {
-    n_industries <- nrow(figaro_industries)
-    n_countries <- nrow(figaro_countries)
-    n_row_countries <- n_countries - 1
-
-    map_dfr(years, function(y) {
-      year_data <- data %>%
-        filter(year == y) %>%
-        filter(
-          country %in% figaro_countries$country,
-          industry %in% figaro_industries$industry
-        ) %>%
-        distinct(country, industry)
-
-      if (nrow(year_data) == 0) return(empty_check(y))
-
-      tibble(
-        year = y,
-        status = "OK",
-        available_data_fr = format_percent(
-          nrow(year_data %>% filter(country == "FR") %>% distinct(industry)) / n_industries
-        ),
-        available_data_row = format_percent(
-          nrow(year_data %>% filter(country != "FR")) / (n_row_countries * n_industries)
-        ),
-        available_data_countries = format_percent(
-          nrow(year_data %>% distinct(country)) / n_countries
-        )
-      )
-    })
-  }
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/wat/wat_accounts_sources.R", encoding = "UTF-8-BOM")
 
   years <- as.character(years)
+  refresh_sources <- isTRUE(refresh_sources) || !isTRUE(use_temp_data)
+  source_errors <- list()
 
-  # -------------------------------------------------------------------
-  # Metadata
+  industries <- read_delim(
+    "metadata/metadata_figaro_industries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  ) %>% filter(code != "TOTAL")
 
-  if (verbose) cat("Loading metadata...\n")
+  countries <- read_delim(
+    "metadata/metadata_figaro_countries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  )$code
 
-  figaro_industries <- read_delim(
-      "metadata/metadata_figaro_industries.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    filter(code != "TOTAL") %>%
-    rename(industry = code) %>%
-    select(industry)
+  load_source <- function(
+    name,
+    loader,
+    source_years = years
+  ) {
+    data <- load_accounts_source_for_check(loader, source_years, refresh_sources, verbose)
+    error <- attr(data, "source_error")
+    if (!is.null(error)) source_errors[[name]] <<- error
+    data
+  }
 
-  figaro_countries <- read_delim(
-      "metadata/metadata_figaro_countries.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = code) %>%
-    select(country)
+  coverage <- function(
+    data,
+    scope = "industry",
+    units = industries$code,
+    structural_zero_row = FALSE
+  ) {
+    accounts_source_coverage(data, years, units, countries, scope, structural_zero_row)
+  }
 
-  table_passage_ocde_data <- read_delim(
+  # --- Disponibilite des sources effectivement utilisees ----------------------
+
+  data <- load_source("oecd", load_oecd_wat_source)
+
+  if (nrow(data) > 0L) {
+    bridge <- read_delim(
       "obs_accounts/wat/table_passage_ocde.csv",
       delim = ";",
       show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, oecd_industry)
+    ) %>% transmute(industry = figaro_industry, oecd_industry)
 
-  # -------------------------------------------------------------------
-  # OECD data
-
-  oecd_file_path <- file.path(download_dir, "DSD_WATER_PSUT.csv")
-  ensure_file(
-    oecd_file_path,
-    {
-      base_url_oecd_data <- "https://sdmx.oecd.org/public/rest/data/OECD.ENV.EPI,DSD_WATER_PSUT@DF_WATER_PSUT,1.0/.A.SURFACE_GROUND..USE.SEC.?"
-      url_oecd_data <- paste0(
-        base_url_oecd_data,
-        "startPeriod=", min(years),
-        "&dimensionAtObservation=AllDimensions",
-        "&format=csvfilewithlabels"
-      )
-      write.csv(read.csv(url_oecd_data), oecd_file_path, row.names = FALSE)
-    }
-  )
-
-  oecd_data <- if (file.exists(oecd_file_path)) {
-    read.csv(oecd_file_path) %>%
-      filter(
-        VARIABLE == "SEC",
-        SUPPLY_USE == "USE",
-        MEASURE == "SURFACE_GROUND",
-        FREQ == "A",
-        UNIT_MEASURE == "M3",
-        UNIT_MULT == 6,
-        !is.na(OBS_VALUE)
-      ) %>%
-      mutate(
-        year = as.character(TIME_PERIOD),
-        country = countrycode(REF_AREA, "iso3c", "iso2c", nomatch = NULL),
-        oecd_industry = ACTIVITY
-      ) %>%
-      merge(table_passage_ocde_data) %>%
-      select(year, country, industry)
-  } else {
-    tibble(year = character(), country = character(), industry = character())
+    data <- data %>%
+      filter(!is.na(water_withdrawal)) %>%
+      inner_join(bridge, by = "oecd_industry", relationship = "many-to-many")
   }
 
-  # -------------------------------------------------------------------
-  # Synthese
+  oecd <- coverage(data)
+  reports <- list(oecd = oecd, synthesis = oecd)
 
-  oecd_check <- check_country_industry(oecd_data)
-  synthesis <- oecd_check
+  # --- Rapports et erreurs de chargement --------------------------------------
 
-  # -------------------------------------------------------------------
-  # Output
-
-  section_title("OECD WATER_PSUT")
-  print(oecd_check)
-
-  section_title("Synth\u00e8se")
-  print(synthesis)
-
-  invisible(list(
-    oecd = oecd_check,
-    synthesis = synthesis
-  ))
+  print_accounts_source_checks(reports)
+  reports$source_errors <- source_errors
+  invisible(reports)
 }
-
-
-
-
-
-
-

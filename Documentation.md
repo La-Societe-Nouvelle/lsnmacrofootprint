@@ -142,6 +142,84 @@ Les builders disposent d'un argument `verbose` pour afficher les grandes etapes:
 chargement des metadata, chargement FIGARO, construction des comptes et donnees
 finales.
 
+### Sources et controles des douze indicateurs
+
+Tous les producteurs observes et les controles `check_*_obs_accounts_output_data()` partagent
+les chargeurs des fichiers `obs_accounts/<indic>/<indic>_accounts_sources.R`.
+Ils appliquent les memes filtres, correspondances et conversions d'unites.
+Les caches Eurostat ecrits par ces chargeurs utilisent `TIME_PERIOD` et
+`OBS_VALUE`. Les anciens caches `time`/`values` sont convertis en memoire a la
+lecture, sans etre reecrits. Les autres formats sont conserves selon la source:
+Parquet, CSV large UNEP, CSV ILOSTAT, observations PRODCOM mixtes et fichiers BTS
+delimites par des points-virgules.
+
+| Indicateur | Sources partagees |
+| --- | --- |
+| ART | Stock SIRENE et historique des etablissements (Parquet). |
+| ECO | Agregats annuels FIGARO (Parquet). |
+| GEQ | Remunerations horaires ILOSTAT par sexe et secteur. |
+| GHG | Eurostat, extension EDGAR/AEA et OCDE. |
+| HAZ | Quantites et unites de production PRODCOM. |
+| IDR | Fichiers BTS de l'Insee et parts de remuneration ILOSTAT par decile. |
+| KNW | Depenses ANBERD, couts de formation Eurostat CVT et agregats OCDE STAN. |
+| MAT | Extraction domestique UNEP, par categorie de matieres. |
+| NRG | Comptes Eurostat et donnees JRC de reference. |
+| SOC | Masses salariales URSSAF, dont le champ ESS. |
+| WAS | Production de dechets Eurostat et OCDE. |
+| WAT | Prelevements d'eau OCDE. |
+
+Les controles lisent uniquement les caches locaux par defaut
+(`use_temp_data = TRUE`, `refresh_sources = FALSE`). Un cache absent ou invalide
+est signale dans `source_errors`; sa couverture vaut zero. Aucun telechargement
+ni calcul d'extension EDGAR n'est lance dans ce mode.
+
+```r
+nrg_check <- check_nrg_obs_accounts_output_data(years = 2014:2023)
+was_check <- check_was_obs_accounts_output_data(years = seq(2010, 2022, 2))
+ghg_check <- check_ghg_obs_accounts_output_data(years = 2010:2024)
+knw_check <- check_knw_obs_accounts_output_data(years = 2010:2024)
+soc_check <- check_soc_obs_accounts_output_data(years = 2020:2023)
+
+# Rafraichissement explicite des sources pour la plage demandee.
+nrg_check <- check_nrg_obs_accounts_output_data(
+  years = 2014:2023, refresh_sources = TRUE
+)
+```
+
+L'ancien appel `use_temp_data = FALSE` demande egalement un rafraichissement.
+Les nouveaux fichiers sont controles avant de remplacer le cache existant;
+si le telechargement ou la validation echoue, l'erreur figure dans `source_errors`
+et l'ancien cache reste disponible pour un prochain appel. Un rafraichissement peut remplacer
+la plage d'annees presente dans le cache par celle demandee.
+
+Ces rapports mesurent la disponibilite des donnees chargees avant imputation.
+Les sources reparties par NVA sont controlees avant cette repartition: le rapport
+ne valide pas ses poids. GEQ et les couts CVT de KNW reprennent la selection des
+annees les plus proches appliquee par leurs builders. Le rapport peut donc
+montrer une couverture pour une annee utilisant des donnees d'une autre annee.
+Le chargeur ILOSTAT IDR conserve les libelles d'annees source de son calcul actuel.
+Les conversions monetaires ANBERD sont appliquees apres chargement par le builder;
+leur controle ne telecharge pas de taux de change.
+
+`status = "OK"` signifie qu'au moins une unite source exploitable est presente;
+les pourcentages donnent la couverture. IDR requiert les quatre deciles utilises
+par le calcul; GEQ controle les trois valeurs de remuneration par secteur.
+Pour KNW, la synthese exige ANBERD, CVT et les deux agregats STAN. Pour ART et SOC,
+la couverture etrangere reste structurellement complete puisque leurs comptes
+sont fixes a zero hors France. Le diagnostic JRC de NRG reste charge par son
+builder mais son coefficient n'est pas applique au resultat.
+
+Les chargeurs et les controles sont charges par `scripts/setup.R` pour les douze
+indicateurs. Les calculs de repartition, de trajectoire et d'imputation restent
+dans les builders et leurs utilitaires.
+
+Pour GHG, la synthese retient Eurostat, puis l'extension, puis l'OCDE pour chaque
+cle `(year, country, industry)`. Le rapport inclut `estimated` pour la couverture
+de l'extension et `selected_sources` pour les lignes effectivement retenues.
+L'extension conserve son perimetre actuel, limite a 2024. Le chargeur OCDE
+reutilise le cache de production `oecd_aea_<debut>_<fin>.csv`, y compris pour un
+controle portant sur une partie de sa periode, ou l'ancien `DSD_AEA_GHG.csv`.
+
 ## Comptes tendanciels
 
 La fonction principale est:

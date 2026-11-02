@@ -2,8 +2,9 @@
 
 check_ghg_obs_accounts_output_data <- function(
   years = 2010:2025,
-  use_temp_data = FALSE,
-  verbose = FALSE
+  use_temp_data = TRUE,
+  verbose = FALSE,
+  refresh_sources = FALSE
 ) {
   if (verbose) message("Check output data for GHG accounts (observed data)")
   # -------------------------------------------------------------------
@@ -22,21 +23,6 @@ check_ghg_obs_accounts_output_data <- function(
       available_data_row = 0,
       available_data_countries = 0
     )
-  }
-
-  ensure_file <- function(file_path, download_expr) {
-    if (!dir.exists(dirname(file_path))) dir.create(dirname(file_path), recursive = TRUE)
-
-    if (!file.exists(file_path) || !use_temp_data) {
-      tryCatch(
-        suppressMessages(suppressWarnings(force(download_expr))),
-        error = function(e) {
-          if (verbose) message("Unable to refresh ", file_path, ": ", conditionMessage(e))
-        }
-      )
-    }
-
-    file.exists(file_path)
   }
 
   check_country_industry <- function(data) {
@@ -72,6 +58,13 @@ check_ghg_obs_accounts_output_data <- function(
   }
 
   years <- as.character(years)
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/ghg/ghg_accounts_sources.R", encoding = "UTF-8-BOM")
+  # use_temp_data = FALSE remains an explicit refresh request for existing callers.
+  refresh_sources <- isTRUE(refresh_sources) || !isTRUE(use_temp_data)
+  load_source <- function(loader) {
+    load_accounts_source_for_check(loader, years, refresh_sources, verbose)
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -95,158 +88,32 @@ check_ghg_obs_accounts_output_data <- function(
     rename(country = code) %>%
     select(country)
 
-  eurostat_correspondence_table_nace_r2 <- read_delim(
-      "obs_accounts/ghg/eurostat_correspondence_table_nace_r2.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, nace_r2)
-
-  eurostat_correspondence_table_c_orig <- read_delim(
-      "obs_accounts/ghg/eurostat_correspondence_table_c_orig.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = figaro_country) %>%
-    select(country, c_orig)
-
-  oecd_correspondence_table_activity <- read_delim(
-      "obs_accounts/ghg/oecd_correspondence_table_activity.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, oecd_activity)
-
   # -------------------------------------------------------------------
-  # Eurostat data - Greenhouse gas emission footprints
+  # Apply the same row-level precedence as the producer, including EDGAR.
 
-  eurostat_file_path <- file.path(download_dir, "env_ac_ghgfp.csv")
-  ensure_file(
-    eurostat_file_path,
-    {
-      eurostat_raw_data <- get_eurostat(
-        "env_ac_ghgfp",
-        filters = list(time = years, na_item = "TOTAL", c_dest = "WORLD"),
-        cache = FALSE
-      )
-      write.csv(eurostat_raw_data, eurostat_file_path, row.names = FALSE)
-    }
-  )
-
-  eurostat_data <- if (file.exists(eurostat_file_path)) {
-    read.csv(eurostat_file_path) %>%
-      filter(
-        freq == "A",
-        unit == "THS_T",
-        na_item == "TOTAL",
-        c_dest == "WORLD",
-        values >= 0
-      ) %>%
-      merge(eurostat_correspondence_table_nace_r2) %>%
-      merge(eurostat_correspondence_table_c_orig) %>%
-      mutate(year = substring(as.character(time), 1, 4)) %>%
-      select(year, country, industry)
-  } else {
-    tibble(year = character(), country = character(), industry = character())
-  }
-
-  # -------------------------------------------------------------------
-  # OECD data - Air Emissions Accounts
-
-  oecd_file_path <- file.path(download_dir, "DSD_AEA_GHG.csv")
-  ensure_file(
-    oecd_file_path,
-    {
-      base_url_oecd_data <- "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD.SEEA,DSD_AEA@DF_AEA,1.2/..EMISSIONS.T_CO2E+T...GHG...?"
-      url_oecd_data <- paste0(
-        base_url_oecd_data,
-        "startPeriod=", min(years),
-        "&endPeriod=", max(years),
-        "&dimensionAtObservation=AllDimensions",
-        "&format=csvfilewithlabels"
-      )
-      write.csv(read.csv(url_oecd_data), oecd_file_path, row.names = FALSE)
-    }
-  )
-
-  oecd_data <- if (file.exists(oecd_file_path)) {
-    read.csv(oecd_file_path) %>%
-      filter(
-        MEASURE == "EMISSIONS",
-        POLLUTANT == "GHG",
-        METHODOLOGY == "EMISSIONS_SEEA",
-        ACTION == "I",
-        FREQ == "A",
-        UNIT_MEASURE == "T_CO2E",
-        SOURCE == "REPORTED",
-        ACTIVITY_SCOPE == "RES",
-        ADJUSTMENT == "N"
-      ) %>%
-      mutate(
-        year = as.character(TIME_PERIOD),
-        country = countrycode(REF_AREA, "iso3c", "iso2c", nomatch = NULL),
-        oecd_activity = ACTIVITY
-      ) %>%
-      merge(oecd_correspondence_table_activity) %>%
-      select(year, country, industry)
-  } else {
-    tibble(year = character(), country = character(), industry = character())
-  }
-
-  # -------------------------------------------------------------------
-  # Synthese
-
+  eurostat_data <- load_source(load_eurostat_ghg_source)
+  estimated_data <- load_source(load_estimated_ghg_source)
+  oecd_data <- load_source(load_oecd_ghg_source)
+  selected_data <- select_ghg_accounts_sources(eurostat_data, estimated_data, oecd_data)
   eurostat_check <- check_country_industry(eurostat_data)
+  estimated_check <- check_country_industry(estimated_data)
   oecd_check <- check_country_industry(oecd_data)
-
-  eurostat_countries <- eurostat_data %>%
-    distinct(country) %>%
-    pull(country)
-
-  ghg_priority_data <- figaro_industries %>%
-    merge(figaro_countries) %>%
-    crossing(tibble(year = years)) %>%
-    left_join(
-      eurostat_data %>%
-        distinct(year, country, industry) %>%
-        mutate(has_eurostat = TRUE),
-      by = c("year", "country", "industry")
-    ) %>%
-    left_join(
-      oecd_data %>%
-        distinct(year, country, industry) %>%
-        mutate(has_oecd = TRUE),
-      by = c("year", "country", "industry")
-    ) %>%
-    mutate(
-      has_data = if_else(
-        country %in% eurostat_countries,
-        !is.na(has_eurostat),
-        !is.na(has_oecd)
-      )
-    ) %>%
-    filter(has_data) %>%
-    select(year, country, industry)
-
-  synthesis <- check_country_industry(ghg_priority_data)
-
-  # -------------------------------------------------------------------
-  # Output
-
+  synthesis <- check_country_industry(selected_data)
   section_title("Eurostat env_ac_ghgfp")
   print(eurostat_check)
-
+  section_title("Extension GHG (EDGAR / AEA)")
+  print(estimated_check)
   section_title("OECD Air Emissions Accounts")
   print(oecd_check)
-
-  section_title("Synth\u00e8se")
+  section_title("Synthese")
   print(synthesis)
-
   invisible(list(
     eurostat = eurostat_check,
+    estimated = estimated_check,
     oecd = oecd_check,
-    synthesis = synthesis
+    synthesis = synthesis,
+    selected_sources = selected_data,
+    source_errors = list(eurostat = attr(eurostat_data, "source_error"),
+                         estimated = attr(estimated_data, "source_error"), oecd = attr(oecd_data, "source_error"))
   ))
 }
