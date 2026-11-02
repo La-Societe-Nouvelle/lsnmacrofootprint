@@ -19,3 +19,5 @@ disaggregation/data_temp/*
 *.log
 
 sandbox/*
+
+/tests/
