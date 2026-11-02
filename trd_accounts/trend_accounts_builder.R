@@ -19,7 +19,9 @@
 build_trd_accounts <- function(
   indic_i,
   years = 2010:2030,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE,
+  do_clean_outliers = TRUE
 ) {
   if (verbose) print(paste0("Computing trend for indic ", toupper(indic_i)))
   # -------------------------------------------------------------------
@@ -133,15 +135,15 @@ build_trd_accounts <- function(
     ) %>%
     select(year, country, industry, value, flag)
 
-  if (verbose) print("Cleaning outliers")
+  trends_data <- trends_data_raw
+  if (do_clean_outliers) {
+    if (verbose) print("Cleaning outliers")
 
-  # clean outliers
-  trends_data <- trends_data_raw %>%
-    rbind(obs_data) %>%
-    clean_outliers(
-      verbose = verbose
-    ) %>%
-    filter(year %in% trend_years)
+    trends_data <- trends_data_raw %>%
+      rbind(obs_data) %>%
+      clean_outliers(verbose = verbose) %>%
+      filter(year %in% trend_years)
+  }
 
   # build accounts
   figaro_trd_accounts <- trends_data %>%
@@ -194,9 +196,12 @@ build_trd_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_filename <- paste0("accounts_trd_",tolower(indic_i),".csv")
-  accounts_data_path  <- file.path(output_dir, accounts_data_filename)
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_filename <- paste0("accounts_trd_",tolower(indic_i),".csv")
+    accounts_data_path  <- file.path(output_dir, accounts_data_filename)
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

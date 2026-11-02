@@ -14,7 +14,8 @@
 #' output columns: serie_id, country, industry, year, value, unit, flag, lastupdate
 
 build_was_tgt_accounts <- function(
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -78,7 +79,7 @@ build_was_tgt_accounts <- function(
   last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
   tgt_years <- (last_year_obs + 1) : 2030
-  n_years <- 2030 - tgt_years[1]
+  n_years <- 2030 - last_year_obs
 
   years <- tibble(year = as.character(tgt_years))
 
@@ -124,7 +125,7 @@ build_was_tgt_accounts <- function(
       fpt = if_else(NVA > 0, value / NVA, 0)
     ) %>%
     mutate(
-      tgt_2030 = value * 0.95
+      tgt_2030 = fpt * 0.95
     ) %>%
     select(country, industry, tgt_2030)
 
@@ -205,8 +206,11 @@ build_was_tgt_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_tgt_was.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_tgt_was.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

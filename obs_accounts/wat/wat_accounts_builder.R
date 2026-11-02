@@ -18,13 +18,16 @@
 build_wat_obs_accounts <- function(
   years = 2010:2022, # OECD available since 1990
   use_temp_data = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   if (verbose) message("Build WAT accounts for observed data")
   # -------------------------------------------------------------------
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/wat/wat_accounts_sources.R", encoding = "UTF-8-BOM")
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
@@ -103,47 +106,7 @@ build_wat_obs_accounts <- function(
 
   # Water accounts - supply and use
 
-  base_url_oecd_data = "https://sdmx.oecd.org/public/rest/data/OECD.ENV.EPI,DSD_WATER_PSUT@DF_WATER_PSUT,1.0/.A.SURFACE_GROUND..USE.SEC.?"
-  url_oecd_data = paste0(base_url_oecd_data,
-    "startPeriod=",min(years$year),
-    # "&endPeriod=",max(years$year),
-    "&dimensionAtObservation=","AllDimensions",
-    "&format=","csvfilewithlabels"
-  )
-
-  oecd_file_path  <- file.path(download_dir, "DSD_WATER_PSUT.csv")
-
-  if (!file.exists(oecd_file_path) | !use_temp_data)
-  {
-    if (verbose) cat("Downloadding OECD data...\n")
-    oecd_raw_data <- read.csv(url_oecd_data)
-
-    write.csv(oecd_raw_data, oecd_file_path, row.names = FALSE)
-  }
-
-  oecd_raw_data <- read.csv(oecd_file_path)
-
-  oecd_data <- oecd_raw_data %>%
-    filter(
-      VARIABLE == "SEC",
-      SUPPLY_USE == "USE",
-      MEASURE == "SURFACE_GROUND",
-      FREQ == "A",
-      UNIT_MEASURE == "M3", # m3
-      UNIT_MULT == 6 # millions
-    ) %>%
-    mutate(
-      REF_AREA = countrycode(REF_AREA, 'iso3c', 'iso2c', nomatch = NULL)
-    ) %>%
-    # format
-    mutate(
-      year = as.character(TIME_PERIOD),
-      country = REF_AREA,
-      oecd_industry = ACTIVITY,
-      water_withdrawal = round(OBS_VALUE * 1e3, digits = 0),
-      unit = "THS_M3",
-    ) %>%
-    select(year,country,oecd_industry,water_withdrawal,unit)
+  oecd_data <- load_oecd_wat_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("OECD data loaded\n")
 
@@ -211,7 +174,7 @@ build_wat_obs_accounts <- function(
     mutate(
       serie_id    = "wat_obs",
       value       = round(value, digits = 0),
-      unit        = "M3",
+      unit        = "THS_M3",
       lastupdate  = Sys.Date()
     ) %>%
     select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
@@ -222,8 +185,11 @@ build_wat_obs_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_obs_wat.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_obs_wat.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

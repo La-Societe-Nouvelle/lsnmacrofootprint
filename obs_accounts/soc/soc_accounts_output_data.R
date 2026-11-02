@@ -1,149 +1,78 @@
-﻿# La Societe Nouvelle
+# La Societe Nouvelle
 
+# Controle des donnees partagees avec le producteur, avant imputation.
+# Les caches sont consultes localement ; refresh_sources autorise leur acquisition.
 check_soc_obs_accounts_output_data <- function(
   years = 2010:2025,
-  use_temp_data = FALSE,
-  verbose = FALSE
+  use_temp_data = TRUE,
+  verbose = FALSE,
+  refresh_sources = FALSE
 ) {
-  if (verbose) message("Check output data for SOC accounts (observed data)")
-  # -------------------------------------------------------------------
-  # Utils
 
-  format_percent <- function(x) round(100 * x, digits = 1)
+  # --- Sources et perimetre --------------------------------------------------
 
-  section_title <- function(title) {
-    cat("\n", strrep("-", 80), "\n", title, "\n", strrep("-", 80), "\n", sep = "")
-  }
-  empty_check <- function(years) {
-    tibble(
-      year = as.character(years),
-      status = "NOK",
-      available_data_fr = 0,
-      available_data_row = 0,
-      available_data_countries = 0
-    )
-  }
-
-  ensure_file <- function(file_path, download_expr) {
-    if (!dir.exists(dirname(file_path))) dir.create(dirname(file_path), recursive = TRUE)
-
-    if (!file.exists(file_path) || !use_temp_data) {
-      tryCatch(
-        suppressMessages(suppressWarnings(force(download_expr))),
-        error = function(e) {
-          if (verbose) message("Unable to refresh ", file_path, ": ", conditionMessage(e))
-        }
-      )
-    }
-
-    file.exists(file_path)
-  }
-
-  check_fr_industry <- function(data) {
-    n_industries <- nrow(figaro_industries)
-
-    map_dfr(years, function(y) {
-      year_data <- data %>%
-        filter(year == y) %>%
-        filter(industry %in% figaro_industries$industry) %>%
-        distinct(industry)
-
-      if (nrow(year_data) == 0) return(empty_check(y))
-
-      tibble(
-        year = y,
-        status = "OK",
-        available_data_fr = format_percent(nrow(year_data) / n_industries),
-        available_data_row = 100,
-        available_data_countries = 100
-      )
-    })
-  }
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/soc/soc_accounts_sources.R", encoding = "UTF-8-BOM")
 
   years <- as.character(years)
+  refresh_sources <- isTRUE(refresh_sources) || !isTRUE(use_temp_data)
+  source_errors <- list()
 
-  # -------------------------------------------------------------------
-  # Metadata
+  industries <- read_delim(
+    "metadata/metadata_figaro_industries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  ) %>% filter(code != "TOTAL")
 
-  if (verbose) cat("Loading metadata...\n")
+  countries <- read_delim(
+    "metadata/metadata_figaro_countries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  )$code
 
-  figaro_industries <- read_delim(
-      "metadata/metadata_figaro_industries.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    filter(code != "TOTAL") %>%
-    rename(industry = code) %>%
-    select(industry)
+  load_source <- function(
+    name,
+    loader,
+    source_years = years
+  ) {
+    data <- load_accounts_source_for_check(loader, source_years, refresh_sources, verbose)
+    error <- attr(data, "source_error")
+    if (!is.null(error)) source_errors[[name]] <<- error
+    data
+  }
 
-  table_passage_urssaf_data <- read_delim(
+  coverage <- function(
+    data,
+    scope = "industry",
+    units = industries$code,
+    structural_zero_row = FALSE
+  ) {
+    accounts_source_coverage(data, years, units, countries, scope, structural_zero_row)
+  }
+
+  # --- Disponibilite des sources effectivement utilisees ----------------------
+
+  data <- load_source("urssaf", load_urssaf_soc_source)
+
+  if (nrow(data) > 0L) {
+    bridge <- read_delim(
       "obs_accounts/soc/table_passage_urssaf.csv",
       delim = ";",
       show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, secteur_na88)
+    ) %>% transmute(industry = figaro_industry, secteur_na88)
 
-  # -------------------------------------------------------------------
-  # URSSAF data
-
-  urssaf_file_name <- "nombre-etab-effectifs-salaries-et-masse-salariale-ess-france-x-na88.csv"
-  urssaf_file_path <- file.path(download_dir, urssaf_file_name)
-  ensure_file(
-    urssaf_file_path,
-    {
-      url_urssaf_data <- "https://open.urssaf.fr/api/explore/v2.1/catalog/datasets/nombre-etab-effectifs-salaries-et-masse-salariale-ess-france-x-na88/exports/csv?lang=fr&timezone=Europe%2FBerlin&use_labels=true&delimiter=%3B"
-      write.csv(
-        read.csv(url_urssaf_data, sep = ";", check.names = TRUE),
-        urssaf_file_path,
-        row.names = FALSE
-      )
-    }
-  )
-
-  urssaf_data <- if (file.exists(urssaf_file_path)) {
-    raw_data <- read.csv(urssaf_file_path, check.names = TRUE)
-    year_col <- names(raw_data)[grepl("Ann", names(raw_data))][1]
-    sector_col <- names(raw_data)[grepl("Secteur.NA88", names(raw_data))][1]
-    mass_col <- names(raw_data)[grepl("Masse", names(raw_data))][1]
-
-    raw_data %>%
-      transmute(
-        year = as.character(.data[[year_col]]),
-        secteur_na88 = sub(" .*", "", .data[[sector_col]]),
-        value = .data[[mass_col]]
-      ) %>%
-      filter(!is.na(value)) %>%
-      merge(table_passage_urssaf_data) %>%
-      select(year, industry)
-  } else {
-    tibble(year = character(), industry = character())
+    data <- data %>%
+      filter(!is.na(masse_salariale)) %>%
+      inner_join(bridge, by = "secteur_na88", relationship = "many-to-many") %>%
+      mutate(year = as.character(annee), country = "FR")
   }
 
-  # -------------------------------------------------------------------
-  # Synthese
+  urssaf <- coverage(data, scope = "fr_industry", structural_zero_row = TRUE)
+  reports <- list(urssaf = urssaf, synthesis = urssaf)
 
-  urssaf_check <- check_fr_industry(urssaf_data)
-  synthesis <- urssaf_check
+  # --- Rapports et erreurs de chargement --------------------------------------
 
-  # -------------------------------------------------------------------
-  # Output
-
-  section_title("URSSAF ESS NA88")
-  print(urssaf_check)
-
-  section_title("Synth\u00e8se")
-  print(synthesis)
-
-  invisible(list(
-    urssaf = urssaf_check,
-    synthesis = synthesis
-  ))
+  print_accounts_source_checks(reports)
+  reports$source_errors <- source_errors
+  invisible(reports)
 }
-
-
-
-
-
-
-

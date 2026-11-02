@@ -1,161 +1,72 @@
-﻿# La Societe Nouvelle
+# La Societe Nouvelle
 
+# Controle des donnees partagees avec le producteur, avant imputation.
+# Les caches sont consultes localement ; refresh_sources autorise leur acquisition.
 check_eco_obs_accounts_output_data <- function(
   years = 2010:2025,
-  use_temp_data = FALSE,
-  verbose = FALSE
+  use_temp_data = TRUE,
+  verbose = FALSE,
+  refresh_sources = FALSE
 ) {
-  if (verbose) message("Check output data for ECO accounts (observed data)")
-  # -------------------------------------------------------------------
-  # Utils
 
-  source("utils/utils_figaro_data.R")
+  # --- Sources et perimetre --------------------------------------------------
 
-  format_percent <- function(x) round(100 * x, digits = 1)
-
-  section_title <- function(title) {
-    cat("\n", strrep("-", 80), "\n", title, "\n", strrep("-", 80), "\n", sep = "")
-  }
-  empty_check <- function(years) {
-    tibble(
-      year = as.character(years),
-      status = "NOK",
-      available_data_fr = 0,
-      available_data_row = 0,
-      available_data_countries = 0
-    )
-  }
-
-  ensure_figaro_file <- function(filename) {
-    if (!dir.exists(figaro_data_dir)) dir.create(figaro_data_dir, recursive = TRUE)
-
-    file_path <- file.path(figaro_data_dir, filename)
-
-    if (!file.exists(file_path) || !use_temp_data) {
-      if (verbose) cat("Downloading ", filename, "...\n", sep = "")
-      download_figaro_file(
-        filename = filename,
-        verbose = verbose,
-        data_dir = figaro_data_dir
-      )
-    }
-
-    file.exists(file_path)
-  }
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/eco/eco_accounts_sources.R", encoding = "UTF-8-BOM")
 
   years <- as.character(years)
+  refresh_sources <- isTRUE(refresh_sources) || !isTRUE(use_temp_data)
+  source_errors <- list()
 
-  # -------------------------------------------------------------------
-  # Metadata
+  industries <- read_delim(
+    "metadata/metadata_figaro_industries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  ) %>% filter(code != "TOTAL")
 
-  if (verbose) cat("Loading metadata...\n")
+  countries <- read_delim(
+    "metadata/metadata_figaro_countries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  )$code
 
-  figaro_industries <- read_delim(
-      "metadata/metadata_figaro_industries.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    filter(code != "TOTAL") %>%
-    rename(industry = code) %>%
-    select(industry)
+  load_source <- function(
+    name,
+    loader,
+    source_years = years
+  ) {
+    data <- load_accounts_source_for_check(loader, source_years, refresh_sources, verbose)
+    error <- attr(data, "source_error")
+    if (!is.null(error)) source_errors[[name]] <<- error
+    data
+  }
 
-  figaro_countries <- read_delim(
-      "metadata/metadata_figaro_countries.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = code) %>%
-    select(country)
+  coverage <- function(
+    data,
+    scope = "industry",
+    units = industries$code,
+    structural_zero_row = FALSE
+  ) {
+    accounts_source_coverage(data, years, units, countries, scope, structural_zero_row)
+  }
 
-  n_industries <- nrow(figaro_industries)
-  n_countries <- nrow(figaro_countries)
-  n_row_countries <- n_countries - 1
+  # --- Disponibilite des sources effectivement utilisees ----------------------
 
-  # -------------------------------------------------------------------
-  # FIGARO data - Main aggregates
+  # Lire chaque fichier separement pour conserver les annees disponibles si
+  # un fichier d'une autre annee est absent ou invalide.
+  source("utils/utils_figaro_data.R", encoding = "UTF-8-BOM")
 
-  if (verbose) cat("Checking FIGARO data - Main aggregates...\n")
-
-  figaro_main_aggregates_check <- map_dfr(years, function(y) {
-    filename <- paste0("figaro_main_aggregates_", y, ".parquet")
-    file_path <- file.path(figaro_data_dir, filename)
-
-    if (!ensure_figaro_file(filename)) {
-      return(empty_check(y))
-    }
-
-    main_aggregates_data <- tryCatch(
-      read_parquet(file_path) %>%
-        filter(
-          industry != "TOTAL",
-          aggregate == "NVA",
-          as.character(year) == y
-        ) %>%
-        select(country, industry, value),
-      error = function(e) NULL
-    )
-
-    if (is.null(main_aggregates_data) || nrow(main_aggregates_data) == 0) {
-      return(empty_check(y))
-    }
-
-    available_fr <- main_aggregates_data %>%
-      filter(country == "FR", !is.na(value)) %>%
-      distinct(industry) %>%
-      inner_join(figaro_industries, by = "industry") %>%
-      nrow() %>%
-      `/`(n_industries) %>%
-      format_percent()
-
-    available_row <- main_aggregates_data %>%
-      filter(country != "FR", !is.na(value)) %>%
-      distinct(country, industry) %>%
-      inner_join(figaro_countries, by = "country") %>%
-      inner_join(figaro_industries, by = "industry") %>%
-      nrow() %>%
-      `/`(n_row_countries * n_industries) %>%
-      format_percent()
-
-    available_countries <- main_aggregates_data %>%
-      filter(!is.na(value)) %>%
-      distinct(country) %>%
-      inner_join(figaro_countries, by = "country") %>%
-      nrow() %>%
-      `/`(n_countries) %>%
-      format_percent()
-
-    tibble(
-      year = y,
-      status = "OK",
-      available_data_fr = available_fr,
-      available_data_row = available_row,
-      available_data_countries = available_countries
-    )
+  data <- map_dfr(years, function(year_i) {
+    load_source(paste0("figaro_", year_i), load_figaro_eco_source, year_i)
   })
 
-  # -------------------------------------------------------------------
-  # Synthese
+  if (nrow(data) > 0L) data <- data %>% filter(aggregate == "NVA", !is.na(value))
+  figaro <- coverage(data)
+  reports <- list(figaro_main_aggregates = figaro, synthesis = figaro)
 
-  synthesis <- figaro_main_aggregates_check
+  # --- Rapports et erreurs de chargement --------------------------------------
 
-  # -------------------------------------------------------------------
-  # Output
-
-  section_title("FIGARO main aggregates")
-  print(figaro_main_aggregates_check)
-
-  section_title("Synth\u00e8se")
-  print(synthesis)
-
-  invisible(list(
-    figaro_main_aggregates = figaro_main_aggregates_check,
-    synthesis = synthesis
-  ))
+  print_accounts_source_checks(reports)
+  reports$source_errors <- source_errors
+  invisible(reports)
 }
-
-
-
-
-
-
-

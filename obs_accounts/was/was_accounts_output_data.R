@@ -2,8 +2,9 @@
 
 check_was_obs_accounts_output_data <- function(
   years = 2010:2025,
-  use_temp_data = FALSE,
-  verbose = FALSE
+  use_temp_data = TRUE,
+  verbose = FALSE,
+  refresh_sources = FALSE
 ) {
   if (verbose) message("Check output data for WAS accounts (observed data)")
   # -------------------------------------------------------------------
@@ -22,21 +23,6 @@ check_was_obs_accounts_output_data <- function(
       available_data_row = 0,
       available_data_countries = 0
     )
-  }
-
-  ensure_file <- function(file_path, download_expr) {
-    if (!dir.exists(dirname(file_path))) dir.create(dirname(file_path), recursive = TRUE)
-
-    if (!file.exists(file_path) || !use_temp_data) {
-      tryCatch(
-        suppressMessages(suppressWarnings(force(download_expr))),
-        error = function(e) {
-          if (verbose) message("Unable to refresh ", file_path, ": ", conditionMessage(e))
-        }
-      )
-    }
-
-    file.exists(file_path)
   }
 
   check_country_industry <- function(data) {
@@ -72,6 +58,13 @@ check_was_obs_accounts_output_data <- function(
   }
 
   years <- as.character(years)
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/was/was_accounts_sources.R", encoding = "UTF-8-BOM")
+  # use_temp_data = FALSE remains an explicit refresh request for existing callers.
+  refresh_sources <- isTRUE(refresh_sources) || !isTRUE(use_temp_data)
+  load_source <- function(loader) {
+    load_accounts_source_for_check(loader, years, refresh_sources, verbose)
+  }
 
   # -------------------------------------------------------------------
   # Metadata
@@ -95,151 +88,41 @@ check_was_obs_accounts_output_data <- function(
     rename(country = code) %>%
     select(country)
 
-  eurostat_correspondence_table_geo <- read_delim(
-      "obs_accounts/was/eurostat_correspondence_table_geo.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = figaro_country) %>%
-    select(country, geo)
-
-  eurostat_correspondence_table_nace_r2 <- read_delim(
-      "obs_accounts/was/eurostat_correspondence_table_nace_r2.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, nace_r2)
-
-  table_passage_ocde_data <- read_delim(
-      "obs_accounts/was/table_passage_ocde.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(oecd_activity, industry)
-
   # -------------------------------------------------------------------
-  # Eurostat data
+  # Availability is measured on the shared sources, before NVA allocation.
 
-  eurostat_file_path <- file.path(download_dir, "env_wasgen.csv")
-  ensure_file(
-    eurostat_file_path,
-    {
-      eurostat_raw_data <- get_eurostat(
-        "env_wasgen",
-        filters = list(time = years, hazard = "HAZ_NHAZ"),
-        cache = FALSE
-      )
-      write.csv(eurostat_raw_data, eurostat_file_path, row.names = FALSE)
-    }
-  )
-
-  eurostat_data <- if (file.exists(eurostat_file_path)) {
-    read.csv(eurostat_file_path) %>%
-      filter(
-        freq == "A",
-        unit == "T",
-        hazard == "HAZ_NHAZ",
-        waste == "PRIM",
-        !is.na(OBS_VALUE)
-      ) %>%
-      merge(eurostat_correspondence_table_geo) %>%
-      merge(eurostat_correspondence_table_nace_r2) %>%
-      mutate(year = as.character(TIME_PERIOD)) %>%
-      select(year, country, industry)
-  } else {
-    tibble(year = character(), country = character(), industry = character())
-  }
-
-  # -------------------------------------------------------------------
-  # OECD data
-
-  oecd_file_path <- file.path(download_dir, "DSD_WSECTOR.csv")
-  ensure_file(
-    oecd_file_path,
-    {
-      base_url_oecd_data <- "https://sdmx.oecd.org/public/rest/data/OECD.ENV.EPI,DSD_WSECTOR@DF_WSECTOR,/.A.TOTAL.T.?"
-      url_oecd_data <- paste0(
-        base_url_oecd_data,
-        "startPeriod=", min(years),
-        "&endPeriod=", max(years),
-        "&dimensionAtObservation=AllDimensions",
-        "&format=csvfilewithlabels"
-      )
-      write.csv(read.csv(url_oecd_data), oecd_file_path, row.names = FALSE)
-    }
-  )
-
-  oecd_data <- if (file.exists(oecd_file_path)) {
-    read.csv(oecd_file_path) %>%
-      filter(
-        MEASURE == "TOTAL",
-        ACTION == "I",
-        FREQ == "A",
-        UNIT_MEASURE == TRUE,
-        UNIT_MULT == 3,
-        !is.na(OBS_VALUE)
-      ) %>%
-      mutate(
-        year = as.character(TIME_PERIOD),
-        country = countrycode(REF_AREA, "iso3c", "iso2c", nomatch = NULL),
-        oecd_activity = ACTIVITY
-      ) %>%
-      merge(table_passage_ocde_data) %>%
-      select(year, country, industry)
-  } else {
-    tibble(year = character(), country = character(), industry = character())
-  }
-
-  # -------------------------------------------------------------------
-  # Synthese
-
+  eurostat_data <- load_source(function(...) {
+    data <- load_eurostat_was_source(...)
+    nace <- read_delim("obs_accounts/was/eurostat_correspondence_table_nace_r2.csv",
+                       delim = ";", show_col_types = FALSE) %>%
+      transmute(industry = figaro_industry, nace_r2)
+    # Un secteur source peut couvrir plusieurs branches, pour plusieurs pays.
+    data %>% filter(waste_generation >= 0) %>%
+      inner_join(nace, by = "nace_r2", relationship = "many-to-many")
+  })
+  oecd_data <- load_source(function(...) {
+    data <- load_oecd_was_source(...)
+    activities <- read_delim("obs_accounts/was/table_passage_ocde.csv",
+                             delim = ";", show_col_types = FALSE) %>%
+      transmute(industry = figaro_industry, oecd_activity)
+    data %>% filter(waste_generation >= 0) %>%
+      inner_join(activities, by = "oecd_activity", relationship = "many-to-many")
+  })
   eurostat_check <- check_country_industry(eurostat_data)
   oecd_check <- check_country_industry(oecd_data)
-
-  combined_data <- figaro_industries %>%
-    merge(figaro_countries) %>%
-    crossing(tibble(year = years)) %>%
-    left_join(
-      eurostat_data %>%
-        distinct(year, country, industry) %>%
-        mutate(has_eurostat = TRUE),
-      by = c("year", "country", "industry")
-    ) %>%
-    left_join(
-      oecd_data %>%
-        distinct(year, country, industry) %>%
-        mutate(has_oecd = TRUE),
-      by = c("year", "country", "industry")
-    ) %>%
-    filter(!is.na(has_eurostat) | (is.na(has_eurostat) & !is.na(has_oecd))) %>%
-    select(year, country, industry)
-
-  synthesis <- check_country_industry(combined_data)
-
-  # -------------------------------------------------------------------
-  # Output
-
+  synthesis <- check_country_industry(bind_rows(
+    select(eurostat_data, year, country, industry), select(oecd_data, year, country, industry)
+  ))
   section_title("Eurostat env_wasgen")
   print(eurostat_check)
-
   section_title("OECD WSECTOR")
   print(oecd_check)
-
-  section_title("Synth\u00e8se")
+  section_title("Synthese")
   print(synthesis)
-
   invisible(list(
     eurostat = eurostat_check,
     oecd = oecd_check,
-    synthesis = synthesis
+    synthesis = synthesis,
+    source_errors = list(eurostat = attr(eurostat_data, "source_error"), oecd = attr(oecd_data, "source_error"))
   ))
 }
-
-
-
-
-
-
-
