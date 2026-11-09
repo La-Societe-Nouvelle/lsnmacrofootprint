@@ -6,9 +6,11 @@
 download_figaro_file <- function(
   filename,
   verbose = FALSE,
-  data_dir = "data_figaro"
+  data_dir = "data_figaro",
+  destfile = NULL
 ) {
-  filepath <- file.path(data_dir, filename)
+  # Un chargeur peut fournir un chemin temporaire pour valider avant sauvegarde.
+  filepath <- if (is.null(destfile)) file.path(data_dir, filename) else destfile
 
   endpoint <- paste0(
     "https://api.sinese.fr/v2/figarodata/",

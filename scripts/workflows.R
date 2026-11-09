@@ -1,11 +1,14 @@
 # La Société Nouvelle
 
+# write_output controls final local CSVs only; source/model caches are separate.
+# PostgreSQL exports are explicit upload_*() commands.
+
 # -----------------------------------------------------------------------------
 # Mise à jour des séries historiques
 
 update_obs_accounts <- function(
   indics            = default_indics,
-  do_update         = FALSE,
+  write_output      = TRUE,
   use_temp_data     = TRUE,
   verbose           = FALSE
 ) {
@@ -24,7 +27,7 @@ update_obs_accounts <- function(
       tolower(indic_i),
       paste0(tolower(indic_i), "_accounts_builder.R")
     )
-    source(path)
+    source(path, encoding = "UTF-8-BOM")
 
     function_name <- paste0("build_", tolower(indic_i), "_obs_accounts")
     obs_accounts_builder <- get(function_name)
@@ -34,17 +37,9 @@ update_obs_accounts <- function(
 
     accounts_data <<- obs_accounts_builder(
       use_temp_data = use_temp_data,
+      write_output = write_output,
       verbose = verbose
     )
-
-    # -------------------------
-    # Local/Environment storage
-
-    if (do_update)
-    {
-      accounts_data_path  <- file.path(output_dir, paste0("accounts_obs_", tolower(indic_i), ".csv"))
-      write.csv(accounts_data, accounts_data_path, row.names = FALSE)
-    }
 
     # -> Next indic
     # -------------------------
@@ -56,13 +51,14 @@ update_obs_accounts <- function(
 
 update_trd_accounts <- function(
   indics            = default_indics,
-  do_update         = FALSE,
-  verbose           = FALSE
+  write_output      = TRUE,
+  verbose           = FALSE,
+  do_clean_outliers = TRUE
 ) {
   # --------------------------------------------------
   # Source script
 
-  source("trd_accounts/trend_accounts_builder.R")
+  source("trd_accounts/trend_accounts_builder.R", encoding = "UTF-8-BOM")
 
   # --------------------------------------------------
   # Loop through each requested indicator
@@ -76,17 +72,10 @@ update_trd_accounts <- function(
 
     accounts_data <<- build_trd_accounts(
       indic_i,
-      verbose = FALSE
+      write_output = write_output,
+      do_clean_outliers = do_clean_outliers,
+      verbose = verbose
     )
-
-    # -------------------------
-    # Local/Environment storage
-
-    if (do_update)
-    {
-      accounts_data_path  <- file.path(output_dir, paste0("accounts_trd_", tolower(indic_i), ".csv"))
-      write.csv(accounts_data, accounts_data_path, row.names = FALSE)
-    }
 
     # -> Next indic
     # -------------------------
@@ -100,7 +89,7 @@ update_trd_accounts <- function(
 
 update_tgt_accounts <- function(
   indics            = default_tgt_indics,
-  do_update         = FALSE,
+  write_output      = TRUE,
   verbose           = TRUE
 ) {
   # --------------------------------------------------
@@ -118,7 +107,7 @@ update_tgt_accounts <- function(
       tolower(indic_i),
       paste0(tolower(indic_i), "_targets_builder", ".R")
     )
-    source(path)
+    source(path, encoding = "UTF-8-BOM")
 
     function_name <- paste0("build_", tolower(indic_i), "_tgt_accounts")
     tgt_accounts_builder <- get(function_name)
@@ -127,17 +116,9 @@ update_tgt_accounts <- function(
     # Build accounts data
 
     accounts_data <<- tgt_accounts_builder(
+      write_output = write_output,
       verbose = verbose
     )
-
-    # -------------------------
-    # Local/Environment storage
-
-    if (do_update)
-    {
-      accounts_data_path  <- file.path(output_dir, paste0("accounts_tgt_", tolower(indic_i), ".csv"))
-      write.csv(accounts_data, accounts_data_path, row.names = FALSE)
-    }
 
     # -> Next indic
     # -------------------------
@@ -149,7 +130,7 @@ update_tgt_accounts <- function(
 
 update_footprints <- function(
   indics = default_indics,
-  do_update = FALSE,
+  write_output = TRUE,
   verbose   = TRUE
 ) {
   # -------------------------------------------------------------------
@@ -181,7 +162,7 @@ update_footprints <- function(
     # -------------------------
     # Build footprint
 
-    macro_fpt_raw <<- build_footprints(serie_id, verbose)
+    macro_fpt_raw <<- build_footprints(serie_id, verbose = verbose)
 
     # -------------------------
     # Format data
@@ -193,13 +174,14 @@ update_footprints <- function(
         indic      = str_sub(serie_id, 1, 3),
         serie      = str_sub(serie_id, 5, 7)
       ) %>%
-      select(serie_id, country, industry, year, aggregate, value, flag, lastupdate, indic, serie)
+      select(serie_id, country, industry, year, aggregate, value, unit, flag, lastupdate, indic, serie)
 
     # -------------------------
     # Local/Environment storage
 
-    if (do_update)
+    if (write_output)
     {
+      dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
       serie_type <- unique(footprints_data$serie)
       indic_i    <- unique(footprints_data$indic)
 
@@ -224,19 +206,19 @@ update_footprints <- function(
 
 update_disaggregated_footprints <- function(
   year_i = 2022,
-  do_update = FALSE,
+  write_output = TRUE,
   verbose   = TRUE
 ) {
   # --------------------------------------------------
   # Source scripts
 
-  source("disaggregation/disaggregation.R")
+  source("disaggregation/disaggregation.R", encoding = "UTF-8-BOM")
 
   # EEIO Models
-  source("disaggregation/eeio_canada/eeio_canada_footprints_builder.R")
-  source("disaggregation/eeio_dk/eeio_dk_footprints_builder.R")
-  source("disaggregation/eeio_uk/eeio_uk_footprints_builder.R")
-  source("disaggregation/eeio_us/eeio_us_footprints_builder.R")
+  source("disaggregation/eeio_canada/eeio_canada_footprints_builder.R", encoding = "UTF-8-BOM")
+  source("disaggregation/eeio_dk/eeio_dk_footprints_builder.R", encoding = "UTF-8-BOM")
+  source("disaggregation/eeio_uk/eeio_uk_footprints_builder.R", encoding = "UTF-8-BOM")
+  source("disaggregation/eeio_us/eeio_us_footprints_builder.R", encoding = "UTF-8-BOM")
 
   # -------------------------------------------------------------------
   # 1- Build EEIO footprints
@@ -252,7 +234,7 @@ update_disaggregated_footprints <- function(
   build_disaggregated_footprints(
     YEAR = year_i,
     use_temp_data = FALSE,
-    do_update = TRUE
+    write_output = write_output
   )
 
   # -------------------------------------------------------------------

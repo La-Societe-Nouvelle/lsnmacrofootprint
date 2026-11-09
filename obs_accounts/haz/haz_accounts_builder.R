@@ -16,13 +16,16 @@
 build_haz_obs_accounts <- function(
   years = 2010:2024,
   use_temp_data = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   if (verbose) message("Build HAZ accounts for observed data")
   # -------------------------------------------------------------------
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/haz/haz_accounts_sources.R", encoding = "UTF-8-BOM")
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
@@ -105,64 +108,7 @@ build_haz_obs_accounts <- function(
   # -------------------------------------------------------------------
   # PRODCOM data (Eurostat)
 
-  base_url_prodcom_data <- "https://ec.europa.eu/eurostat/api/comext/dissemination/sdmx/3.0/data/dataflow/ESTAT/ds-059358/1.0?"
-  url_prodcom_data <- paste0(
-    base_url_prodcom_data,
-    "format=", "csvdata",
-    "&c[freq]=", "A",
-    "&c[TIME_PERIOD]=", years$year,
-    "&c[indicators]=", "PRODQNT,QNTUNIT",
-    "&compressed=", "true"
-  )
-  prodcom_file_path  <- file.path(download_dir, "ds-059358.csv")
-
-  if (!file.exists(prodcom_file_path) || !use_temp_data)
-  {
-    if (verbose) cat("Téléchargement données PRODCOM...\n")
-
-    prodcom_raw_data <- map2_dfr(years$year, url_prodcom_data, function(year, url) {
-      if (verbose) cat(paste0("\t", year, "\n"))
-
-      suppressMessages(
-        suppressWarnings(
-          capture.output(
-            year_data <- fread(
-              url,
-              colClasses = "character",
-              sep = ",",
-              showProgress = FALSE
-            ),
-            type = "message"
-          )
-        )
-      )
-
-      year_data
-    })
-
-    if (verbose) cat("Données PRODCOM téléchargées\n")
-    write.csv(prodcom_raw_data, prodcom_file_path, row.names = FALSE)
-  }
-
-  prodcom_raw_data <- read.csv(prodcom_file_path)
-
-  prodcom_data <- prodcom_raw_data %>%
-    pivot_wider(
-      names_from = indicators,
-      values_from = OBS_VALUE
-    ) %>%
-    filter(
-      QNTUNIT == "KG",
-      TIME_PERIOD %in% years$year,
-      freq == "A"
-    ) %>%
-    mutate(
-      year = as.character(TIME_PERIOD),
-      country = reporter,
-      value = as.numeric(PRODQNT),
-      unit = QNTUNIT
-    ) %>%
-    select(year, country, product, value, unit)
+  prodcom_data <- load_prodcom_haz_source(years$year, use_temp_data, verbose)
 
   # -------------------------------------------------------------------
 
@@ -261,8 +207,11 @@ build_haz_obs_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_obs_haz.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_obs_haz.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

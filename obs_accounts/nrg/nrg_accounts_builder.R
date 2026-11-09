@@ -17,7 +17,8 @@
 build_nrg_obs_accounts <- function(
   years = 2014:2023,
   use_temp_data = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   if (verbose) message("Build NRG accounts for observed data")
   # -------------------------------------------------------------------
@@ -27,6 +28,8 @@ build_nrg_obs_accounts <- function(
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_outliers.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/nrg/nrg_accounts_sources.R", encoding = "UTF-8-BOM")
 
   # -------------------------------------------------------------------
   # Metadata
@@ -56,30 +59,6 @@ build_nrg_obs_accounts <- function(
     ) %>%
     select(country)
 
-  eurostat_correspondence_table_geo <- read_delim(
-      "obs_accounts/nrg/eurostat_correspondence_table_geo.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = figaro_country) %>%
-    select(country, geo)
-
-  eurostat_correspondence_table_nace_r2 <- read_delim(
-      "obs_accounts/nrg/eurostat_correspondence_table_nace_r2.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, nace_r2)
-
-  jrc_correspondence_table_industry <- read_delim(
-      "obs_accounts/nrg/jrc_correspondence_table_industry.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, jrc_industry)
-
   if (verbose) cat("Metadata loaded\n")
 
   # -------------------------------------------------------------------
@@ -104,46 +83,7 @@ build_nrg_obs_accounts <- function(
 
   if (verbose) cat("Loading EUROSTAT data...\n")
 
-  base_url_eurostat_data = "https://ec.europa.eu/eurostat/api/dissemination/sdmx/3.0/data/dataflow/ESTAT/env_ac_pefasu/1.0/*.*.*.*.*.*?"
-  url_eurostat_data = paste0(base_url_eurostat_data,
-    "c[freq]=","A",
-    "&c[stk_flow]=","SUP", # SUP
-    # "&c[prod_nrg]=N00_P00_R00",
-    "&c[unit]=","TJ",
-    "&c[TIME_PERIOD]=",paste0(years$year, collapse = ","),
-    "&compress=","false",
-    "&format=","csvdata"
-  )
-
-  eurostat_file_path  <- file.path(download_dir, "env_ac_pefasu.csv")
-
-  if (!file.exists(eurostat_file_path) | !use_temp_data)
-  {
-    if (verbose) cat("Downloading FIGARO data...\n")
-    eurostat_raw_data <- read.csv(url_eurostat_data)
-
-    write.csv(eurostat_raw_data, eurostat_file_path, row.names = FALSE)
-  }
-
-  eurostat_raw_data <- read.csv(eurostat_file_path)
-
-  eurostat_data <- eurostat_raw_data %>%
-    filter(
-      freq == "A",
-      stk_flow == "SUP",
-      prod_nrg == "R30",
-      unit == "TJ",
-      TIME_PERIOD %in% years$year
-    ) %>%
-    # format
-    merge(eurostat_correspondence_table_geo) %>% # by geo
-    merge(eurostat_correspondence_table_nace_r2) %>% # by nace_r2
-    mutate(
-      year = as.character(TIME_PERIOD),
-      nrg_use = round(as.numeric(OBS_VALUE) * 1e3, digits = 0),
-      unit = "GJ"
-    ) %>%
-    select(year,country,industry,nrg_use,unit)
+  eurostat_data <- load_eurostat_nrg_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("EROSTAT data loaded\n")
 
@@ -152,42 +92,7 @@ build_nrg_obs_accounts <- function(
 
   if (verbose) cat("Loading JRC data...\n")
 
-  base_url_jrc_data = "https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/FIGARO-E3/Energy%20and%20emissions/flatfile_FIGARO-e_ENE_TJ_2015.csv"
-
-  jrc_file_path  <- file.path(download_dir, "FIGARO-e_ENE_TJ_2015.csv")
-
-  if (!file.exists(jrc_file_path) | !use_temp_data)
-  {
-    if (verbose) cat("Downloading JRC data...\n")
-
-    jrc_raw_data <- read.csv(base_url_jrc_data)
-
-    write.csv(jrc_raw_data, jrc_file_path, row.names = FALSE)
-  }
-
-  jrc_raw_data <- read.csv(jrc_file_path)
-
-  jrc_data <- jrc_raw_data %>%
-    filter(
-      category == "Energy",
-      codeIndicator == "NEU", # Net energy use
-      codeEproduct == "Total",
-      timePeriod == "2015",
-      unit == "TJ"
-    ) %>%
-    mutate(
-      year = as.character(timePeriod),
-      country = refArea,
-      jrc_industry = colPi,
-      value = round(obsValue * 1e3, digits = 0),
-      unit = "GJ"
-    ) %>%
-    merge(jrc_correspondence_table_industry) %>%
-    group_by(year,country,industry,unit) %>%
-    summarise(
-      value = sum(value, na.rm = TRUE)
-    ) %>%
-    select(year,country,industry,value,unit)
+  jrc_data <- load_jrc_nrg_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("JRC data loaded\n")
 
@@ -265,8 +170,11 @@ build_nrg_obs_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_obs_nrg.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_obs_nrg.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

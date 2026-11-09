@@ -37,6 +37,7 @@
 #'   InseeFrLab/global-ghg-emissions (see credit above).
 #'
 #' estimate_ghg_from_edgar(years, use_temp_data, verbose)
+#' Returns emissions in thousands of tonnes of CO2 equivalent (THS_TCO2E).
 
 
 # ==========================================================================================
@@ -1256,7 +1257,7 @@ estimate_ghg_from_edgar <- function(
   # ======================================================================================
   # CO2e Conversion
 
-  # Final GHG emissions converted to CO2 equivalent and aggregated across gases.
+  # Final GHG emissions in thousands of tonnes of CO2 equivalent, aggregated across gases.
   # Columns: year, country, industry, value, unit.
   final_ghg_emissions_co2e <- final_aea_emissions_by_gas %>%
     mutate(
@@ -1272,7 +1273,7 @@ estimate_ghg_from_edgar <- function(
       .groups = "drop"
     ) %>% 
     mutate(
-      unit = "TCO2E"
+      unit = "THS_TCO2E"
     )
 
   final_ghg_emissions_co2e

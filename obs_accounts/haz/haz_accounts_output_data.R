@@ -1,158 +1,73 @@
-﻿# La Societe Nouvelle
+# La Societe Nouvelle
 
+# Controle des donnees partagees avec le producteur, avant imputation.
+# Les caches sont consultes localement ; refresh_sources autorise leur acquisition.
 check_haz_obs_accounts_output_data <- function(
   years = 2010:2025,
-  use_temp_data = FALSE,
-  verbose = FALSE
+  use_temp_data = TRUE,
+  verbose = FALSE,
+  refresh_sources = FALSE
 ) {
-  if (verbose) message("Check output data for HAZ accounts (observed data)")
-  # -------------------------------------------------------------------
-  # Utils
 
-  format_percent <- function(x) round(100 * x, digits = 1)
+  # --- Sources et perimetre --------------------------------------------------
 
-  section_title <- function(title) {
-    cat("\n", strrep("-", 80), "\n", title, "\n", strrep("-", 80), "\n", sep = "")
-  }
-  empty_check <- function(years) {
-    tibble(
-      year = as.character(years),
-      status = "NOK",
-      available_data_fr = 0,
-      available_data_row = 0,
-      available_data_countries = 0
-    )
-  }
-
-  check_country_only <- function(data) {
-    n_countries <- nrow(figaro_countries)
-    n_row_countries <- n_countries - 1
-
-    map_dfr(years, function(y) {
-      year_data <- data %>%
-        filter(year == y) %>%
-        filter(country %in% figaro_countries$country) %>%
-        distinct(country)
-
-      if (nrow(year_data) == 0) return(empty_check(y))
-
-      tibble(
-        year = y,
-        status = "OK",
-        available_data_fr = format_percent(any(year_data$country == "FR")),
-        available_data_row = format_percent(nrow(year_data %>% filter(country != "FR")) / n_row_countries),
-        available_data_countries = format_percent(nrow(year_data) / n_countries)
-      )
-    })
-  }
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/haz/haz_accounts_sources.R", encoding = "UTF-8-BOM")
 
   years <- as.character(years)
+  refresh_sources <- isTRUE(refresh_sources) || !isTRUE(use_temp_data)
+  source_errors <- list()
 
-  # -------------------------------------------------------------------
-  # Metadata
+  industries <- read_delim(
+    "metadata/metadata_figaro_industries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  ) %>% filter(code != "TOTAL")
 
-  if (verbose) cat("Loading metadata...\n")
+  countries <- read_delim(
+    "metadata/metadata_figaro_countries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  )$code
 
-  figaro_countries <- read_delim(
-      "metadata/metadata_figaro_countries.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(country = code) %>%
-    select(country)
+  load_source <- function(
+    name,
+    loader,
+    source_years = years
+  ) {
+    data <- load_accounts_source_for_check(loader, source_years, refresh_sources, verbose)
+    error <- attr(data, "source_error")
+    if (!is.null(error)) source_errors[[name]] <<- error
+    data
+  }
 
-  haz_products <- read.csv(
+  coverage <- function(
+    data,
+    scope = "industry",
+    units = industries$code,
+    structural_zero_row = FALSE
+  ) {
+    accounts_source_coverage(data, years, units, countries, scope, structural_zero_row)
+  }
+
+  # --- Disponibilite des sources effectivement utilisees ----------------------
+
+  data <- load_source("prodcom", load_prodcom_haz_source)
+  products <- read.csv(
     "obs_accounts/haz/reference-substances.txt",
     sep = "\t",
     check.names = FALSE,
     colClasses = "character"
-  )
+  )$`PRODCOM Code`
+  data <- data %>% filter(!is.na(value))
+  if (nrow(data) > 0L) data <- data %>% filter(product %in% products)
+  prodcom <- coverage(data, scope = "country")
 
-  # -------------------------------------------------------------------
-  # PRODCOM data (Eurostat)
+  reports <- list(prodcom = prodcom, synthesis = prodcom)
 
-  base_url_prodcom_data <- "https://ec.europa.eu/eurostat/api/comext/dissemination/sdmx/3.0/data/dataflow/ESTAT/ds-059358/1.0?"
-  prodcom_file_path <- file.path(download_dir, "ds-059358.csv")
+  # --- Rapports et erreurs de chargement --------------------------------------
 
-  if (!file.exists(prodcom_file_path) || !use_temp_data) {
-    if (verbose) cat("Downloading PRODCOM data...\n")
-
-    prodcom_raw_data <- map_dfr(years, function(year) {
-      if (verbose) cat(paste0("\t", year, "\n"))
-
-      url_prodcom_data <- paste0(
-        base_url_prodcom_data,
-        "format=csvdata",
-        "&c[freq]=A",
-        "&c[TIME_PERIOD]=", year,
-        "&c[indicators]=PRODQNT,QNTUNIT",
-        "&compressed=true"
-      )
-      suppressMessages(
-        suppressWarnings(
-          capture.output(
-            year_data <- fread(
-              url_prodcom_data,
-              colClasses = "character",
-              sep = ",",
-              showProgress = FALSE
-            ),
-            type = "message"
-          )
-        )
-      )
-
-      year_data
-    })
-
-    if (verbose) cat("PRODCOM data downloaded\n")
-    write.csv(prodcom_raw_data, prodcom_file_path, row.names = FALSE)
-  }
-
-  prodcom_data <- if (file.exists(prodcom_file_path)) {
-    read.csv(prodcom_file_path) %>%
-      pivot_wider(
-        names_from = indicators,
-        values_from = OBS_VALUE
-      ) %>%
-      filter(
-        QNTUNIT == "KG",
-        product %in% haz_products$`PRODCOM Code`,
-        !is.na(PRODQNT)
-      ) %>%
-      mutate(
-        year = as.character(TIME_PERIOD),
-        country = reporter
-      ) %>%
-      select(year, country)
-  } else {
-    tibble(year = character(), country = character())
-  }
-
-  # -------------------------------------------------------------------
-  # Synthese
-
-  prodcom_check <- check_country_only(prodcom_data)
-  synthesis <- prodcom_check
-
-  # -------------------------------------------------------------------
-  # Output
-
-  section_title("PRODCOM ds-059358")
-  print(prodcom_check)
-
-  section_title("Synth\u00e8se")
-  print(synthesis)
-
-  invisible(list(
-    prodcom = prodcom_check,
-    synthesis = synthesis
-  ))
+  print_accounts_source_checks(reports)
+  reports$source_errors <- source_errors
+  invisible(reports)
 }
-
-
-
-
-
-
-

@@ -19,6 +19,9 @@ default_tgt_indics <- c(
 
 # Default execution options.
 install_missing_packages <- FALSE
-do_update <- FALSE
+# Write local result CSVs. PostgreSQL exports use explicit upload_*() calls.
+# Keep TRUE for the full pipeline: downstream steps read these CSVs.
+write_output <- TRUE
+# Clean projected trend values with FBI imputation.
 do_clean_outliers <- TRUE
 verbose <- TRUE

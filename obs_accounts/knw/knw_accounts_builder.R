@@ -20,13 +20,16 @@
 build_knw_obs_accounts <- function(
   years = 2015:2020,
   use_temp_data = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   if (verbose) message("Build KNW accounts for observed data")
   # -------------------------------------------------------------------
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/knw/knw_accounts_sources.R", encoding = "UTF-8-BOM")
   source("utils/utils_imputations.R")
   source("utils/utils_proxy_by_similarity.R")
   source("utils/utils_monetary_conversion.R")
@@ -67,14 +70,6 @@ build_knw_obs_accounts <- function(
     ) %>%
     rename(industry = figaro_industry) %>%
     select(industry, anberd_activity)
-
-  oecd_correspondence_table_activity <- read_delim(
-      "obs_accounts/knw/oecd_correspondence_table_activity.csv",
-      delim = ";",
-      show_col_types = FALSE
-    ) %>%
-    rename(industry = figaro_industry) %>%
-    select(industry, oecd_activity)
 
   eurostat_correspondence_table_activity <- read_delim(
       "obs_accounts/knw/eurostat_correspondence_table_nace_r2.csv",
@@ -117,42 +112,7 @@ build_knw_obs_accounts <- function(
 
   if (verbose) cat("Loading ANBERD data...\n")
 
-  base_url_anberd_data = "https://sdmx.oecd.org/public/rest/data/OECD.STI.STP,DSD_ANBERD@DF_ANBERDi4,/.A.MA..USD_PPP.V.?"
-  url_anberd_data = paste0(base_url_anberd_data,
-    "startPeriod=",min(years$year),
-    "&endPeriod=",max(years$year),
-    "&dimensionAtObservation=AllDimensions"
-  )
-
-  anberd_file_path  <- file.path(download_dir, "DSD_ANBERD.csv")
-
-  if (!file.exists(anberd_file_path) | !use_temp_data)
-  {
-    if (verbose) print("Download ANBERD data")
-
-    anberd_raw_data <- read_sdmx(url_anberd_data)
-
-    write.csv(anberd_raw_data, anberd_file_path, row.names = FALSE)
-  }
-
-  anberd_raw_data <- read.csv(anberd_file_path)
-
-  anberd_data <- anberd_raw_data %>%
-    filter(
-      CRITERIA == "MA", # "MA" DIRDE in the main activity of the company and not distributed according to the sectors involved
-      FREQ == "A",
-      MEASURE == "B",
-      PRICE_BASE == "V", # "V" current prices
-      TIME_PERIOD %in% years$year,
-      UNIT_MEASURE == "USD_PPP" # "USD_PPP" according to $
-    ) %>%
-    mutate(
-      year = as.character(TIME_PERIOD),
-      country = countrycode(REF_AREA, "iso3c", "iso2c", nomatch = NULL),
-      anberd_activity = ACTIVITY,
-      value = round(as.numeric(ObsValue) / 1e6, digits = 0),
-      unit = "MUSD"
-    ) %>%
+  anberd_data <- load_anberd_knw_source(years$year, use_temp_data, verbose) %>%
     merge(usd_eur) %>%
     mutate(
       value = round(value * usd_eur, digits = 0),
@@ -168,47 +128,7 @@ build_knw_obs_accounts <- function(
 
   if (verbose) cat("Loading EUROSTAT data...\n")
 
-  base_url_trng_cvt_data = "https://ec.europa.eu/eurostat/api/dissemination/sdmx/3.0/data/dataflow/ESTAT/trng_cvt_16n2/1.0?"
-  url_trng_cvt_data = paste0(base_url_trng_cvt_data,
-    "compress=","false",
-    "&format=","csvdata",
-    "&formatVersion=","2.0"
-  )
-
-  eurostat_file_path  <- file.path(download_dir, "trng_cvt_16n2.csv")
-
-  if (!file.exists(eurostat_file_path) | !use_temp_data)
-  {
-    if (verbose) cat("Download EUROSTAT data")
-
-    trng_cvt_raw_data <- read.csv(url_trng_cvt_data)
-
-    write.csv(trng_cvt_raw_data, eurostat_file_path, row.names = FALSE)
-  }
-
-  trng_cvt_raw_data <- read.csv(eurostat_file_path)
-
-  trng_cvt_data <- trng_cvt_raw_data %>%
-    filter(
-      freq == "A",
-      cost == "TOTAL",
-      unit == "PC"
-    ) %>%
-    crossing(years) %>%
-    mutate(
-      time_num = as.integer(TIME_PERIOD),
-      ecart = abs(time_num - as.integer(year))
-    ) %>%
-    group_by(year) %>%
-    filter(ecart == min(ecart, na.rm = TRUE)) %>%
-    ungroup() %>%
-    # format
-    mutate(
-      country = geo,
-      nace_r2 = nace_r2,
-      trng_cvt = as.numeric(OBS_VALUE) / 100,
-    ) %>%
-    select(year,country,nace_r2,trng_cvt)
+  trng_cvt_data <- load_training_knw_source(years$year, use_temp_data, verbose)
 
   if (verbose) print("EUROSTAT data loaded\n")
 
@@ -217,46 +137,7 @@ build_knw_obs_accounts <- function(
 
   if (verbose) cat("Loading OECD STAN data...")
 
-  base_url_stan_data = "https://sdmx.oecd.org/public/rest/data/OECD.STI.PIE,DSD_STAN@DF_STAN_2025,1.0/A...D11+B1G.V.?"
-  url_stan_data = paste0(base_url_stan_data,
-    "startPeriod=",min(years$year),
-    "&endPeriod=",max(years$year),
-    "&dimensionAtObservation=","AllDimensions",
-    "&format=csvfilewithlabels"
-  )
-
-  oecd_file_path  <- file.path(download_dir, "DSD_STAN.csv")
-
-  if (!file.exists(oecd_file_path) | !use_temp_data)
-  {
-    if (verbose) print("Download STAN data")
-
-    stan_raw_data <- read.csv(url_stan_data)
-
-    write.csv(stan_raw_data, oecd_file_path, row.names = FALSE)
-  }
-
-  stan_raw_data <- read.csv(oecd_file_path)
-
-  stan_data <- stan_raw_data %>%
-    filter(
-      ACTION == "I",
-      FREQ == "A",
-      MEASURE %in% c("D11","B1G"),
-      PRICE_BASE == "V",
-      UNIT_MEASURE == "XDC",
-      UNIT_MULT == 6
-    ) %>%
-    mutate(
-      year = TIME_PERIOD,
-      country = countrycode(REF_AREA, "iso3c", "iso2c", nomatch = NULL),
-      oecd_activity = ACTIVITY,
-      aggregate = MEASURE,
-      value = as.numeric(OBS_VALUE),
-      unit = "MEUR"
-    ) %>%
-    merge(oecd_correspondence_table_activity) %>%
-    select(year, country, industry, aggregate, value)
+  stan_data <- load_stan_knw_source(years$year, use_temp_data, verbose)
 
   if (verbose) cat("OECD STAN data loaded\n")
 
@@ -418,8 +299,11 @@ build_knw_obs_accounts <- function(
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_obs_knw.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_obs_knw.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

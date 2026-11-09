@@ -9,10 +9,11 @@
 #'   - FRA : +0.8 pts increase by 2030, from 2020
 #'   - other countries : trend
 #'
-#' output columns: serie_id, country, industry, year, value, flag, lastupdate
+#' output columns: serie_id, country, industry, year, value, unit, flag, lastupdate
 
 build_knw_tgt_accounts <- function(
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -76,7 +77,7 @@ build_knw_tgt_accounts <- function(
   last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
   tgt_years <- (last_year_obs + 1) : 2030
-  n_years <- 2030 - tgt_years[1]
+  n_years <- 2030 - last_year_obs
 
   years <- tibble(year = as.character(tgt_years))
 
@@ -197,17 +198,21 @@ build_knw_tgt_accounts <- function(
     mutate(
       serie_id    = "knw_tgt",
       value       = round(value, digits = 3),
+      unit        = unique(obs_data_raw$unit),
       flag        = "",
       lastupdate  = Sys.Date()
     ) %>%
-    select(serie_id, industry, country, year, value, flag, lastupdate) %>%
+    select(serie_id, country, industry, year, value, unit, flag, lastupdate) %>%
     arrange(serie_id, industry, country, year)
 
   # -------------------------------------------------------------------
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_tgt_knw.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_tgt_knw.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)

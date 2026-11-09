@@ -12,7 +12,7 @@ source("utils/utils_monetary_conversion.R")
 build_disaggregated_footprints <<- function(
   YEAR = 2022,
   use_temp_data = FALSE,
-  do_update = TRUE
+  write_output = TRUE
 ) {
   # ----------------------------------------------------------------------------------------------------
   # Building EEIO Data
@@ -175,9 +175,10 @@ build_disaggregated_footprints <<- function(
   message("Traitement terminé")
   print(nace_a732_fpt %>% as_tibble())
 
-  if (do_update) {
+  if (write_output) {
     write.csv(nace_a732_fpt, file = "disaggregation/data_temp/nace_a732_fpt.csv", row.names = FALSE)
   }
+  return(nace_a732_fpt)
 }
 
 ####################################################################################################

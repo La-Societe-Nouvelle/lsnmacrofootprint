@@ -14,13 +14,16 @@
 build_eco_obs_accounts <- function(
   years = 2010:2024,
   use_temp_data = TRUE,
-  verbose = FALSE
+  verbose = FALSE,
+  write_output = TRUE
 ) {
   if (verbose) message("Build ECO accounts for observed data")
   # -------------------------------------------------------------------
   # Utils
 
   source("utils/utils_figaro_data.R")
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+  source("obs_accounts/eco/eco_accounts_sources.R", encoding = "UTF-8-BOM")
 
   # -------------------------------------------------------------------
   # Metadata
@@ -57,10 +60,7 @@ build_eco_obs_accounts <- function(
 
   if (verbose) cat("Loading FIGARO data...\n")
 
-  main_aggregates_data_raw <- map_dfr(
-    years$year,
-    load_local_figaro_main_aggregates
-  )
+  main_aggregates_data_raw <- load_figaro_eco_source(years$year, use_temp_data, verbose)
 
   main_aggregates_data <- main_aggregates_data_raw %>%
     filter(industry != "TOTAL") %>%
@@ -121,8 +121,11 @@ build_eco_obs_accounts <- function(
 
   # Save data
 
-  accounts_data_path  <- file.path(output_dir, "accounts_obs_eco.csv")
-  write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  if (write_output) {
+    dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
+    accounts_data_path  <- file.path(output_dir, "accounts_obs_eco.csv")
+    write.csv(formatted_data, accounts_data_path, row.names = FALSE)
+  }
 
   # Return
   return(formatted_data)
