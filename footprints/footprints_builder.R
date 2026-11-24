@@ -180,8 +180,26 @@ build_footprints <- function(
       paste0("figaro_inverse_leontief_", year_i, ".parquet")
     )
 
-    if (!file.exists(matrix_filepath)) {
-      # compute leontief inverse if not exist
+    # Empreinte des entrees FIGARO : le cache n'est reutilise que s'il a ete
+    # calcule a partir des memes fichiers (et de la meme methode de calcul).
+    leontief_method_version <- "A=(Z+K)/x;diag==1->0.995;v1"
+    leontief_inputs <- c(
+      main_aggregates_filename_filepath,
+      intermediate_inputs_filepath,
+      capital_use_filepath
+    )
+    leontief_fingerprint <- c(
+      paste0("method=", leontief_method_version),
+      paste0(basename(leontief_inputs), "=", unname(tools::md5sum(leontief_inputs)))
+    )
+    fingerprint_filepath <- sub("\\.parquet$", ".inputs.txt", matrix_filepath)
+
+    cache_is_valid <- file.exists(matrix_filepath) &&
+      file.exists(fingerprint_filepath) &&
+      identical(readLines(fingerprint_filepath, warn = FALSE), leontief_fingerprint)
+
+    if (!cache_is_valid) {
+      # compute leontief inverse if missing or computed from other inputs
       if (verbose) print(paste0("Computing Leontief inverse for year ", year_i))
 
       # A = (Z + K) x diag(x)^(-1), soit a_ij = (z_ij + k_ij) / x_j
@@ -203,7 +221,12 @@ build_footprints <- function(
         check.names = FALSE
       )
 
+      # Empreinte supprimee avant ecriture puis reecrite apres : un cache
+      # interrompu en cours d'ecriture ne peut pas etre considere valide.
+      unlink(fingerprint_filepath)
+      dir.create(dirname(matrix_filepath), showWarnings = FALSE, recursive = TRUE)
       write_parquet(matrix_l, matrix_filepath)
+      writeLines(leontief_fingerprint, fingerprint_filepath)
     }
 
     l <- read_parquet(matrix_filepath) %>%
