@@ -92,6 +92,7 @@ Les secrets de connexion ne doivent pas etre mis dans `config/config.R`.
 | `metadata/` | Nomenclatures et tables de correspondance. |
 | `disaggregation/` | Travaux EEIO et desagregation. |
 | `data_figaro/` | Donnees FIGARO locales au format Parquet. |
+| `data_raw/` | Sources brutes telechargees (dont les taux de change OCDE). |
 | `data_temp/` | Cache local, dont l'inverse de Leontief. |
 | `data_output/` | Fichiers CSV produits. |
 
@@ -201,6 +202,11 @@ montrer une couverture pour une annee utilisant des donnees d'une autre annee.
 Le chargeur ILOSTAT IDR conserve les libelles d'annees source de son calcul actuel.
 Les conversions monetaires ANBERD sont appliquees apres chargement par le builder;
 leur controle ne telecharge pas de taux de change.
+Les taux de change OCDE (`utils/utils_monetary_conversion.R`) sont des sources
+brutes stockees dans `data_raw/OECD_<devise>.csv` et lues via
+`read_accounts_source_cache()` : `use_temp_data = FALSE` force le telechargement,
+`allow_download = FALSE` interdit tout acces reseau. Un taux absent ou un echec de
+telechargement arrete le calcul (aucun ancien cache ni parite fixe de secours).
 
 `status = "OK"` signifie qu'au moins une unite source exploitable est presente;
 les pourcentages donnent la couverture. IDR requiert les quatre deciles utilises

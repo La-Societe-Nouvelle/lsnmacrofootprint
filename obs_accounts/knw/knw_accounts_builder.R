@@ -103,7 +103,7 @@ build_knw_obs_accounts <- function(
 
   usd_eur <- data.frame(
     year = years$year,
-    usd_eur = sapply(years$year, from_usd_to_euro)
+    usd_eur = from_usd_to_euro(years$year, use_temp_data = use_temp_data, verbose = verbose)
   )
   # usd_eur = coef 1 $ x usd_eur -> 1 €
 

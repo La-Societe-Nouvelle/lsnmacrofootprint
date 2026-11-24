@@ -1,127 +1,138 @@
 # La Societe Nouvelle
 
-get_oecd_exchange_rates <- function(cache_key, url, update = FALSE, verbose = TRUE) {
-  cache_dir <- file.path("data_temp", "monetary_conversion")
-  cache_file <- file.path(cache_dir, paste0(cache_key, ".csv"))
+# Taux de change OCDE (table 4 des comptes nationaux, EXC_A : unites de monnaie
+# nationale par dollar US, moyenne annuelle).
+#
+# Les fichiers sont des sources brutes : ils sont stockes dans download_dir
+# (data_raw) et suivent les regles communes de read_accounts_source_cache() :
+#   - use_temp_data = TRUE  : le cache existant est reutilise ;
+#   - use_temp_data = FALSE : la source est telechargee de nouveau ;
+#   - allow_download = FALSE : aucun acces reseau, erreur si le cache manque.
+# Un echec de telechargement est une erreur : aucun ancien fichier ni taux de
+# substitution n'est utilise silencieusement.
 
-  if (!update && file.exists(cache_file)) {
-    if (verbose) message("Cached OECD data used: ", cache_file)
-    return(read.csv(cache_file))
-  }
+if (!exists("read_accounts_source_cache", mode = "function")) {
+  source("utils/utils_accounts_sources.R", encoding = "UTF-8-BOM")
+}
 
-  dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
+# =============================================================================
+# 1. Charger une serie de taux de change OCDE
+# =============================================================================
 
-  tmp_file <- tempfile(fileext = ".csv")
-  download_error <- NULL
+oecd_exchange_rates_url <- function(
+  areas
+) {
+  paste0(
+    "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.",
+    paste(areas, collapse = "+"),
+    "...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels"
+  )
+}
 
-  for (attempt in 1:3) {
-    download_error <- tryCatch(
-      {
-        handle <- curl::new_handle(timeout = 180, connecttimeout = 30)
-        curl::curl_download(url, tmp_file, quiet = !verbose, handle = handle)
-        NULL
-      },
-      error = function(e) e
+load_oecd_exchange_rates_source <- function(
+  cache_key,
+  areas,
+  use_temp_data = TRUE,
+  allow_download = TRUE,
+  verbose = FALSE
+) {
+
+  # Les scripts de desagregation chargent ce module sans scripts/setup.R.
+  raw_dir <- if (exists("download_dir", inherits = TRUE)) download_dir else "data_raw"
+  url <- oecd_exchange_rates_url(areas)
+
+  raw_data <- read_accounts_source_cache(
+    file.path(raw_dir, paste0(cache_key, ".csv")),
+    function() {
+      if (verbose) message("Downloading OECD exchange rates: ", cache_key)
+      destination <- tempfile(fileext = ".csv")
+      on.exit(unlink(destination), add = TRUE)
+      handle <- curl::new_handle(timeout = 180, connecttimeout = 30)
+      curl::curl_download(url, destination, quiet = !verbose, handle = handle)
+      read.csv(destination)
+    },
+    c("REF_AREA", "TIME_PERIOD", "OBS_VALUE"),
+    use_temp_data,
+    allow_download,
+    read_cache = read.csv,
+    numeric_columns = "OBS_VALUE"
+  )
+
+  raw_data %>%
+    transmute(
+      year = as.character(TIME_PERIOD),
+      area = as.character(REF_AREA),
+      value = OBS_VALUE
     )
-
-    if (is.null(download_error)) {
-      data <- read.csv(tmp_file)
-      write.csv(data, cache_file, row.names = FALSE)
-      if (verbose) message("OECD data cached: ", cache_file)
-      return(data)
-    }
-
-    if (verbose) {
-      message(
-        "OECD download failed for ", cache_key,
-        " (attempt ", attempt, "/3): ", conditionMessage(download_error)
-      )
-    }
-    Sys.sleep(attempt)
-  }
-
-  if (file.exists(cache_file)) {
-    warning(
-      "OECD download failed for ", cache_key,
-      "; using existing cache: ", cache_file,
-      call. = FALSE
-    )
-    return(read.csv(cache_file))
-  }
-
-  stop(
-    "Unable to download OECD exchange-rate data for ", cache_key,
-    " and no cache is available at ", cache_file, ". Last error: ",
-    conditionMessage(download_error),
-    call. = FALSE
-  )
 }
 
-from_pound_to_euro <- function(year, update = FALSE, verbose = TRUE) {
-  from_pound_to_euro_data <- get_oecd_exchange_rates(
-    cache_key = "OECD_POUND",
-    url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.GBR+EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
-    update = update,
-    verbose = verbose
-  )
+# =============================================================================
+# 2. Extraire un coefficient de conversion vers l'euro
+# =============================================================================
 
-  from_pound_to_euro_data %>%
-    filter(TIME_PERIOD == year) %>%
-    summarise(value = OBS_VALUE[REF_AREA == "EU27_2020"] / OBS_VALUE[REF_AREA == "GBR"]) %>%
-    pull(value)
-}
+# Coefficient (EUR par unite de monnaie) = taux EUR/USD / taux monnaie/USD.
+# Sans denominateur (dollar US), le coefficient est directement le taux EUR/USD.
+# Vectorise sur year ; erreur si un taux manque, est duplique ou invalide.
+oecd_rate_to_euro <- function(
+  rates,
+  year,
+  currency_area = NULL,
+  cache_key = ""
+) {
 
-from_usd_to_euro <- function(year, update = FALSE, verbose = FALSE) {
-  from_usd_to_euro_data <- get_oecd_exchange_rates(
-    cache_key = "OECD_DOLLAR",
-    url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
-    update = update,
-    verbose = verbose
-  )
+  year <- as.character(year)
 
-  from_usd_to_euro_data %>%
-    filter(TIME_PERIOD == year) %>%
-    pull(OBS_VALUE)
-}
-
-from_cad_to_euro <- function(year, update = FALSE, verbose = TRUE) {
-  from_cad_to_euro_data <- get_oecd_exchange_rates(
-    cache_key = "OECD_CDOLLAR",
-    url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.EU27_2020+CAN...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
-    update = update,
-    verbose = verbose
-  )
-
-  from_cad_to_euro_data %>%
-    filter(TIME_PERIOD == year) %>%
-    summarise(value = OBS_VALUE[REF_AREA == "EU27_2020"] / OBS_VALUE[REF_AREA == "CAN"]) %>%
-    pull(value)
-}
-
-from_dkk_to_euro <- function(year, update = FALSE, verbose = TRUE) {
-  from_dkk_to_euro_data <- tryCatch(
-    get_oecd_exchange_rates(
-      cache_key = "OECD_DKK",
-      url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.NAD,DSD_NAMAIN10@DF_TABLE4,/A.DNK+EU27_2020...EXC_A.......?&dimensionAtObservation=AllDimensions&format=csvfilewithlabels",
-      update = update,
-      verbose = verbose
-    ),
-    error = function(e) {
-      warning(
-        "OECD DKK/EUR download unavailable; using fixed ERM II parity 1 / 7.46038. ",
-        "Original error: ", conditionMessage(e),
+  rate_of <- function(
+    area,
+    year_i
+  ) {
+    value <- rates$value[rates$area == area & rates$year == year_i]
+    if (length(value) != 1L || !is.finite(value) || value <= 0) {
+      stop(
+        "OECD exchange rate unavailable for ", area, " / ", year_i,
+        " (", cache_key, "): ", length(value), " valid value(s) expected 1. ",
+        "Refresh the source with use_temp_data = FALSE.",
         call. = FALSE
       )
-      NULL
     }
-  )
-
-  if (is.null(from_dkk_to_euro_data)) {
-    return(1 / 7.46038)
+    value
   }
 
-  from_dkk_to_euro_data %>%
-    filter(TIME_PERIOD == year) %>%
-    summarise(value = OBS_VALUE[REF_AREA == "EU27_2020"] / OBS_VALUE[REF_AREA == "DNK"]) %>%
-    pull(value)
+  vapply(year, function(year_i) {
+    eur <- rate_of("EU27_2020", year_i)
+    if (is.null(currency_area)) eur else eur / rate_of(currency_area, year_i)
+  }, numeric(1), USE.NAMES = FALSE)
+}
+
+convert_to_euro_coef <- function(
+  year,
+  cache_key,
+  currency_area,
+  use_temp_data,
+  allow_download,
+  verbose
+) {
+  areas <- c(currency_area, "EU27_2020")
+  rates <- load_oecd_exchange_rates_source(cache_key, areas, use_temp_data, allow_download, verbose)
+  oecd_rate_to_euro(rates, year, currency_area, cache_key)
+}
+
+# =============================================================================
+# 3. Coefficients publics (1 unite de monnaie x coef -> EUR)
+# =============================================================================
+
+from_pound_to_euro <- function(year, use_temp_data = TRUE, allow_download = TRUE, verbose = FALSE) {
+  convert_to_euro_coef(year, "OECD_POUND", "GBR", use_temp_data, allow_download, verbose)
+}
+
+from_usd_to_euro <- function(year, use_temp_data = TRUE, allow_download = TRUE, verbose = FALSE) {
+  convert_to_euro_coef(year, "OECD_DOLLAR", NULL, use_temp_data, allow_download, verbose)
+}
+
+from_cad_to_euro <- function(year, use_temp_data = TRUE, allow_download = TRUE, verbose = FALSE) {
+  convert_to_euro_coef(year, "OECD_CDOLLAR", "CAN", use_temp_data, allow_download, verbose)
+}
+
+from_dkk_to_euro <- function(year, use_temp_data = TRUE, allow_download = TRUE, verbose = FALSE) {
+  convert_to_euro_coef(year, "OECD_DKK", "DNK", use_temp_data, allow_download, verbose)
 }
