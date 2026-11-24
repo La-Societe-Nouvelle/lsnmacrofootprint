@@ -144,10 +144,10 @@ build_nrg_obs_accounts <- function(
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(figaro_nrg_accounts) != size) {
     error_data <<- figaro_nrg_accounts
-    stop("ERROR - Wrong size for obs accounts (WAS)")
+    stop("ERROR - Wrong size for obs accounts (NRG)")
   } else if (any(is.na(figaro_nrg_accounts$value))) {
     error_data <<- figaro_nrg_accounts
-    stop("ERROR - NA values in obs accounts (WAS)")
+    stop("ERROR - NA values in obs accounts (NRG)")
   }
 
   if (verbose) message("Accounts ready !")

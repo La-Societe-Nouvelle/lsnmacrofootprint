@@ -175,10 +175,10 @@ build_art_obs_accounts <- function(
   size <- nrow(years)*nrow(figaro_industries)*nrow(figaro_countries)
   if (nrow(figaro_art_accounts) != size) {
     error_data <<- figaro_art_accounts
-    stop("ERROR - Wrong size for obs accounts (MAT)")
+    stop("ERROR - Wrong size for obs accounts (ART)")
   } else if (any(is.na(figaro_art_accounts$value))) {
     error_data <<- figaro_art_accounts
-    stop("ERROR - NA values in obs accounts (MAT)")
+    stop("ERROR - NA values in obs accounts (ART)")
   }
 
   if (verbose) message("Accounts ready !")
