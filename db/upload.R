@@ -71,37 +71,39 @@ upload_table_data <- function(
     stop("No valid serie_id found in data.")
   }
 
-  if (verbose) {
-    message(
-      "Deleting existing rows from ",
-      schema, ".", table,
-      " for ", length(serie_ids), " serie_id(s)..."
+  DBI::dbWithTransaction(conn, {
+    if (verbose) {
+      message(
+        "Deleting existing rows from ",
+        schema, ".", table,
+        " for ", length(serie_ids), " serie_id(s)..."
+      )
+    }
+
+    DBI::dbExecute(
+      conn,
+      paste0(
+        "DELETE FROM ",
+        DBI::dbQuoteIdentifier(conn, schema),
+        ".",
+        DBI::dbQuoteIdentifier(conn, table),
+        " WHERE serie_id IN (",
+        paste(DBI::dbQuoteString(conn, serie_ids), collapse = ", "),
+        ")"
+      )
     )
-  }
 
-  DBI::dbExecute(
-    conn,
-    paste0(
-      "DELETE FROM ",
-      DBI::dbQuoteIdentifier(conn, schema),
-      ".",
-      DBI::dbQuoteIdentifier(conn, table),
-      " WHERE serie_id IN (",
-      paste(DBI::dbQuoteString(conn, serie_ids), collapse = ", "),
-      ")"
+    if (verbose) {
+      message("Uploading ", nrow(data), " rows into ", schema, ".", table, "...")
+    }
+
+    DBI::dbWriteTable(
+      conn = conn,
+      name = DBI::Id(schema = schema, table = table),
+      value = data,
+      append = TRUE
     )
-  )
-
-  if (verbose) {
-    message("Uploading ", nrow(data), " rows into ", schema, ".", table, "...")
-  }
-
-  DBI::dbWriteTable(
-    conn = conn,
-    name = DBI::Id(schema = schema, table = table),
-    value = data,
-    append = TRUE
-  )
+  })
 
   if (verbose) {
     message("Upload complete.")
@@ -268,38 +270,40 @@ upload_figaro_data <- function(
   conn <- get_connection_db()
   on.exit(DBI::dbDisconnect(conn), add = TRUE)
 
-  if (verbose) {
-    message(
-      "Deleting existing rows from ",
-      schema, ".", table,
-      " for year(s): ",
-      paste(years, collapse = ", ")
+  DBI::dbWithTransaction(conn, {
+    if (verbose) {
+      message(
+        "Deleting existing rows from ",
+        schema, ".", table,
+        " for year(s): ",
+        paste(years, collapse = ", ")
+      )
+    }
+
+    DBI::dbExecute(
+      conn,
+      paste0(
+        "DELETE FROM ",
+        DBI::dbQuoteIdentifier(conn, schema),
+        ".",
+        DBI::dbQuoteIdentifier(conn, table),
+        " WHERE year IN (",
+        paste(DBI::dbQuoteString(conn, years), collapse = ", "),
+        ")"
+      )
     )
-  }
 
-  DBI::dbExecute(
-    conn,
-    paste0(
-      "DELETE FROM ",
-      DBI::dbQuoteIdentifier(conn, schema),
-      ".",
-      DBI::dbQuoteIdentifier(conn, table),
-      " WHERE year IN (",
-      paste(DBI::dbQuoteString(conn, years), collapse = ", "),
-      ")"
+    if (verbose) {
+      message("Uploading ", nrow(figaro_data), " rows into ", schema, ".", table, "...")
+    }
+
+    DBI::dbWriteTable(
+      conn = conn,
+      name = DBI::Id(schema = schema, table = table),
+      value = figaro_data,
+      append = TRUE
     )
-  )
-
-  if (verbose) {
-    message("Uploading ", nrow(figaro_data), " rows into ", schema, ".", table, "...")
-  }
-
-  DBI::dbWriteTable(
-    conn = conn,
-    name = DBI::Id(schema = schema, table = table),
-    value = figaro_data,
-    append = TRUE
-  )
+  })
 
   if (verbose) {
     message("Upload complete.")
