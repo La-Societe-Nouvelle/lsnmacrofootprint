@@ -30,6 +30,7 @@ source(file.path(project_root, "scripts/setup.R"), encoding = "UTF-8")
 dir.create(download_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 dir.create(figaro_data_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create("data_temp", showWarnings = FALSE, recursive = TRUE)
 
 # Use the default execution scope defined in config/config.R.
 indics <- default_indics
