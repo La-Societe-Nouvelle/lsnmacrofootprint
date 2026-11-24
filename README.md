@@ -7,10 +7,13 @@ un package R. Le chargement a ete verifie avec R 4.4.1.
 
 ## Installation
 
-Depuis R ou RStudio, definir le dossier de travail:
+Modifier `config/config.R` **avant** de charger les scripts: le setup relit ce
+fichier a chaque chargement. Sur un nouveau poste, regler
+`install_missing_packages <- TRUE` pour installer les dependances manquantes au
+chargement; avec `FALSE`, le setup signale les packages manquants sans les
+installer.
 
-Sur un nouveau poste, regler d'abord `install_missing_packages <- TRUE` dans
-`config/config.R` pour installer les dependances manquantes au chargement.
+Depuis R ou RStudio, definir le dossier de travail puis charger le setup:
 
 ```r
 setwd("path/to/lsnmacrofootprint")
@@ -22,11 +25,6 @@ installation. Les packages CRAN incluent `readsdmx`, `Rilostat` et
 `rvest`. Si `do_clean_outliers <- TRUE` dans `config/config.R`, `fbi` est aussi
 requis et installe depuis [son depot GitHub](https://github.com/cykbennie/fbi),
 avec `remotes` installe au besoin. Avec `FALSE`, cette dependance est ignoree.
-
-Modifier la configuration **avant** de charger les scripts. Le setup relit ce
-fichier a chaque chargement. `install_missing_packages <- TRUE` y autorise
-l'installation automatique; avec `FALSE`, le setup signale les packages
-manquants sans les installer.
 
 ## Premier calcul
 
