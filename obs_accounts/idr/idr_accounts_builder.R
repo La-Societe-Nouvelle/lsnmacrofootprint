@@ -122,16 +122,33 @@ build_idr_obs_accounts <- function(
     rename(base_country = country) %>%
     select(year, base_country, industry, interdecile_range)
 
-  countries_idr_coef <- ilostat_data %>%
+  countries_pay_gap_index <- ilostat_data %>%
     pivot_wider(
       names_from = decile,
       values_from = value
     ) %>%
+    mutate(
+      pay_gap_index = round((DCL_DECILE_09 + DCL_DECILE_10) / (DCL_DECILE_01 + DCL_DECILE_02), digits = 2) # /!\ definition differs
+    )
+
+  # Reference francaise requise pour chaque annee ILOSTAT retenue
+  fr_reference <- countries_pay_gap_index %>%
+    filter(country == "FR", is.finite(pay_gap_index), pay_gap_index > 0) %>%
+    count(year)
+  missing_fr_years <- setdiff(unique(countries_pay_gap_index$year), fr_reference$year[fr_reference$n == 1])
+  if (length(missing_fr_years) > 0) {
+    stop(
+      "ERROR - Missing or invalid ILOSTAT FR deciles (IDR) for year(s): ",
+      paste(sort(missing_fr_years), collapse = ", ")
+    )
+  }
+
+  countries_idr_coef <- countries_pay_gap_index %>%
     group_by(year) %>%
     mutate(
-      pay_gap_index = round((DCL_DECILE_09 + DCL_DECILE_10) / (DCL_DECILE_01 + DCL_DECILE_02), digits = 2), # /!\ definition differs
       coef = pay_gap_index / pay_gap_index[country == "FR"]
     ) %>%
+    ungroup() %>%
     select(year, country, coef)
 
   # IDR accounts data for each FIGARO Country/Industry

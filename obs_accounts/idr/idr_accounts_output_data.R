@@ -73,7 +73,10 @@ check_idr_obs_accounts_output_data <- function(
       filter(n == 4)
   }
 
-  ilostat <- coverage(ilostat_data, scope = "country")
+  # Le builder normalise chaque pays par l'indice francais de l'annee :
+  # sans les quatre deciles FR, la source n'est pas exploitable.
+  ilostat <- coverage(ilostat_data, scope = "country") %>%
+    mutate(status = if_else(status == "OK" & available_data_fr == 100, "OK", "NOK"))
   synthesis <- bts %>%
     select(year, status_bts = status, available_data_fr) %>%
     left_join(select(ilostat, year, status_ilostat = status, available_data_row, available_data_countries), by = "year") %>%
