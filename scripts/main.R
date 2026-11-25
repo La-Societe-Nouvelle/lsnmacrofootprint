@@ -54,6 +54,7 @@ update_trd_accounts(
   indics = indics,
   write_output = write_output,
   do_clean_outliers = do_clean_outliers,
+  seed = random_seed,
   verbose = verbose
 )
 

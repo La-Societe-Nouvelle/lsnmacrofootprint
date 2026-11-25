@@ -24,4 +24,7 @@ install_missing_packages <- FALSE
 write_output <- TRUE
 # Clean projected trend values with FBI imputation.
 do_clean_outliers <- TRUE
+# Seed of the Monte Carlo trend simulations (reproducible trends).
+# Applied at the start of each indicator; NULL keeps the current random state.
+random_seed <- 2026L
 verbose <- TRUE

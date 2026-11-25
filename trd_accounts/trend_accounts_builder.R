@@ -21,9 +21,14 @@ build_trd_accounts <- function(
   years = 2010:2030,
   verbose = FALSE,
   write_output = TRUE,
-  do_clean_outliers = TRUE
+  do_clean_outliers = TRUE,
+  seed = 2026L
 ) {
   if (verbose) print(paste0("Computing trend for indic ", toupper(indic_i)))
+
+  # Graine des tirages Monte Carlo : rend chaque indicateur reproductible,
+  # y compris lorsqu'il est recalculé seul. NULL conserve l'état aléatoire courant.
+  if (!is.null(seed)) set.seed(seed)
   # -------------------------------------------------------------------
   # Utils
 
@@ -374,11 +379,14 @@ combine_forecast_models <- function(
   # --------------------------------------------------
   # Compute CAGR to assess forecasts
 
-  obs_data_cagr <- get_cagr(data$value)
+  obs_data_cagr <- get_cagr(data$value, data$year)
 
   forecasts_cagrs <- map_dbl(
     forecasts,
-    \(forecast) get_cagr(c(last_value, forecast))
+    \(forecast) get_cagr(
+      c(last_value, forecast),
+      c(last_year, last_year + seq_along(forecast))
+    )
   )
 
   # Detect unaligned forecasts
@@ -411,10 +419,11 @@ combine_forecast_models <- function(
 
   forecast_performances <- map_dbl(
     selected_forecasts,
-    \(forecast) assess_performance(data, forecast)
+    \(forecast) assess_performance(data, forecast, last_value)
   )
 
-  model_weights <- forecast_performances / sum(forecast_performances)
+  # Pondération inverse à l'erreur (RMSE)
+  model_weights <- get_inverse_error_weights(forecast_performances)
 
   # Combined results
   combined_results <- as.numeric(forecast_matrix %*% model_weights)
@@ -447,7 +456,7 @@ compute_fallback_forecast <- function(
   # --------------------------------------------------
   # Compute historical CAGR
 
-  historical_data_cagr <- get_cagr(historical_data$value)
+  historical_data_cagr <- get_cagr(historical_data$value, historical_data$year)
 
   # --------------------------------------------------
   # Fallback if all models are unaligned
@@ -473,37 +482,62 @@ compute_fallback_forecast <- function(
 }
 
 # Compound Annual Growth Rate
-get_cagr <- function(values) {
+# Annualisé selon l'écart en années (séries biennales comprises), et non selon
+# le nombre de points.
+get_cagr <- function(values, years) {
 
   values <- as.numeric(values)
-  values <- values[is.finite(values) & values > 0]
+  years  <- as.numeric(years)
 
-  n_periods <- length(values) - 1
+  valid  <- is.finite(values) & values > 0 & is.finite(years)
+  values <- values[valid]
+  years  <- years[valid]
 
-  if (n_periods < 1) {
+  if (length(values) < 2) {
+    return(NA_real_)
+  }
+
+  n_years <- years[length(years)] - years[1]
+
+  if (n_years <= 0) {
     return(NA_real_)
   }
 
   first_value <- values[1]
   last_value  <- values[length(values)]
 
-  (last_value / first_value)^(1 / n_periods) - 1
+  (last_value / first_value)^(1 / n_years) - 1
+}
+
+# Inverse-error weights. Models with a null error (perfect fit) share all the weight.
+get_inverse_error_weights <- function(
+  errors,
+  tolerance = 1e-9
+) {
+  if (any(errors <= tolerance)) {
+    weights <- as.numeric(errors <= tolerance)
+  } else {
+    weights <- 1 / errors
+  }
+
+  weights / sum(weights)
 }
 
 # Compute RMSE to assess the performance of a forecast
 assess_performance <- function(
   data,
-  forecast
+  forecast,
+  last_value
 ) {
-  # Last observed historical value
-  last_observed_value <- tail(data$value[!is.na(data$value)], 1)
+  years <- as.numeric(data$year)
 
-  # Average forecast annual variation
-  average_forecast_variation <- mean(diff(forecast), na.rm = TRUE)
+  # Average forecast annual variation (from the last observed value)
+  average_forecast_variation <- mean(diff(c(last_value, forecast)), na.rm = TRUE)
 
-  # Retropolate historical values from the last observed value
-  retropolated_values <- last_observed_value -
-    average_forecast_variation * seq_len(nrow(data))
+  # Retropolate historical values from the last observed value,
+  # according to the gap in years with the last observed year
+  retropolated_values <- last_value -
+    average_forecast_variation * (max(years) - years)
 
   # Compute RMSE between observed and retropolated values
   sqrt(mean((data$value - retropolated_values) ^ 2, na.rm = TRUE))

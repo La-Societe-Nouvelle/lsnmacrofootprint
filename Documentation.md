@@ -66,6 +66,7 @@ Les parametres modifiables sont centralises dans `config/config.R`.
 | `install_missing_packages` | Si `TRUE`, installe les packages R manquants. |
 | `write_output` | Ecrit les CSV de resultats locaux (defaut: `TRUE`), sans export en base. |
 | `do_clean_outliers` | Active le nettoyage des outliers dans les tendances. |
+| `random_seed` | Graine des simulations Monte Carlo des tendances, appliquee au debut de chaque indicateur (`NULL` : pas de graine). |
 | `verbose` | Active les logs de progression. |
 
 Les secrets de connexion ne doivent pas etre mis dans `config/config.R`.
@@ -249,6 +250,11 @@ accounts_trd_<indic>.csv
 
 Les projections utilisent les helpers dans `trd_accounts/`, notamment les
 simulations Monte Carlo, regressions et fallbacks de croissance.
+Les modeles retenus sont combines avec des poids inverses a leur erreur. Cette
+erreur compare l'historique a une retropolation depuis la derniere observation,
+selon l'ecart en annees. Le taux de croissance annuel moyen est calcule sur
+l'ecart en annees, y compris pour les series biennales (WAS). La graine
+`random_seed` rend les tirages Monte Carlo reproductibles.
 
 ## Comptes cibles
 

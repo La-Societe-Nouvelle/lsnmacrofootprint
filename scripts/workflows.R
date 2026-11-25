@@ -53,7 +53,8 @@ update_trd_accounts <- function(
   indics            = default_indics,
   write_output      = TRUE,
   verbose           = FALSE,
-  do_clean_outliers = TRUE
+  do_clean_outliers = TRUE,
+  seed              = 2026L
 ) {
   # --------------------------------------------------
   # Source script
@@ -74,6 +75,7 @@ update_trd_accounts <- function(
       indic_i,
       write_output = write_output,
       do_clean_outliers = do_clean_outliers,
+      seed = seed,
       verbose = verbose
     )
 
