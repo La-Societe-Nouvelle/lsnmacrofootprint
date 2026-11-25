@@ -13,7 +13,8 @@ load_eurostat_was_source <- function(
   years,
   use_temp_data = TRUE,
   verbose = FALSE,
-  allow_download = TRUE
+  allow_download = TRUE,
+  aggregate_geo = NULL
 ) {
 
   # --- Requete : dechets dangereux et non dangereux, reunis --------------------
@@ -54,6 +55,8 @@ load_eurostat_was_source <- function(
     show_col_types = FALSE
   ) %>%
     transmute(country = figaro_country, geo)
+
+  geo <- bind_rows(geo, tibble(country = aggregate_geo, geo = aggregate_geo))
 
   # --- Selection des dechets primaires, en tonnes -----------------------------
 

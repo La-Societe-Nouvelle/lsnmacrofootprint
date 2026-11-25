@@ -96,7 +96,7 @@ build_was_obs_accounts <- function(
   main_aggregates_data <- main_aggregates_data_raw %>%
     filter(industry != "TOTAL") %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    select(country, industry, year, NVA)
+    select(country, industry, year, NVA, GVA, PRD)
 
   if (verbose) cat("FIGARO data loaded\n")
 
@@ -105,12 +105,46 @@ build_was_obs_accounts <- function(
 
   if (verbose) print("Load EUROSTAT data")
 
-  eurostat_data <- load_eurostat_was_source(years$year, use_temp_data, verbose)
+  eurostat_data_with_eu27 <- load_eurostat_was_source(
+    years$year,
+    use_temp_data,
+    verbose,
+    aggregate_geo = "EU27_2020"
+  )
+
+  eurostat_data <- eurostat_data_with_eu27 %>%
+    filter(country != "EU27_2020")
 
   # -------------------------------------------------------------------
   # OECD data
 
   oecd_data <- load_oecd_was_source(years$year, use_temp_data, verbose)
+
+  # -------------------------------------------------------------------
+  # OECD "_O" scaled by the Eurostat services share of services + households waste (country, else EU27).
+
+  service_ratios <- eurostat_data_with_eu27 %>%
+    filter(nace_r2 %in% c("G-U_X_G4677", "EP_HH"), year != "2010") %>%
+    select(year, country, nace_r2, waste_generation) %>%
+    pivot_wider(names_from = nace_r2, values_from = waste_generation) %>%
+    filter(!is.na(`G-U_X_G4677`), !is.na(EP_HH)) %>%
+    group_by(country) %>%
+    filter(n() >= 3) %>%
+    summarise(service_ratio = sum(`G-U_X_G4677`) / sum(`G-U_X_G4677` + EP_HH))
+
+  ratio_eu <- service_ratios$service_ratio[service_ratios$country == "EU27_2020"]
+
+  oecd_data <- oecd_data %>%
+    left_join(service_ratios, by = "country") %>%
+    mutate(
+      service_ratio = coalesce(service_ratio, ratio_eu),
+      waste_generation = if_else(
+        oecd_activity == "_O",
+        round(waste_generation * service_ratio, digits = 0),
+        waste_generation
+      )
+    ) %>%
+    select(-service_ratio)
 
   # -------------------------------------------------------------------
   # Building WAS impact vector
@@ -126,10 +160,10 @@ build_was_obs_accounts <- function(
   # use VA to split impacts between FIGARO industries
   va_distribution_eurostat_nace_r2 <- eurostat_correspondence_table_nace_r2 %>%
     merge(main_aggregates_data) %>%
+    group_by(country, nace_r2) %>%
+    mutate(split_base = split_base_va(NVA, GVA, PRD)) %>%
     group_by(year, country, nace_r2) %>%
-    mutate(
-      share_nace_r2 = NVA / sum(NVA, na.rm = TRUE), # /!\ if VA < 0 !
-    ) %>%
+    mutate(share_nace_r2 = split_base / sum(split_base, na.rm = TRUE)) %>%
     ungroup() %>%
     select(year, country, industry, nace_r2, share_nace_r2)
 
@@ -148,10 +182,10 @@ build_was_obs_accounts <- function(
   # use VA to split impacts between FIGARO industries
   va_distribution_oecd_activities <- table_passage_ocde_data %>%
     merge(main_aggregates_data) %>%
+    group_by(country, oecd_activity, oecd_activity_level) %>%
+    mutate(split_base = split_base_va(NVA, GVA, PRD)) %>%
     group_by(year, country, oecd_activity, oecd_activity_level) %>%
-    mutate(
-      share_oecd_activity = NVA / sum(NVA, na.rm = TRUE), # /!\ if VA < 0 !
-    ) %>%
+    mutate(share_oecd_activity = split_base / sum(split_base, na.rm = TRUE)) %>%
     ungroup() %>%
     select(year, country, industry, oecd_activity, oecd_activity_level, share_oecd_activity)
 

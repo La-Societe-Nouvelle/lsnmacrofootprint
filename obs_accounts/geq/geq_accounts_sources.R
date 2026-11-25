@@ -36,7 +36,8 @@ load_ilostat_geq_source <- function(
     filter(
       classif2 == "CUR_TYPE_PPP",
       str_starts(classif1, "ECO_ISIC4_"),
-      sex %in% c("SEX_M","SEX_F","SEX_T")
+      sex %in% c("SEX_M","SEX_F","SEX_T"),
+      best_source == 1
     ) %>%
     # keep closest years
     crossing(years) %>%
@@ -44,8 +45,9 @@ load_ilostat_geq_source <- function(
       time_num = as.integer(time),
       ecart = abs(time_num - as.integer(year))
     ) %>%
-    group_by(year) %>%
+    group_by(year, ref_area, classif1, sex) %>%
     filter(ecart == min(ecart, na.rm = TRUE)) %>%
+    slice_max(time_num, n = 1, with_ties = FALSE) %>% # ties: prefer the more recent year
     ungroup() %>%
     mutate(
       country = countrycode(ref_area, "iso3c", "iso2c",nomatch = NULL),

@@ -95,7 +95,7 @@ build_wat_obs_accounts <- function(
   main_aggregates_data <- main_aggregates_data_raw %>%
     filter(industry != "TOTAL") %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    select(country, industry, year, NVA)
+    select(country, industry, year, NVA, GVA, PRD)
 
   if (verbose) cat("FIGARO data loaded\n")
 
@@ -118,10 +118,10 @@ build_wat_obs_accounts <- function(
   # use VA to split impacts between FIGARO industries
   va_distribution_oecd_industries <- table_passage_ocde_data %>%
     merge(main_aggregates_data) %>%
+    group_by(country, oecd_industry) %>%
+    mutate(split_base = split_base_va(NVA, GVA, PRD)) %>%
     group_by(year, country, oecd_industry) %>%
-    mutate(
-      share_oecd_industry = NVA / sum(NVA, na.rm = TRUE), # /!\ if VA < 0 !
-    ) %>%
+    mutate(share_oecd_industry = split_base / sum(split_base, na.rm = TRUE)) %>%
     ungroup() %>%
     select(year, country, industry, oecd_industry, share_oecd_industry)
 

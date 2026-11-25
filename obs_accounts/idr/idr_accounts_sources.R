@@ -40,11 +40,11 @@ load_ilostat_idr_source <- function(
       time_num = as.integer(time),
       ecart = abs(time_num - as.integer(year))
     ) %>%
-    group_by(year) %>%
+    group_by(year, ref_area, classif1) %>%
     filter(ecart == min(ecart, na.rm = TRUE)) %>%
+    slice_max(time_num, n = 1, with_ties = FALSE) %>% # ties: prefer the more recent year
     ungroup() %>%
     mutate(
-      year = time,
       country = countrycode(ref_area, "iso3c", "iso2c", nomatch = NULL),
       decile = classif1,
       value = obs_value
@@ -127,7 +127,12 @@ load_bts_idr_source <- function(
       },
       read_file = function(
         path
-      ) read.csv(path, sep = ";"),
+      ) as.data.frame(data.table::fread(
+        path,
+        sep = ";",
+        select = c("A38", "NBHEUR_TOT", "TRNNETO"),
+        showProgress = FALSE
+      )),
       columns = c("A38", "NBHEUR_TOT", "TRNNETO"),
       use_temp_data = use_temp_data,
       allow_download = allow_download

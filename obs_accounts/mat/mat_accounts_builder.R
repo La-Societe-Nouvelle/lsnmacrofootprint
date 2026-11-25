@@ -4,7 +4,8 @@
 #' Environmental FIGARO accounts builder for raw material extraction (MAT)
 #'
 #' Main sources :
-#'   - UNEP material‑flow data
+#'   - Eurostat economy-wide material flow accounts (env_ac_mfa), European countries
+#'   - UNEP material‑flow data, other countries
 #'
 #' Output data
 #'   Accounts are in tonnes
@@ -82,13 +83,22 @@ build_mat_obs_accounts <- function(
 
   unep_data <- load_unep_mat_source(years$year, use_temp_data, verbose)
 
+  # Eurostat env_ac_mfa first, then UNEP.
+  eurostat_data <- load_eurostat_mat_source(years$year, use_temp_data, verbose)
+
+  mat_data <- bind_rows(
+    eurostat_data,
+    unep_data %>% select(year, country, category, value)
+  ) %>%
+    distinct(year, country, category, .keep_all = TRUE)
+
   # -------------------------------------------------------------------
   # Building MAT impact vector & Fill missing values by similarity
 
   if (verbose) cat("Building FIGARO accounts...\n")
 
   # direct extraction by sector
-  sector_extraction <- unep_data %>%
+  sector_extraction <- mat_data %>%
     mutate(
       sector = case_when(
         category %in% c("Biomass") ~ "A",

@@ -15,6 +15,7 @@
 
 build_haz_obs_accounts <- function(
   years = 2010:2024,
+  resource_c20_allocation_window_years = 5,
   use_temp_data = TRUE,
   verbose = FALSE,
   write_output = TRUE
@@ -98,12 +99,13 @@ build_haz_obs_accounts <- function(
 
   intermediate_inputs_c20_data_raw <- map_dfr(
     years$year,
-    load_local_figaro_intermediate_inputs
+    load_local_figaro_intermediate_inputs,
+    resource_industries = "C20"
   )
 
   figaro_resource_c20 <- intermediate_inputs_c20_data_raw %>%
-    filter(resource_industry == "C20") %>%
-    select(year, use_country, use_industry, resource_country, resource_industry, value)
+    select(year, use_country, use_industry, resource_country, resource_industry, value) %>%
+    smooth_resource_c20_trailing(resource_c20_allocation_window_years)
 
   # -------------------------------------------------------------------
   # PRODCOM data (Eurostat)
@@ -215,4 +217,19 @@ build_haz_obs_accounts <- function(
 
   # Return
   return(formatted_data)
+}
+
+# Mean of C20 inputs over a trailing window of years.
+smooth_resource_c20_trailing <- function(figaro_resource_c20, window_years) {
+  if (window_years <= 1) return(figaro_resource_c20)
+
+  years_i <- sort(unique(as.integer(figaro_resource_c20$year)))
+
+  map_dfr(years_i, function(year_i) {
+    figaro_resource_c20 %>%
+      filter(as.integer(year) > year_i - window_years, as.integer(year) <= year_i) %>%
+      group_by(use_country, use_industry, resource_country, resource_industry) %>%
+      summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
+      mutate(year = as.character(year_i))
+  })
 }

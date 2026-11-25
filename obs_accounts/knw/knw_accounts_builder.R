@@ -94,7 +94,7 @@ build_knw_obs_accounts <- function(
   main_aggregates_data <- main_aggregates_data_raw %>%
     filter(industry != "TOTAL") %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    select(country, industry, year, NVA)
+    select(country, industry, year, NVA, GVA, PRD)
 
   if (verbose) cat("FIGARO data loaded\n")
 
@@ -156,10 +156,10 @@ build_knw_obs_accounts <- function(
   # use VA to split contributions between FIGARO industries
   va_distribution_anberd_activities <- anberd_correspondence_table_activity %>%
     merge(main_aggregates_data) %>%
+    group_by(country, anberd_activity) %>%
+    mutate(split_base = split_base_va(NVA, GVA, PRD)) %>%
     group_by(year, country, anberd_activity) %>%
-    mutate(
-      share_anberd_activity = NVA / sum(NVA, na.rm = TRUE), # /!\ if VA < 0 !
-    ) %>%
+    mutate(share_anberd_activity = split_base / sum(split_base, na.rm = TRUE)) %>%
     ungroup() %>%
     select(year, country, industry, anberd_activity, share_anberd_activity)
 
