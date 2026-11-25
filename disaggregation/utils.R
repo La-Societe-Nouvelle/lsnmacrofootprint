@@ -335,8 +335,10 @@ get_figaro_imported_embedded_emissions <<- function(year_i)
     mutate(
       value = case_when(
         country == "FR" ~ 0,
-        TRUE ~ replace_na(emissions / x, 0)
-      )
+        x > 0 ~ emissions / x,
+        TRUE ~ 0
+      ),
+      value = replace_na(value, 0)
     ) %>%
     pull(value) %>%
     as.numeric()
