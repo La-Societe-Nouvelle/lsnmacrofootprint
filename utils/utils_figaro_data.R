@@ -41,7 +41,7 @@ download_figaro_file <- function(
 }
 
 load_figaro_data_from_remote <- function(
-  years = 2010:2030,
+  years = 2010:2040,
   verbose = FALSE
 ) {
   # --------------------------------------------------
@@ -94,18 +94,35 @@ load_local_figaro_main_aggregates <- function(
   read_parquet(main_aggregates_filepath) %>%
     filter(industry != "TOTAL") %>%
     mutate(
+      # Year as character.
+      year = as.character(year),
       id = paste0(country, "_", industry)
     ) %>%
     select(id, year, country, industry, aggregate, value)
 }
 
+# Split base of a group: NVA, else GVA, else PRD when non-positive values occur.
+split_base_va <- function(NVA, GVA, PRD) {
+  if (isTRUE(all(NVA > 0))) NVA else if (isTRUE(all(GVA > 0))) GVA else PRD
+}
+
 load_local_figaro_intermediate_inputs <- function(
-  year_i
+  year_i,
+  resource_industries = NULL
 ) {
   intermediate_inputs_filename <- paste0("figaro_intermediate_inputs_", year_i, ".parquet")
   intermediate_inputs_filepath <- file.path("data_figaro/", intermediate_inputs_filename)
 
-  intermediate_inputs <- read_parquet(intermediate_inputs_filepath) %>%
+  intermediate_inputs <- read_parquet(intermediate_inputs_filepath, as_data_frame = FALSE)
+
+  # Resources filtered before collect.
+  if (!is.null(resource_industries)) {
+    intermediate_inputs <- intermediate_inputs %>%
+      filter(resource_industry %in% resource_industries)
+  }
+
+  intermediate_inputs <- intermediate_inputs %>%
+    collect() %>%
     mutate(
       year = year_i,
       use_id = paste0(use_country, "_", use_industry),

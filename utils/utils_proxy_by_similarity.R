@@ -25,7 +25,8 @@ proxy_missing_value_by_similarity = function(
   proxy = "VAFC",
   min_value = -Inf,
   max_value = Inf,
-  verbose = TRUE
+  verbose = TRUE,
+  workers = getOption("lsn.proxy_workers", max(1, detectCores() - 1))
 ) {
   # --------------------------------------------------
   # Utils
@@ -187,6 +188,12 @@ proxy_missing_value_by_similarity = function(
   # -------------------------
   # Parallel mode
 
+  # Missing cells by country x industry series.
+  missing_keys <- split(
+    missing_values_indexes,
+    paste(raw_vector$country[missing_values_indexes], raw_vector$industry[missing_values_indexes])
+  )
+
   if (parallelize)
   {
     old_plan <- plan()
@@ -200,17 +207,17 @@ proxy_missing_value_by_similarity = function(
         registerDoFuture()
       )
     )
-    plan(multisession, workers = max(1, detectCores() - 1))
+    plan(multisession, workers = workers)
 
     options(progressr.enable = TRUE)
     handlers("txtprogressbar")
 
     results <- with_progress({
       # Progress bar
-      p <- progressor(along = missing_values_indexes)
+      p <- progressor(along = missing_keys)
       # Computations
       foreach(
-        i = missing_values_indexes,
+        key_indexes = missing_keys,
         .combine = rbind,
         .options.future = list(
           packages = c("dplyr", "progressr"),
@@ -218,33 +225,20 @@ proxy_missing_value_by_similarity = function(
         )
       ) %dofuture% {
         # Compute proxy data
-        proxy_data <- get_proxy_value_by_similarity(
+        proxy_data <- get_proxy_values_by_similarity(
           raw_vector = raw_vector,
           type = type,
-          index = i,
+          indexes = key_indexes,
           oecd_sbs_data = oecd_sbs_data,
           figaro_main_aggregates_data = figaro_main_aggregates_data,
           min_value = min_value,
           max_value = max_value
         )
-        # check if error
-        if (is.na(proxy_data$value)) {
-          stop(paste0("ERROR PROXY ",i," - ",raw_vector$country[i], " ",raw_vector$industry[i]))
-        }
         # progress
-        p(sprintf("%s %s", raw_vector$country[i], raw_vector$industry[i]))
-        # return index and results
-        data.frame(
-          index = i,
-          value = proxy_data$value,
-          flag = "e"
-        )
+        p(sprintf("%s %s", raw_vector$country[key_indexes[1]], raw_vector$industry[key_indexes[1]]))
+        proxy_data
       }
     }, enable = TRUE)
-
-    # assign results to complete dataframe
-    raw_vector$value[results$index] <- results$value
-    raw_vector$flag[results$index]  <- results$flag
   }
 
   # -------------------------
@@ -260,41 +254,39 @@ proxy_missing_value_by_similarity = function(
     handlers("txtprogressbar")
 
     results <- with_progress({
-      p <- progressor(along = missing_values_indexes)
+      p <- progressor(along = missing_keys)
 
       foreach(
-        i = missing_values_indexes,
+        key_indexes = missing_keys,
         .combine = rbind
       ) %do% {
         # Compute proxy data
-        proxy_data <- get_proxy_value_by_similarity(
+        proxy_data <- get_proxy_values_by_similarity(
           raw_vector = raw_vector,
           type = type,
-          index = i,
+          indexes = key_indexes,
           oecd_sbs_data = oecd_sbs_data,
           figaro_main_aggregates_data = figaro_main_aggregates_data,
           min_value = min_value,
           max_value = max_value
         )
-        # check if error
-        if (is.na(proxy_data$value)) {
-          stop(paste0("ERROR PROXY ",i," - ",raw_vector$country[i], " ",raw_vector$industry[i]))
-        }
         # progress
-        p(sprintf("%s %s", raw_vector$country[i], raw_vector$industry[i]))
-        # return index and results
-        data.frame(
-          index = i,
-          value = proxy_data$value,
-          flag = "e"
-        )
+        p(sprintf("%s %s", raw_vector$country[key_indexes[1]], raw_vector$industry[key_indexes[1]]))
+        proxy_data
       }
     }, enable = TRUE)
-
-    # assign results to complete dataframe
-    raw_vector$value[results$index] <- results$value
-    raw_vector$flag[results$index]  <- results$flag
   }
+
+  # check if error
+  failed <- results$index[is.na(results$value)]
+  if (length(failed) > 0) {
+    i <- failed[1]
+    stop(paste0("ERROR PROXY ", i, " - ", raw_vector$country[i], " ", raw_vector$industry[i]))
+  }
+
+  # assign results to complete dataframe
+  raw_vector$value[results$index] <- results$value
+  raw_vector$flag[results$index]  <- "e"
 
   # --------------------------------------------------
 
@@ -308,51 +300,26 @@ proxy_missing_value_by_similarity = function(
 }
 
 
-# compute_similarity() --------------------------------------------------------
-# Computes a similarity-based estimate for missing values using sectoral and national shares (ISO2).
-# @param SBS_SHARES A data frame containing sectoral shares data.
-# @param raw_vector A data frame with country, industry, and value columns.
-# @param agg A data frame containing aggregate data.
-# @param type A character string indicating the estimation type ('intensity' or 'other').
-# @param num_proxy An integer specifying the number of proxy countries to consider (default: 5).
-# @param similarity_countries description
-# Return A data frame with estimated values, including country, industry, estimated value, and additional info.
+# get_proxy_values_by_similarity() --------------------------------------------
+# Missing cells of one country x industry series (indexes), from a panel computed once.
 
-# raw_vector must have id as {figaro_country}_{figaro_industry}
-# # All in ISO2
-
-get_proxy_value_by_similarity = function(
+get_proxy_values_by_similarity = function(
   raw_vector,
   type, # extension type (intensity/index/rate)
-  index,
+  indexes,
   oecd_sbs_data,
   figaro_main_aggregates_data,
   num_proxy = 5,
   min_value = -Inf,
-  max_value = Inf,
-  verbose = TRUE
+  max_value = Inf
 ) {
   # --------------------------------------------------
 
-  year_i <- raw_vector$year[index]
-  country_i <- raw_vector$country[index]
-  industry_i <- raw_vector$industry[index]
-
-  # print(year_i)
-  # print(country_i)
-  # print(industry_i)
+  country_i <- raw_vector$country[indexes[1]]
+  industry_i <- raw_vector$industry[indexes[1]]
 
   # --------------------------------------------------
   # Impacts data for industry
-
-  countries_with_data_over_period <- raw_vector %>%
-    filter(
-      !is.na(value),
-      industry == industry_i,
-      country != country_i
-    ) %>%
-    pull(country) %>%
-    unique()
 
   period_sectoral_vector <- raw_vector %>%
     filter(
@@ -362,142 +329,30 @@ get_proxy_value_by_similarity = function(
     ) %>%
     select(year,country,industry,value)
 
-  sectoral_vector <- raw_vector %>%
-    filter(
-      !is.na(value),
-      year == year_i,
-      industry == industry_i,
-      country != country_i
-    ) %>%
-    select(year,country,industry,value)
+  countries_with_data_over_period <- unique(period_sectoral_vector$country)
 
-  # print(raw_vector %>%
-  #   filter(
-  #     year == year_i,
-  #     industry == industry_i,
-  #     country != country_i
-  #   ) %>%
-  #   select(year,country,industry,value) %>%
-  #   as_tibble())
-  # print(sectoral_vector %>% as_tibble())
-
-  # -------------------------------------------------------------------
-  # Method to apply
-
-  industry_va <- figaro_main_aggregates_data %>%
-      filter(year == year_i, country == country_i, industry == industry_i) %>%
-      pull(NVA)
-
-  sbs_subset <- oecd_sbs_data %>%
-    filter(industry == industry_i, country == country_i)
-
-  sbs_subset_candidates <- oecd_sbs_data %>%
-    filter(industry == industry_i, country %in% countries_with_data_over_period)
-
-  use_sbs_data <-
-    nrow(sbs_subset) > 0 &&
-    !all(is.na(sbs_subset$share)) &&
-    nrow(sbs_subset_candidates) > 0 &&
-    !all(is.na(sbs_subset_candidates$share))
+  # Value added of the series, by year
+  series_va <- figaro_main_aggregates_data %>%
+    filter(country == country_i, industry == industry_i) %>%
+    select(year, NVA)
 
   # --------------------------------------------------
-  # No value added
+  # Weighted mean of donors' values (or intensities) over all their years
 
-  # print(industry_va == 0)
-
-  if (industry_va == 0)
-  {
-    proxy_data <- figaro_main_aggregates_data %>%
-      filter(year == year_i, country == country_i, industry == industry_i) %>%
-      mutate(
-        value = 0,
-        flag = "z"
-      ) %>%
-      select(year, country, industry, value, flag)
-
-    return(proxy_data)
-  }
-
-  # --------------------------------------------------
-  # Proxy using SBS data
-
-  else if (use_sbs_data)
-  {
-    similar_countries <- get_similar_countries_sbs(
-      country_i = country_i,
-      industry_i = industry_i,
-      candidate_countries = countries_with_data_over_period,
-      oecd_sbs_data = oecd_sbs_data
-    )
-
-    # print(similar_countries %>% as_tibble())
-  }
-
-  # --------------------------------------------------
-  # Proxy using FIGARO data
-  # (share of industry VA in GDP)
-
-  else
-  {
-    similar_countries <- get_similar_countries_figaro(
-      country_i = country_i,
-      industry_i = industry_i,
-      candidate_countries = countries_with_data_over_period,
-      figaro_main_aggregates_data = figaro_main_aggregates_data
-    )
-
-    # print(similar_countries %>% as_tibble())
-  }
-
-  # --------------------------------------------------
-  # Build proxy data
-
-  # print(type)
-  # print(similar_countries)
-
-  similar_countries <- similar_countries %>%
-    filter(country %in% period_sectoral_vector$country) %>%
-    head(num_proxy)
-
-  if (nrow(similar_countries) == 0) {
-    similar_countries <- get_similar_countries_figaro(
-      country_i = country_i,
-      industry_i = industry_i,
-      candidate_countries = countries_with_data_over_period,
-      figaro_main_aggregates_data = figaro_main_aggregates_data
-    ) %>%
-      filter(country %in% period_sectoral_vector$country) %>%
-      head(num_proxy)
-  }
-
-  if (nrow(similar_countries) == 0 && nrow(sectoral_vector) > 0) {
-    similar_countries <- data.frame(
-      country = sectoral_vector$country,
-      similarity_score = 1
-    )
-  }
-
-  if (nrow(similar_countries) == 0 && nrow(period_sectoral_vector) > 0) {
-    similar_countries <- data.frame(
-      country = unique(period_sectoral_vector$country),
-      similarity_score = 1
-    ) %>%
-      head(num_proxy)
-  }
-
-  if (type == "intensity")
-  {
+  compute_proxy_value <- function(similar_countries) {
     proxy_source <- period_sectoral_vector %>%
       merge(similar_countries)
 
+    if (type == "intensity") {
+      proxy_source <- proxy_source %>%
+        merge(figaro_main_aggregates_data) %>% # by year, country, industry
+        mutate(value = value / NVA)
+    }
+
     proxy_value <- proxy_source %>%
-      merge(figaro_main_aggregates_data) %>% # by year, country, industry
-      mutate(
-        ratio = value / NVA
-      ) %>%
-      filter(is.finite(ratio), is.finite(similarity_score)) %>%
+      filter(is.finite(value), is.finite(similarity_score)) %>%
       summarise(
-        value = sum(ratio * similarity_score) / sum(similarity_score),
+        value = sum(value * similarity_score) / sum(similarity_score),
         .groups = "drop"
       ) %>%
       pull(value)
@@ -506,41 +361,77 @@ get_proxy_value_by_similarity = function(
       proxy_value <- if (is.finite(min_value)) min_value else 0
     }
 
-    proxy_data <- figaro_main_aggregates_data %>%
-      filter(year == year_i, country == country_i, industry == industry_i) %>%
-      mutate(
-        value = pmin(pmax(proxy_value * NVA, min_value), max_value),
-        flag = "e"
-      ) %>%
-      select(year, country, industry, value, flag)
+    proxy_value
   }
-  else
-  {
-    proxy_source <- period_sectoral_vector %>%
-      merge(similar_countries)
 
-    proxy_value <- proxy_source %>%
-      filter(is.finite(value), is.finite(similarity_score)) %>%
-      summarise(
-        value = sum(value * similarity_score) / sum(similarity_score),
-        .groups= 'drop'
-      ) %>%
-      pull(value)
+  # --------------------------------------------------
+  # Similar countries, computed at the first cell with value added
 
-    if (length(proxy_value) == 0 || !is.finite(proxy_value)) {
-      proxy_value <- if (is.finite(min_value)) min_value else 0
+  similar_countries <- NULL
+  base_proxy_value <- NULL
+
+  get_base_panel <- function() {
+    sbs_subset <- oecd_sbs_data %>%
+      filter(industry == industry_i, country == country_i)
+
+    sbs_subset_candidates <- oecd_sbs_data %>%
+      filter(industry == industry_i, country %in% countries_with_data_over_period)
+
+    use_sbs_data <-
+      nrow(sbs_subset) > 0 &&
+      !all(is.na(sbs_subset$share)) &&
+      nrow(sbs_subset_candidates) > 0 &&
+      !all(is.na(sbs_subset_candidates$share))
+
+    # SBS similarity, else FIGARO (share of industry VA in GDP)
+    panel <- if (use_sbs_data) {
+      get_similar_countries_sbs(country_i, industry_i, countries_with_data_over_period, oecd_sbs_data) %>%
+        head(num_proxy)
     }
 
-    proxy_data <- figaro_main_aggregates_data %>%
-      filter(year == year_i, country == country_i, industry == industry_i) %>%
-      mutate(
-        value = pmin(pmax(proxy_value, min_value), max_value),
-        flag = "e"
-      ) %>%
-      select(year, country, industry, value, flag)
+    if (is.null(panel) || nrow(panel) == 0) {
+      panel <- get_similar_countries_figaro(country_i, industry_i, countries_with_data_over_period, figaro_main_aggregates_data) %>%
+        head(num_proxy)
+    }
+
+    panel
   }
 
-  return(proxy_data)
+  # --------------------------------------------------
+  # Values by missing cell
+
+  values <- vapply(indexes, function(index) {
+    year_i <- raw_vector$year[index]
+    industry_va <- series_va$NVA[series_va$year == year_i]
+
+    if (length(industry_va) != 1) return(NA_real_)
+
+    # No value added
+    if (industry_va == 0) return(0)
+
+    if (is.null(similar_countries)) {
+      similar_countries <<- get_base_panel()
+      if (nrow(similar_countries) > 0) base_proxy_value <<- compute_proxy_value(similar_countries)
+    }
+
+    if (!is.null(base_proxy_value)) {
+      proxy_value <- base_proxy_value
+    } else {
+      # Fallback panels: reporting countries of the year, then of the period
+      countries <- period_sectoral_vector$country[period_sectoral_vector$year == year_i]
+      if (length(countries) == 0) countries <- head(countries_with_data_over_period, num_proxy)
+
+      proxy_value <- compute_proxy_value(data.frame(country = countries, similarity_score = rep(1, length(countries))))
+    }
+
+    value <- if (type == "intensity") proxy_value * industry_va else proxy_value
+    pmin(pmax(value, min_value), max_value)
+  }, numeric(1))
+
+  data.frame(
+    index = indexes,
+    value = values
+  )
 }
 
 get_similar_countries_sbs <- function(
