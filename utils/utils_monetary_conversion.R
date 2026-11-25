@@ -136,3 +136,37 @@ from_cad_to_euro <- function(year, use_temp_data = TRUE, allow_download = TRUE, 
 from_dkk_to_euro <- function(year, use_temp_data = TRUE, allow_download = TRUE, verbose = FALSE) {
   convert_to_euro_coef(year, "OECD_DKK", "DNK", use_temp_data, allow_download, verbose)
 }
+
+# Coefficients pour plusieurs monnaies nationales (zones OCDE en ISO3).
+# Retourne une table year, area, coef (1 unite de monnaie nationale x coef -> EUR).
+# Le cache cache_key doit contenir toutes les zones demandees : en cas d'ajout
+# d'une zone, rafraichir la source avec use_temp_data = FALSE.
+from_national_currencies_to_euro <- function(
+  year,
+  areas,
+  cache_key,
+  use_temp_data = TRUE,
+  allow_download = TRUE,
+  verbose = FALSE
+) {
+  areas <- sort(unique(as.character(areas)))
+  # Taux EUR/USD : meme serie que from_usd_to_euro() (la requete multi-pays de
+  # l'OCDE ne renvoie pas la zone EU27_2020).
+  rates <- bind_rows(
+    load_oecd_exchange_rates_source(cache_key, areas, use_temp_data, allow_download, verbose),
+    load_oecd_exchange_rates_source("OECD_DOLLAR", "EU27_2020", use_temp_data, allow_download, verbose)
+  )
+
+  coefs <- expand.grid(
+    year = as.character(year),
+    area = areas,
+    stringsAsFactors = FALSE
+  )
+  coefs$coef <- mapply(
+    function(year_i, area_i) oecd_rate_to_euro(rates, year_i, area_i, cache_key),
+    coefs$year,
+    coefs$area,
+    USE.NAMES = FALSE
+  )
+  coefs
+}

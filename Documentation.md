@@ -164,7 +164,7 @@ delimites par des points-virgules.
 | GHG | Eurostat, extension EDGAR/AEA et OCDE. |
 | HAZ | Quantites et unites de production PRODCOM. |
 | IDR | Fichiers BTS de l'Insee et parts de remuneration ILOSTAT par decile. |
-| KNW | Depenses ANBERD, couts de formation Eurostat CVT et agregats OCDE STAN. |
+| KNW | Depenses ANBERD, frais de personnel de R&D Eurostat, couts de formation Eurostat CVT et agregats OCDE STAN. |
 | MAT | Extraction domestique UNEP, par categorie de matieres. |
 | NRG | Comptes Eurostat et donnees JRC de reference. |
 | SOC | Masses salariales URSSAF, dont le champ ESS. |
@@ -202,7 +202,16 @@ annees les plus proches appliquee par leurs builders. Le rapport peut donc
 montrer une couverture pour une annee utilisant des donnees d'une autre annee.
 Le chargeur ILOSTAT IDR conserve les libelles d'annees source de son calcul actuel.
 Les conversions monetaires ANBERD sont appliquees apres chargement par le builder;
-leur controle ne telecharge pas de taux de change.
+leur controle ne telecharge pas de taux de change. ANBERD est charge en monnaie
+nationale (`XDC`, cache `DSD_ANBERD_XDC.csv`) puis converti en euros au taux de
+change de marche de chaque pays (`OECD_ANBERD_CURRENCIES.csv`), comme les
+agregats FIGARO; les montants en USD PPA ne sont plus utilises.
+Le volet R&D de KNW ne retient que les frais de personnel : la part des frais de
+personnel dans la R&D des entreprises (Eurostat `rd_e_berdcostr2`, cache
+`rd_e_berdcostr2.csv`) est interpolee entre les annees publiees, puis prise
+pour l'activite la plus fine disponible (`eurostat_berd_correspondence_table_nace_r2.csv`),
+la section ou le total national. A defaut, la mediane annuelle des pays
+renseignes est utilisee et la valeur est signalee `e`.
 Les taux de change OCDE (`utils/utils_monetary_conversion.R`) sont des sources
 brutes stockees dans `data_raw/OECD_<devise>.csv` et lues via
 `read_accounts_source_cache()` : `use_temp_data = FALSE` force le telechargement,

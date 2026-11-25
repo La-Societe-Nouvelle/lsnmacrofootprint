@@ -79,6 +79,14 @@ build_knw_obs_accounts <- function(
     rename(industry = figaro_industry) %>%
     select(industry, nace_r2)
 
+  eurostat_berd_correspondence_table_activity <- read_delim(
+      "obs_accounts/knw/eurostat_berd_correspondence_table_nace_r2.csv",
+      delim = ";",
+      show_col_types = FALSE
+    ) %>%
+    rename(industry = figaro_industry) %>%
+    select(industry, nace_r2, nace_r2_section)
+
   if (verbose) cat("Metadata loaded\n")
 
   # -------------------------------------------------------------------
@@ -99,23 +107,29 @@ build_knw_obs_accounts <- function(
   if (verbose) cat("FIGARO data loaded\n")
 
   # -------------------------------------------------------------------
-  # Monetary coef
-
-  usd_eur <- data.frame(
-    year = years$year,
-    usd_eur = from_usd_to_euro(years$year, use_temp_data = use_temp_data, verbose = verbose)
-  )
-  # usd_eur = coef 1 $ x usd_eur -> 1 €
-
-  # -------------------------------------------------------------------
   # ANBERD data (R&D Expenditure)
 
   if (verbose) cat("Loading ANBERD data...\n")
 
-  anberd_data <- load_anberd_knw_source(years$year, use_temp_data, verbose) %>%
-    merge(usd_eur) %>%
+  # Monnaie nationale -> EUR au taux de change de marche de chaque pays,
+  # comme les agregats FIGARO (pays FIGARO uniquement).
+  anberd_data_ncu <- load_anberd_knw_source(years$year, use_temp_data, verbose) %>%
+    filter(country %in% figaro_countries$country)
+
+  ncu_eur <- from_national_currencies_to_euro(
+      years$year,
+      unique(anberd_data_ncu$REF_AREA),
+      cache_key = "OECD_ANBERD_CURRENCIES",
+      use_temp_data = use_temp_data,
+      verbose = verbose
+    ) %>%
+    rename(REF_AREA = area, ncu_eur = coef)
+  # ncu_eur = coef 1 unite de monnaie nationale x ncu_eur -> 1 €
+
+  anberd_data <- anberd_data_ncu %>%
+    merge(ncu_eur, by = c("year", "REF_AREA")) %>%
     mutate(
-      value = round(value * usd_eur, digits = 0),
+      value = round(value * ncu_eur, digits = 0),
       unit = "MEUR"
     ) %>%
     select(year, country, anberd_activity, value, unit) %>%
@@ -142,6 +156,67 @@ build_knw_obs_accounts <- function(
   if (verbose) cat("OECD STAN data loaded\n")
 
   # -------------------------------------------------------------------
+  # EUROSTAT data (BERD by type of expenditure)
+
+  if (verbose) cat("Loading EUROSTAT BERD labour costs...\n")
+
+  berd_labour_cost_data <- load_berd_labour_cost_knw_source(years$year, use_temp_data, verbose)
+
+  if (verbose) cat("EUROSTAT BERD labour costs loaded\n")
+
+  # -------------------------
+  # Share of labour costs in R&D expenditure (Eurostat BERD)
+  # - interpolation lineaire entre les annees publiees, derniere (ou premiere)
+  #   valeur reconduite hors de la periode couverte ;
+  # - priorite : activite Eurostat la plus fine, puis section, puis total national ;
+  # - a defaut, mediane annuelle des totaux nationaux disponibles (flag "e").
+
+  target_years <- as.integer(years$year)
+
+  berd_labour_cost_shares <- berd_labour_cost_data %>%
+    mutate(year = as.integer(year)) %>%
+    group_by(country, nace_r2) %>%
+    group_modify(\(serie, key) {
+      serie <- serie[order(serie$year), ]
+      values <- if (nrow(serie) == 1L) {
+        rep(serie$labour_cost_share, length(target_years))
+      } else {
+        approx(serie$year, serie$labour_cost_share, xout = target_years, rule = 2)$y
+      }
+      tibble(year = as.character(target_years), labour_cost_share = values)
+    }) %>%
+    ungroup()
+
+  national_labour_cost_shares <- berd_labour_cost_shares %>%
+    filter(nace_r2 == "TOTAL") %>%
+    select(year, country, share_total = labour_cost_share)
+
+  median_labour_cost_shares <- national_labour_cost_shares %>%
+    group_by(year) %>%
+    summarise(share_median = median(share_total, na.rm = TRUE), .groups = "drop")
+
+  rd_labour_cost_shares <- figaro_countries %>%
+    crossing(eurostat_berd_correspondence_table_activity) %>%
+    crossing(years) %>%
+    left_join(
+      berd_labour_cost_shares %>% rename(share_fine = labour_cost_share),
+      by = c("year", "country", "nace_r2")
+    ) %>%
+    left_join(
+      berd_labour_cost_shares %>% rename(nace_r2_section = nace_r2, share_section = labour_cost_share),
+      by = c("year", "country", "nace_r2_section")
+    ) %>%
+    left_join(national_labour_cost_shares, by = c("year", "country")) %>%
+    left_join(median_labour_cost_shares, by = "year") %>%
+    mutate(
+      labour_cost_share = coalesce(share_fine, share_section, share_total, share_median),
+      labour_cost_flag = if_else(
+        is.na(share_fine) & is.na(share_section) & is.na(share_total), "e", ""
+      )
+    ) %>%
+    select(year, country, industry, labour_cost_share, labour_cost_flag)
+
+  # -------------------------------------------------------------------
   # Building KNW impact vector
 
   if (verbose) cat("Building FIGARO accounts...\n")
@@ -163,12 +238,15 @@ build_knw_obs_accounts <- function(
     ungroup() %>%
     select(year, country, industry, anberd_activity, share_anberd_activity)
 
+  # Seuls les frais de personnel de R&D sont retenus (part de la VA consacree
+  # a la R&D) : autres depenses courantes et investissements exclus.
   research_contributions_raw <- anberd_data %>%
     merge(va_distribution_anberd_activities) %>%
     merge(main_aggregates_data) %>%
+    merge(rd_labour_cost_shares, by = c("year", "country", "industry")) %>%
     mutate(
-      value = round(value * share_anberd_activity / NVA, digits = 6), # contribution (rate)
-      flag = ""
+      value = round(value * labour_cost_share * share_anberd_activity / NVA, digits = 6), # contribution (rate)
+      flag = labour_cost_flag # "e" si part des frais de personnel estimee (mediane)
     ) %>%
     select(year, country, industry, value, flag)
 

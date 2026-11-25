@@ -3,7 +3,7 @@
 # Sources partagees : les conversions et repartitions finales restent au builder.
 
 # =============================================================================
-# 1. OCDE ANBERD : depenses de R&D, en millions USD
+# 1. OCDE ANBERD : depenses de R&D, en millions de monnaie nationale
 # =============================================================================
 
 load_anberd_knw_source <- function(
@@ -16,7 +16,7 @@ load_anberd_knw_source <- function(
   years <- tibble(year = as.character(years))
 
   url <- paste0(
-    "https://sdmx.oecd.org/public/rest/data/OECD.STI.STP,DSD_ANBERD@DF_ANBERDi4,/.A.MA..USD_PPP.V.?",
+    "https://sdmx.oecd.org/public/rest/data/OECD.STI.STP,DSD_ANBERD@DF_ANBERDi4,/.A.MA..XDC.V.?",
     "startPeriod=", min(years$year), "&endPeriod=", max(years$year),
     "&dimensionAtObservation=AllDimensions"
   )
@@ -24,7 +24,7 @@ load_anberd_knw_source <- function(
   # --- Lecture et validation du cache partage --------------------------------
 
   raw_data <- read_accounts_source_cache(
-    file.path(download_dir, "DSD_ANBERD.csv"),
+    file.path(download_dir, "DSD_ANBERD_XDC.csv"), # nouveau nom : l'ancien cache est en USD PPA
     function() {
       read_sdmx(url)
     },
@@ -54,14 +54,14 @@ load_anberd_knw_source <- function(
       MEASURE == "B",
       PRICE_BASE == "V", # "V" current prices
       TIME_PERIOD %in% years$year,
-      UNIT_MEASURE == "USD_PPP" # "USD_PPP" according to $
+      UNIT_MEASURE == "XDC" # monnaie nationale, convertie en euros par le builder
     ) %>%
     mutate(
       year = as.character(TIME_PERIOD),
       country = countrycode(REF_AREA, "iso3c", "iso2c", nomatch = NULL),
       anberd_activity = ACTIVITY,
       value = round(as.numeric(ObsValue) / 1e6, digits = 0),
-      unit = "MUSD"
+      unit = "MNCU" # millions d'unites de monnaie nationale
     )
 
   anberd_data
@@ -199,5 +199,61 @@ load_stan_knw_source <- function(
     select(year, country, industry, aggregate, value)
 
   stan_data
+}
+
+# =============================================================================
+# 4. Eurostat BERD par type de depense : frais de personnel / BERD totale
+# =============================================================================
+# Toutes les annees publiees sont chargees : le builder interpole la part des
+# frais de personnel entre les annees renseignees (collecte souvent biennale).
+
+load_berd_labour_cost_knw_source <- function(
+  years,
+  use_temp_data = TRUE,
+  verbose = FALSE,
+  allow_download = TRUE
+) {
+
+  # --- Lecture et validation du cache partage --------------------------------
+
+  raw_data <- read_accounts_source_cache(
+    file.path(download_dir, "rd_e_berdcostr2.csv"),
+    function() {
+      read.csv(paste0(
+        "https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/",
+        "rd_e_berdcostr2/A.TOTAL+CUR_LC..MIO_EUR.?format=SDMX-CSV"
+      ))
+    },
+    c("freq", "expend", "nace_r2", "unit", "geo", "TIME_PERIOD", "OBS_VALUE"),
+    use_temp_data,
+    allow_download,
+    read_cache = read.csv,
+    numeric_columns = character()
+  )
+
+  # --- Part des frais de personnel par pays, activite et annee ----------------
+  # Codes Eurostat ramenes aux codes FIGARO (EL -> GR, UK -> GB, Chine hors HK).
+
+  raw_data %>%
+    filter(
+      freq == "A",
+      unit == "MIO_EUR",
+      expend %in% c("TOTAL", "CUR_LC")
+    ) %>%
+    mutate(
+      year = as.character(TIME_PERIOD),
+      country = recode(geo, EL = "GR", UK = "GB", CN_X_HK = "CN"),
+      value = suppressWarnings(as.numeric(OBS_VALUE))
+    ) %>%
+    filter(!is.na(value)) %>%
+    select(year, country, nace_r2, expend, value) %>%
+    pivot_wider(names_from = expend, values_from = value) %>%
+    filter(!is.na(TOTAL), !is.na(CUR_LC), TOTAL > 0, CUR_LC >= 0) %>%
+    transmute(
+      year,
+      country,
+      nace_r2,
+      labour_cost_share = pmin(CUR_LC / TOTAL, 1)
+    )
 }
 
