@@ -193,13 +193,19 @@ load_estimated_ghg_source <- function(
   years,
   use_temp_data = TRUE,
   verbose = FALSE,
-  allow_download = TRUE
+  allow_download = TRUE,
+  extension_years = NULL
 ) {
 
-  # --- Perimetre actuel de l'extension : 2024 uniquement -----------------------
-  # Retourner une table vide si cette annee n'est pas demandee.
+  # --- Perimetre de l'extension : annees absentes d'env_ac_ghgfp ---------------
+  # Retourner une table vide si aucune annee n'est a estimer.
 
-  if (!"2024" %in% as.character(years)) {
+  if (is.null(extension_years)) {
+    eurostat_years <- load_eurostat_ghg_source(years, use_temp_data, verbose, allow_download)$year
+    extension_years <- setdiff(as.character(years), eurostat_years)
+  }
+
+  if (length(extension_years) == 0) {
     return(tibble(
       year = character(),
       country = character(),
@@ -213,7 +219,7 @@ load_estimated_ghg_source <- function(
   # Un controle local lit le cache ; le calcul EDGAR requiert un rafraichissement.
 
   data <- read_accounts_source_cache(
-    file.path(download_dir, "estimated_ghg_accounts.csv"),
+    file.path(download_dir, paste0("estimated_ghg_accounts_", paste(extension_years, collapse = "_"), ".csv")),
     function() {
       source(
         "obs_accounts/ghg/extended-eurostat-ghg-accounts/ghg_accounts_extensions.R",
@@ -221,7 +227,7 @@ load_estimated_ghg_source <- function(
       )
 
       estimate_ghg_from_edgar(
-        years = "2024",
+        years = extension_years,
         use_temp_data = use_temp_data,
         verbose = verbose
       )
@@ -235,7 +241,7 @@ load_estimated_ghg_source <- function(
   # L'extension produit des milliers de tonnes, convertis ici en tonnes.
 
   data %>%
-    filter(as.character(year) %in% as.character(years), !is.na(value)) %>%
+    filter(as.character(year) %in% as.character(extension_years), !is.na(value)) %>%
     transmute(
       year = as.character(year),
       country,

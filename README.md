@@ -60,7 +60,7 @@ Dans `config/config.R`, choisir les indicateurs et conserver
 par les etapes precedentes. Preparer ensuite tous les fichiers necessaires:
 
 ```r
-load_figaro_data_from_remote(years = 2010:2030, verbose = TRUE)
+load_figaro_data_from_remote(years = 2010:2040, verbose = TRUE)
 source("scripts/main.R", encoding = "UTF-8")
 ```
 

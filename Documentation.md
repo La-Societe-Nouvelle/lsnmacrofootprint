@@ -235,7 +235,7 @@ build_trd_accounts(indic_i)
 ```
 
 Elle lit les fichiers `accounts_obs_<indic>.csv`, projette les series jusqu'a
-2030 et ecrit:
+2040 et ecrit:
 
 ```text
 accounts_trd_<indic>.csv
@@ -264,15 +264,18 @@ Les sorties sont ecrites dans:
 accounts_tgt_<indic>.csv
 ```
 
-Les coefficients annuels des cibles MAT/WAS (2030) et GEQ/SOC (2050) utilisent
-la duree entre la derniere annee observee et l'annee objectif. Par exemple, une
+Les cibles ne concernent que la France, jusqu'a 2040 par defaut (`horizon`). Les
+coefficients annuels des cibles MAT/WAS/KNW/NRG (2030) et GEQ/SOC (2050) utilisent
+la duree entre la derniere annee observee et l'annee objectif ; les cibles 2030
+sont maintenues ensuite. Par exemple, une
 base 2024 et une cible 2030 representent six periodes annuelles, de 2025 a 2030.
 La cible WAS vaut 95 % de l'intensite de 2010 (`value / NVA`), puis les intensites
 projetees sont reconverties en volumes avec la NVA de chaque annee.
 
 Apres reprise des tendances pour les pays etrangers, les contraintes de
 monotonie (`cummin`/`cummax`) et les bornes par rapport a la base s'appliquent
-encore a ces pays. Le resultat final peut donc differer de la tendance.
+encore a ces pays. Le resultat final peut donc differer de la tendance. Pour GHG,
+la France suit la SNBC 3 sans ces contraintes.
 
 Pour les comptes SOC observes, une masse salariale totale nulle ou negative
 donne une part ESS de zero.
@@ -343,7 +346,7 @@ public. Les annees ci-dessous couvrent les valeurs par defaut des builders:
 for (path in c(download_dir, output_dir, figaro_data_dir, "data_temp")) {
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
 }
-load_figaro_data_from_remote(years = 2010:2030, verbose = TRUE)
+load_figaro_data_from_remote(years = 2010:2040, verbose = TRUE)
 ```
 
 `load_figaro_data_from_remote()` obtient les liens de telechargement depuis

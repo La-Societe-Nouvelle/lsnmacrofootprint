@@ -13,7 +13,8 @@
 
 build_knw_tgt_accounts <- function(
   verbose = FALSE,
-  write_output = TRUE
+  write_output = TRUE,
+  horizon = 2040
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -76,7 +77,7 @@ build_knw_tgt_accounts <- function(
 
   last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
-  tgt_years <- (last_year_obs + 1) : 2030
+  tgt_years <- (last_year_obs + 1) : horizon
   n_years <- 2030 - last_year_obs
 
   years <- tibble(year = as.character(tgt_years))
@@ -151,7 +152,7 @@ build_knw_tgt_accounts <- function(
     left_join(base_targets) %>%
     left_join(target_coefs) %>%
     mutate(
-      n = as.integer(year) - as.integer(base_year),
+      n = pmin(as.integer(year), 2030) - as.integer(base_year), # target held after 2030
       fpt_tgt = ifelse(country == "FR", pmin(base_fpt * (coef_yearly^n), 100.0), NA)
     ) %>%
     # build raw impact_tgt -----------------------------

@@ -6,14 +6,15 @@
 #'   Update target function for indic GHG
 #'
 #' Targets :
-#'   - FRA : SNBC
+#'   - FRA : SNBC 3, last observation scaled by its sector trajectory
 #'   - other countries : trend
 #'
 #' output columns: serie_id, country, industry, year, value, unit, flag, lastupdate
 
 build_ghg_tgt_accounts <- function(
   verbose = FALSE,
-  write_output = TRUE
+  write_output = TRUE,
+  horizon = 2040
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -44,20 +45,33 @@ build_ghg_tgt_accounts <- function(
     ) %>%
     select(country)
 
-  snbc_correspondence_table_secten <- read_delim(
-      "tgt_accounts/ghg/snbc_correspondence_table_secten.csv",
+  # SNBC 3 trajectories by sector (MtCO2e), net of fossil CCS, see snbc3_extract.R
+  snbc3_correspondence_table <- read_delim(
+      "tgt_accounts/ghg/snbc3_correspondence_table.csv",
       delim = ";",
       show_col_types = FALSE
     ) %>%
     rename(industry = figaro_industry) %>%
-    select(industry, secten)
+    select(industry, snbc_sector)
 
-  snbc_data <- read_delim(
-      "tgt_accounts/ghg/snbc.csv",
+  snbc3_data <- read_delim(
+      "tgt_accounts/ghg/snbc3_detail.csv",
       delim = ";",
-      show_col_types = FALSE
+      show_col_types = FALSE,
+      locale = locale(encoding = "UTF-8")
     ) %>%
-    select(secten, annee, budget_carbone)
+    inner_join(
+      read_delim(
+        "tgt_accounts/ghg/snbc3_sector_lines.csv",
+        delim = ";",
+        show_col_types = FALSE,
+        locale = locale(encoding = "UTF-8")
+      ),
+      by = c("block", "line")
+    ) %>%
+    group_by(snbc_sector, year) %>%
+    summarise(emissions = sum(value), .groups = "drop") %>%
+    mutate(year = as.character(year))
 
   # -------------------------------------------------------------------
   # OBS Accounts
@@ -91,8 +105,7 @@ build_ghg_tgt_accounts <- function(
 
   last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
-  tgt_years <- (last_year_obs + 1) : 2030
-  n_years <- 2030 - last_year_obs
+  tgt_years <- (last_year_obs + 1) : horizon
 
   years <- tibble(year = as.character(tgt_years))
 
@@ -108,12 +121,7 @@ build_ghg_tgt_accounts <- function(
 
   main_aggregates_data <- main_aggregates_data_raw %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    mutate(
-      rate = ifelse(PRD == 0, 0, NVA / PRD)
-    ) %>%
-    select(year, country, industry, PRD, NVA, rate)
-
-  # -------------------------------------------------------------------
+    select(year, country, industry, NVA)
 
   # -------------------------
   # Start point (base)
@@ -122,72 +130,42 @@ build_ghg_tgt_accounts <- function(
     filter(year == last_year_obs) %>%
     merge(main_aggregates_data) %>%
     mutate(
-      last_year_obs = year,
       last_impact_obs = value,
       last_fpt_obs = ifelse(NVA > 0, value / NVA, 0)
     ) %>%
-    select(country,industry,last_year_obs,last_impact_obs,last_fpt_obs)
+    select(country, industry, last_impact_obs, last_fpt_obs)
 
   # -------------------------
   # Targets
 
-  # Emissions obersvées sur l'année de référence de la SNBC (2015)
+  # SNBC 3 trajectory of each sector relative to the last observed year
+  snbc3_base <- snbc3_data %>%
+    filter(year == as.character(last_year_obs)) %>%
+    select(snbc_sector, base_emissions = emissions)
 
-  base_impacts_snbc <- obs_data_raw %>%
-    filter(
-      year == "2015"
-    ) %>%
-    rename(
-      base_snbc_year = year,
-      base_snbc_impact = value
-    ) %>%
-    select(country, industry, base_snbc_year, base_snbc_impact)
+  if (nrow(snbc3_base) != n_distinct(snbc3_correspondence_table$snbc_sector)) {
+    stop("ERROR - SNBC 3 trajectories missing for year ", last_year_obs)
+  }
 
-  # Coefficients de réduction par secten (SNBC) 2015-2029
-
-  target_snbc_coefs <- snbc_data %>%
-    pivot_wider(names_from = "annee", values_from = "budget_carbone") %>%
+  target_coefs <- snbc3_correspondence_table %>%
+    inner_join(snbc3_data, by = "snbc_sector", relationship = "many-to-many") %>%
+    inner_join(snbc3_base, by = "snbc_sector") %>%
+    filter(year %in% years$year) %>%
     mutate(
-      coef_2029 = `2029` / `2015`
+      coef_snbc = if_else(base_emissions > 0, emissions / base_emissions, 1)
     ) %>%
-    select(secten,coef_2029)
-
-  # Coefficients de réduction par industry FIGARO
-
-  target_coefs <- last_impacts_obs %>%
-    merge(base_impacts_snbc) %>%
-    merge(snbc_correspondence_table_secten) %>%
-    merge(target_snbc_coefs) %>%
-    mutate(
-      # Objectif : minimum entre taux de réduction /r 2015 et dernière observation
-      impact_tgt = pmin(base_snbc_impact * coef_2029, last_impact_obs),
-      # Coef de réduction entre l'objectif et la dernière observation
-      coef_total = ifelse(last_impact_obs > 0, impact_tgt / last_impact_obs, 1.0),
-      # Coef annuel
-      coef_yearly = coef_total ^ (1 / (2029 - as.integer(last_year_obs)))
-    ) %>%
-    select(country, industry, coef_yearly)
+    select(industry, year, coef_snbc)
 
   targets_data <- figaro_industries %>%
     merge(figaro_countries) %>%
     crossing(years) %>%
-    # build raw impact tgt -----------------------------
+    # SNBC 3 for France, trend elsewhere
     left_join(last_impacts_obs, by = c("country", "industry")) %>%
-    left_join(target_coefs, by = c("country", "industry")) %>%
-    mutate(
-      n = as.integer(year) - as.integer(last_year_obs),
-      tgt_value = ifelse(country == "FR", last_impact_obs * (coef_yearly^n), NA)
-    ) %>%
-    # apply trend for other countries ------------------
+    left_join(target_coefs, by = c("industry", "year")) %>%
     left_join(trd_data, by = c("country", "industry", "year")) %>%
-    mutate(
-      tgt_value = ifelse(country == "FR", tgt_value, trd_value)
-    ) %>%
-    # check decreasing fpt -----------------------------
-    merge(main_aggregates_data) %>%
-    mutate(
-      fpt_tgt = ifelse(NVA > 0, tgt_value / NVA, 0)
-    ) %>%
+    # check decreasing fpt, other countries ------------
+    left_join(main_aggregates_data, by = c("country", "industry", "year")) %>%
+    mutate(fpt_tgt = ifelse(NVA > 0, trd_value / NVA, 0)) %>%
     arrange(year) %>%
     group_by(country, industry) %>%
     mutate(
@@ -196,11 +174,7 @@ build_ghg_tgt_accounts <- function(
     ) %>%
     ungroup() %>%
     mutate(
-      tgt_value = ifelse(NVA > 0, fpt_tgt * NVA, 0)
-    ) %>%
-    # select -------------------------------------------
-    rename(
-      value = tgt_value
+      value = ifelse(country == "FR", last_impact_obs * coef_snbc, ifelse(NVA > 0, fpt_tgt * NVA, 0))
     ) %>%
     select(country, industry, year, value)
 

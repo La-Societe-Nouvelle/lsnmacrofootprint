@@ -36,6 +36,8 @@
 #'   in obs_accounts/ghg/extended-eurostat-ghg-accounts/resources/ - copied from
 #'   InseeFrLab/global-ghg-emissions (see credit above).
 #'
+#' Local adaptations: AL, MK, RS and ME apart from FIGW1, CO2e totals floored at zero.
+#'
 #' estimate_ghg_from_edgar(years, use_temp_data, verbose)
 #' Returns emissions in thousands of tonnes of CO2 equivalent (THS_TCO2E).
 
@@ -910,6 +912,16 @@ estimate_ghg_from_edgar <- function(
     ) %>%
     select(country, industry, output)
 
+  # Joint RS + ME output, for EDGAR's SCG.
+  industry_outputs_reference <- industry_outputs_reference %>%
+    bind_rows(
+      industry_outputs_reference %>%
+        filter(country %in% c("RS", "ME")) %>%
+        group_by(industry) %>%
+        summarise(output = sum(output), .groups = "drop") %>%
+        mutate(country = "RS_ME")
+    )
+
   # EU27 emission intensity by industry and gas over the reference years.
   # Columns: industry, gas, emission_intensity.
   eu27_industry_emission_intensities <- eurostat_aea_emissions %>%
@@ -1252,7 +1264,8 @@ estimate_ghg_from_edgar <- function(
     fully_estimated_aea_emissions,
     gb_aea_emissions
   ) %>%
-    select(year, country, industry, gas, value)
+    select(year, country, industry, gas, value) %>%
+    split_rs_me_from_scg(figaro_output_reference)
 
   # ======================================================================================
   # CO2e Conversion
@@ -1269,7 +1282,8 @@ estimate_ghg_from_edgar <- function(
     ) %>%
     group_by(year, country, industry) %>%
     summarise(
-      value = sum(value_co2eq),
+      # Floored at zero.
+      value = pmax(sum(value_co2eq), 0),
       .groups = "drop"
     ) %>% 
     mutate(
@@ -1277,4 +1291,33 @@ estimate_ghg_from_edgar <- function(
     )
 
   final_ghg_emissions_co2e
+}
+
+# ------------------------------------------------------------------------------------------
+#' Splits the joint EDGAR "SCG" estimate (RS_ME) by RS and ME output shares per industry.
+
+split_rs_me_from_scg <- function(
+  emissions,
+  figaro_output_reference
+) {
+
+  shares <- figaro_output_reference %>%
+    filter(country %in% c("RS", "ME")) %>%
+    group_by(industry, country) %>%
+    summarise(output = sum(output), .groups = "drop_last") %>%
+    mutate(share = output / sum(output)) %>%
+    ungroup() %>%
+    filter(is.finite(share)) %>%
+    select(country, industry, share)
+
+  split_emissions <- emissions %>%
+    filter(country == "RS_ME") %>%
+    select(-country) %>%
+    inner_join(shares, by = "industry", relationship = "many-to-many") %>%
+    mutate(value = value * share) %>%
+    select(year, country, industry, gas, value)
+
+  emissions %>%
+    filter(country != "RS_ME") %>%
+    bind_rows(split_emissions)
 }

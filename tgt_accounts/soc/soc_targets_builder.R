@@ -13,7 +13,8 @@
 
 build_soc_tgt_accounts <- function(
   verbose = FALSE,
-  write_output = TRUE
+  write_output = TRUE,
+  horizon = 2040
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -76,7 +77,7 @@ build_soc_tgt_accounts <- function(
 
   last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
-  tgt_years <- (last_year_obs + 1) : 2030
+  tgt_years <- (last_year_obs + 1) : horizon
   n_years <- 2050 - last_year_obs
 
   years <- tibble(year = as.character(tgt_years))

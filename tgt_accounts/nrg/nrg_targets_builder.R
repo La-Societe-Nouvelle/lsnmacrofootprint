@@ -17,7 +17,8 @@
 
 build_nrg_tgt_accounts <- function(
   verbose = FALSE,
-  write_output = TRUE
+  write_output = TRUE,
+  horizon = 2040
 ) {
   # -------------------------------------------------------------------
   # Utils
@@ -95,7 +96,7 @@ build_nrg_tgt_accounts <- function(
 
   last_year_obs <- max(as.integer(obs_data$year), na.rm = TRUE)
 
-  tgt_years <- (last_year_obs + 1) : 2030
+  tgt_years <- (last_year_obs + 1) : horizon
   n_years <- 2030 - last_year_obs
 
   years <- tibble(year = as.character(tgt_years))
@@ -149,7 +150,7 @@ build_nrg_tgt_accounts <- function(
     left_join(ppe_correspondence_table_secteur) %>%
     left_join(target_ppe_coefs) %>%
     mutate(
-      n = as.integer(year) - as.integer(base_year),
+      n = pmin(as.integer(year), 2030) - as.integer(base_year), # target held after 2030
       tgt_value = round(base_impact * (coef_yearly^n), digits = 3)
     ) %>%
     select(country, industry, year, tgt_value)
