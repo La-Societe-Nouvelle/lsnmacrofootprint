@@ -18,10 +18,11 @@
 
 build_trd_accounts <- function(
   indic_i,
-  years = 2010:2030,
+  years = 2010:2040,
   verbose = FALSE,
   write_output = TRUE,
-  do_clean_outliers = TRUE
+  do_clean_outliers = TRUE,
+  use_moirai = FALSE
 ) {
   if (verbose) print(paste0("Computing trend for indic ", toupper(indic_i)))
   # -------------------------------------------------------------------
@@ -32,6 +33,7 @@ build_trd_accounts <- function(
 
   source("trd_accounts/utils_montecarlo_forecasts.R")
   source("trd_accounts/utils_regression_forecasts.R")
+  source("trd_accounts/utils_moirai_forecasts.R")
 
   # -------------------------------------------------------------------
   # Metadata
@@ -114,8 +116,7 @@ build_trd_accounts <- function(
 
   if (verbose) print("Building trend data")
 
-  # Horizon 2030
-  trend_years <- (max(obs_data$year) + 1):2030
+  trend_years <- (max(obs_data$year) + 1):max(as.integer(years$year))
 
   # compute trend for each serie (country,industry)
   trends_data_raw <- obs_data %>%
@@ -126,7 +127,8 @@ build_trd_accounts <- function(
         data = .x,
         trend_years = trend_years,
         constraint = metadata_indic,
-        verbose = verbose
+        verbose = verbose,
+        use_moirai = use_moirai
       )
     ) %>%
     mutate(
@@ -227,7 +229,8 @@ compute_serie_forecast <- function(
   trend_years,
   n_mc_simulations = 2000,
   constraint,
-  verbose = FALSE
+  verbose = FALSE,
+  use_moirai = FALSE
 ) {
   if (verbose) message("Construction de la tendance pour ",unique(data$country)," - ",unique(data$industry))
   # --------------------------------------------------
@@ -236,19 +239,17 @@ compute_serie_forecast <- function(
   forecast_horizon <- length(trend_years)
 
   # --------------------------------------------------
-  # Case - constant serie
+  # Case - near-constant serie
 
-  is_constant_serie <- length(unique(data$value)) == 1
+  is_constant_serie <- is_near_constant_serie(data$value)
 
   if (is_constant_serie) {
-
-    if (verbose) print("Calcul des prévisions - Monte Carlo")
 
     return(tibble(
       year     = trend_years,
       country  = unique(data$country),
       industry = unique(data$industry),
-      value    = unique(data$value)
+      value    = stats::median(data$value)
     ))
   }
 
@@ -292,6 +293,21 @@ compute_serie_forecast <- function(
   )
 
   # --------------------------------------------------
+  # Run Moirai forecast (optional)
+
+  moirai_forecast <- if (use_moirai) {
+    if (verbose) print("Calcul des prévisions - Moirai")
+    run_moirai_forecasts(
+      data = data,
+      forecast_horizon = forecast_horizon,
+      constraint = constraint,
+      verbose = verbose
+    )
+  } else {
+    NULL
+  }
+
+  # --------------------------------------------------
   # Final model combination
 
   if (verbose) print("Combinaison des prévisions")
@@ -300,7 +316,8 @@ compute_serie_forecast <- function(
     data = data,
     forecasts = c(
       mc_forecasts,
-      list(regression_forecasts)
+      list(regression_forecasts),
+      list(moirai_forecast)
     ),
     constraint = constraint
   )
@@ -414,7 +431,9 @@ combine_forecast_models <- function(
     \(forecast) assess_performance(data, forecast)
   )
 
-  model_weights <- forecast_performances / sum(forecast_performances)
+  # Weights: inverse RMSE.
+  inverse_performances <- 1 / pmax(forecast_performances, .Machine$double.eps)
+  model_weights <- inverse_performances / sum(inverse_performances)
 
   # Combined results
   combined_results <- as.numeric(forecast_matrix %*% model_weights)

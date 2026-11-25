@@ -6,7 +6,7 @@ output_dir <- "data_output"
 figaro_data_dir <- "data_figaro"
 
 # Default pipeline scope.
-default_years <- 2010:2030
+default_years <- 2010:2040
 
 default_indics <- c(
   "ART", "ECO", "GEQ", "GHG", "HAZ", "IDR",
@@ -25,3 +25,6 @@ write_output <- TRUE
 # Clean projected trend values with FBI imputation.
 do_clean_outliers <- TRUE
 verbose <- TRUE
+
+# Moirai forecast candidate (CC-BY-NC-4.0).
+do_use_moirai <- TRUE

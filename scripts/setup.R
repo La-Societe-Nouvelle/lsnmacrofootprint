@@ -43,9 +43,13 @@ project_packages <- list(
   github = c(fbi = "cykbennie/fbi")
 )
 
-# Inclure FBI uniquement lorsque le nettoyage des valeurs atypiques est active.
-project_dependencies <- function(do_clean_outliers = TRUE) {
-  c(project_packages$cran, if (isTRUE(do_clean_outliers)) names(project_packages$github))
+# FBI si le nettoyage des valeurs atypiques est actif, reticulate si Moirai est actif.
+project_dependencies <- function(do_clean_outliers = TRUE, use_moirai = isTRUE(do_use_moirai)) {
+  c(
+    project_packages$cran,
+    if (isTRUE(do_clean_outliers)) names(project_packages$github),
+    if (isTRUE(use_moirai)) "reticulate"
+  )
 }
 
 # Verifier la disponibilite des namespaces sans attacher les packages a la session.
@@ -69,7 +73,7 @@ install_project_dependencies <- function(do_clean_outliers = TRUE, repos = getOp
 
   # Installer d'abord les dependances CRAN, puis celles provenant de GitHub.
   missing <- missing_project_dependencies(do_clean_outliers)
-  missing_cran <- intersect(missing, project_packages$cran)
+  missing_cran <- setdiff(missing, names(project_packages$github))
   if (length(missing_cran) > 0L) {
     message("Installing CRAN dependencies: ", paste(missing_cran, collapse = ", "))
     install.packages(missing_cran, repos = repos)
@@ -141,6 +145,7 @@ source_project_file("utils/utils_accounts_sources.R")
 # Charger les modeles de prevision avant le builder qui les utilise.
 source_project_file("trd_accounts/utils_montecarlo_forecasts.R")
 source_project_file("trd_accounts/utils_regression_forecasts.R")
+source_project_file("trd_accounts/utils_moirai_forecasts.R")
 source_project_file("trd_accounts/trend_accounts_builder.R")
 
 # --- Comptes observes et controles de disponibilite des sources ----------------

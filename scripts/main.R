@@ -53,7 +53,8 @@ update_trd_accounts(
   indics = indics,
   write_output = write_output,
   do_clean_outliers = do_clean_outliers,
-  verbose = verbose
+  verbose = verbose,
+  use_moirai = do_use_moirai
 )
 
 # Target accounts: target trajectories for indicators with explicit targets.
