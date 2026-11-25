@@ -145,6 +145,11 @@ build_wat_obs_accounts <- function(
       raw_wat_accounts,
       by = c("year", "country", "industry")
     ) %>%
+    left_join(table_passage_ocde_data, by = "industry") %>%
+    mutate(
+      value = if_else(is.na(oecd_industry), 0, value),
+      flag = if_else(is.na(oecd_industry), "", flag)
+    ) %>%
     select(year, country, industry, value, flag)
 
   if (verbose) cat("Completing with similarity...\n")
