@@ -94,7 +94,7 @@ build_trd_accounts <- function(
   obs_accounts_file <- paste0("accounts_obs_",tolower(indic_i),".csv")
   obs_accounts_path  <- file.path(output_dir, obs_accounts_file)
 
-  obs_data_raw <- read.csv(obs_accounts_path)
+  obs_data_raw <- read.csv(obs_accounts_path, colClasses = c(unit = "character")) # "T" (tonnes) ne doit pas devenir TRUE
 
   # Convert accounts data in fpt (with VA)
   obs_data <- obs_data_raw %>%

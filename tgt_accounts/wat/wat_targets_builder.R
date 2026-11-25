@@ -55,7 +55,7 @@ build_wat_tgt_accounts <- function(
 
   obs_accounts_path  <- file.path(output_dir, "accounts_obs_wat.csv")
 
-  obs_data_raw <- read.csv(obs_accounts_path)
+  obs_data_raw <- read.csv(obs_accounts_path, colClasses = c(unit = "character"))
 
   obs_data <- obs_data_raw %>%
     select(year, country, industry, value, flag)
@@ -69,7 +69,7 @@ build_wat_tgt_accounts <- function(
 
   trd_accounts_path  <- file.path(output_dir, "accounts_trd_wat.csv")
 
-  trd_data_raw <- read.csv(trd_accounts_path)
+  trd_data_raw <- read.csv(trd_accounts_path, colClasses = c(unit = "character"))
 
   trd_data <- trd_data_raw %>%
     rename(
