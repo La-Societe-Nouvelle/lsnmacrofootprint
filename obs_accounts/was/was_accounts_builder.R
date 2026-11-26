@@ -188,9 +188,71 @@ build_was_obs_accounts <- function(
     ) %>%
     select(year, country, industry, value, flag)
 
+  # -------------------------
+  # Industries extractives (B) : dechets estimes a partir de l'extraction
+  #
+  # Pour les pays sans donnee de dechets pour B, les dechets sont estimes par
+  # type de matiere extraite (UNEP) : dechets_B = somme(coef_k x extraction_k),
+  # k = combustibles fossiles, minerais metalliques, mineraux non metalliques.
+  # Les coefficients (positifs ou nuls, sans constante) sont estimes sur les
+  # pays-annees observes. Une imputation par similarite fondee sur la VA ou la
+  # production ne distingue pas mines metalliques et hydrocarbures.
+
+  if (verbose) cat("Estimating mining waste from extraction...\n")
+
+  unep_extraction_data <- load_unep_extraction_was_source(years$year, use_temp_data, verbose)
+
+  extraction_categories <- c("fossil_fuels", "metal_ores", "non_metallic_minerals")
+
+  mining_waste_observations <- figaro_was_accounts_raw %>%
+    filter(industry == "B", !is.na(value)) %>%
+    inner_join(unep_extraction_data, by = c("year", "country")) %>%
+    filter(if_all(all_of(extraction_categories), ~ !is.na(.x)))
+
+  # Moindres carres sous contrainte de positivite : meilleur ajustement parmi
+  # les sous-ensembles de categories dont tous les coefficients sont >= 0.
+  mining_waste_coefs <- setNames(rep(0, length(extraction_categories)), extraction_categories)
+  best_sse <- sum(mining_waste_observations$value^2)
+  for (n_categories in seq_along(extraction_categories)) {
+    for (categories in combn(extraction_categories, n_categories, simplify = FALSE)) {
+      x <- as.matrix(mining_waste_observations[, categories])
+      coefs <- qr.solve(x, mining_waste_observations$value)
+      sse <- sum((mining_waste_observations$value - x %*% coefs)^2)
+      if (all(coefs >= 0) && sse < best_sse) {
+        best_sse <- sse
+        mining_waste_coefs[] <- 0
+        mining_waste_coefs[categories] <- coefs
+      }
+    }
+  }
+
+  if (verbose) {
+    cat("Mining waste coefficients (t waste / t extracted):\n")
+    print(round(mining_waste_coefs, 3))
+  }
+
+  mining_waste_estimates <- unep_extraction_data %>%
+    mutate(
+      industry = "B",
+      mining_waste_value = as.numeric(
+        as.matrix(across(all_of(extraction_categories), ~ coalesce(.x, 0))) %*% mining_waste_coefs
+      )
+    ) %>%
+    select(year, country, industry, mining_waste_value)
+
   # Complete with similarity
+  # 1. series partiellement observees : interpolation / extrapolation (flag "r")
+  # 2. B sans donnee : estimation par l'extraction (flag "e")
+  # 3. autres valeurs manquantes : proxy par similarite (flag "e")
   figaro_was_accounts <- figaro_was_accounts_raw %>%
     complete_series(min_value = 0) %>%
+    left_join(mining_waste_estimates, by = c("year", "country", "industry")) %>%
+    mutate(
+      use_extraction = is.na(value) & !is.na(mining_waste_value),
+      value = if_else(use_extraction, mining_waste_value, value),
+      flag = if_else(use_extraction, "e", flag)
+    ) %>%
+    select(year, country, industry, value, flag) %>%
     proxy_missing_value_by_similarity(., "WAS", min_value = 0) %>%
     select(year, country, industry, value, flag)
 

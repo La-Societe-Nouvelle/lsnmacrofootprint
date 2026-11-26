@@ -247,6 +247,13 @@ mondial UNEP (`World`) moins la somme des pays FIGARO, par categorie de matiere.
 Les entites historiques UNEP ramenees au meme code pays (USSR/RU, Sudan
 (Former)/SD...) sont agregees.
 
+Pour WAS, les dechets des industries extractives (B) des pays sans donnee sont
+estimes a partir de l'extraction UNEP par type de matiere :
+`dechets_B = somme(coef_k x extraction_k)` pour les combustibles fossiles, les
+minerais metalliques et les mineraux non metalliques. Les coefficients (positifs
+ou nuls, sans constante) sont estimes a chaque calcul sur les pays-annees
+observes. Ces valeurs sont signalees `e`.
+
 L'imputation par similarite (`proxy_missing_value_by_similarity()`) rapporte les
 indicateurs d'intensite (GHG, HAZ, MAT, NRG, WAS, WAT) a la production des pays
 donneurs, puis applique l'intensite a la production du pays a completer. Les
