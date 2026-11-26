@@ -242,6 +242,11 @@ L'extension conserve son perimetre actuel, limite a 2024. Le chargeur OCDE
 reutilise le cache de production `oecd_aea_<debut>_<fin>.csv`, y compris pour un
 controle portant sur une partie de sa periode, ou l'ancien `DSD_AEA_GHG.csv`.
 
+Pour MAT, le reste du monde FIGARO (`FIGW1`) est calcule en residu : total
+mondial UNEP (`World`) moins la somme des pays FIGARO, par categorie de matiere.
+Les entites historiques UNEP ramenees au meme code pays (USSR/RU, Sudan
+(Former)/SD...) sont agregees.
+
 L'imputation par similarite (`proxy_missing_value_by_similarity()`) rapporte les
 indicateurs d'intensite (GHG, HAZ, MAT, NRG, WAS, WAT) a la production des pays
 donneurs, puis applique l'intensite a la production du pays a completer. Les

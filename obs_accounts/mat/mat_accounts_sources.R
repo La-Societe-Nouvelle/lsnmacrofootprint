@@ -51,8 +51,42 @@ load_unep_mat_source <- function(
       unit = "T"
     ) %>%
     filter(year %in% years$year) %>%
+    mutate(value = as.numeric(value)) %>%
+    # Entites historiques ramenees au meme code (USSR/RU, Sudan (Former)/SD...) :
+    # valeurs nulles ou absentes sur la periode, agregees par code pays.
+    group_by(year, country, flow, category, unit) %>%
+    summarise(
+      value = if (all(is.na(value))) NA_real_ else sum(value, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
     select(year, country, flow, category, value, unit)
 
-  unep_data
+  # --- Reste du monde FIGARO (FIGW1) : total mondial - pays FIGARO ------------
+  # Calcule en residu plutot qu'impute par similarite : le total mondial UNEP
+  # est ainsi respecte.
+
+  figaro_countries <- read_delim(
+    "metadata/metadata_figaro_countries.csv",
+    delim = ";",
+    show_col_types = FALSE
+  )$code
+
+  figaro_countries_data <- unep_data %>%
+    filter(country %in% figaro_countries, country != "FIGW1") %>%
+    group_by(year, flow, category, unit) %>%
+    summarise(figaro_value = sum(value, na.rm = TRUE), .groups = "drop")
+
+  rest_of_world_data <- unep_data %>%
+    filter(country == "World") %>%
+    left_join(figaro_countries_data, by = c("year", "flow", "category", "unit")) %>%
+    mutate(
+      country = "FIGW1",
+      value = pmax(value - coalesce(figaro_value, 0), 0)
+    ) %>%
+    select(year, country, flow, category, value, unit)
+
+  unep_data %>%
+    filter(country != "FIGW1") %>%
+    bind_rows(rest_of_world_data)
 }
 
