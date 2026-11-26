@@ -177,7 +177,40 @@ proxy_missing_value_by_similarity = function(
   figaro_main_aggregates_data <- main_aggregates_data_raw %>%
     filter(industry != "TOTAL") %>%
     pivot_wider(names_from = aggregate, values_from = value) %>%
-    select(country, industry, year, NVA)
+    select(country, industry, year, NVA, PRD)
+
+  # --------------------------------------------------
+  # Development level (World Bank, GDP per capita PPP) for the fallback similarity
+
+  gdp_per_capita_data <- load_worldbank_gdp_per_capita_ppp()
+
+  # --------------------------------------------------
+  # Economic structure distances for the fallback similarity
+  # Distance entre deux pays = moitie de la somme des ecarts de parts de
+  # production par branche (0 : structures identiques, 1 : disjointes),
+  # moyenne sur les annees.
+
+  production_shares <- figaro_main_aggregates_data %>%
+    mutate(PRD = pmax(coalesce(PRD, 0), 0)) %>%
+    group_by(year, country) %>%
+    mutate(production_share = if (sum(PRD) > 0) PRD / sum(PRD) else 0) %>%
+    ungroup() %>%
+    select(year, country, industry, production_share)
+
+  structure_distance_data <- production_shares %>%
+    inner_join(
+      production_shares %>%
+        rename(country_candidate = country, production_share_candidate = production_share),
+      by = c("year", "industry"),
+      relationship = "many-to-many"
+    ) %>%
+    group_by(year, country, country_candidate) %>%
+    summarise(
+      structure_distance = sum(abs(production_share - production_share_candidate)) / 2,
+      .groups = "drop"
+    ) %>%
+    group_by(country, country_candidate) %>%
+    summarise(structure_distance = mean(structure_distance), .groups = "drop")
 
   # --------------------------------------------------
   # Computations
@@ -223,6 +256,8 @@ proxy_missing_value_by_similarity = function(
           type = type,
           index = i,
           oecd_sbs_data = oecd_sbs_data,
+          gdp_per_capita_data = gdp_per_capita_data,
+          structure_distance_data = structure_distance_data,
           figaro_main_aggregates_data = figaro_main_aggregates_data,
           min_value = min_value,
           max_value = max_value
@@ -272,6 +307,8 @@ proxy_missing_value_by_similarity = function(
           type = type,
           index = i,
           oecd_sbs_data = oecd_sbs_data,
+          gdp_per_capita_data = gdp_per_capita_data,
+          structure_distance_data = structure_distance_data,
           figaro_main_aggregates_data = figaro_main_aggregates_data,
           min_value = min_value,
           max_value = max_value
@@ -327,6 +364,8 @@ get_proxy_value_by_similarity = function(
   index,
   oecd_sbs_data,
   figaro_main_aggregates_data,
+  gdp_per_capita_data = NULL,
+  structure_distance_data = NULL,
   num_proxy = 5,
   min_value = -Inf,
   max_value = Inf,
@@ -384,9 +423,11 @@ get_proxy_value_by_similarity = function(
   # -------------------------------------------------------------------
   # Method to apply
 
+  # Denominateur : production pour les intensites (plus stable que la VA, jamais
+  # negative, plus proche des volumes physiques), VA pour les taux et indices.
   industry_va <- figaro_main_aggregates_data %>%
       filter(year == year_i, country == country_i, industry == industry_i) %>%
-      pull(NVA)
+      pull(if (type == "intensity") "PRD" else "NVA")
 
   sbs_subset <- oecd_sbs_data %>%
     filter(industry == industry_i, country == country_i)
@@ -443,7 +484,9 @@ get_proxy_value_by_similarity = function(
       country_i = country_i,
       industry_i = industry_i,
       candidate_countries = countries_with_data_over_period,
-      figaro_main_aggregates_data = figaro_main_aggregates_data
+      figaro_main_aggregates_data = figaro_main_aggregates_data,
+      gdp_per_capita_data = gdp_per_capita_data,
+      structure_distance_data = structure_distance_data
     )
 
     # print(similar_countries %>% as_tibble())
@@ -464,7 +507,9 @@ get_proxy_value_by_similarity = function(
       country_i = country_i,
       industry_i = industry_i,
       candidate_countries = countries_with_data_over_period,
-      figaro_main_aggregates_data = figaro_main_aggregates_data
+      figaro_main_aggregates_data = figaro_main_aggregates_data,
+      gdp_per_capita_data = gdp_per_capita_data,
+      structure_distance_data = structure_distance_data
     ) %>%
       filter(country %in% period_sectoral_vector$country) %>%
       head(num_proxy)
@@ -493,7 +538,7 @@ get_proxy_value_by_similarity = function(
     proxy_value <- proxy_source %>%
       merge(figaro_main_aggregates_data) %>% # by year, country, industry
       mutate(
-        ratio = value / NVA
+        ratio = value / PRD # intensite par unite de production
       ) %>%
       filter(is.finite(ratio), is.finite(similarity_score)) %>%
       summarise(
@@ -509,7 +554,7 @@ get_proxy_value_by_similarity = function(
     proxy_data <- figaro_main_aggregates_data %>%
       filter(year == year_i, country == country_i, industry == industry_i) %>%
       mutate(
-        value = pmin(pmax(proxy_value * NVA, min_value), max_value),
+        value = pmin(pmax(proxy_value * PRD, min_value), max_value),
         flag = "e"
       ) %>%
       select(year, country, industry, value, flag)
@@ -580,18 +625,36 @@ get_similar_countries_sbs <- function(
         any(nace_level == "nace_niv2") ~ "nace_niv2"
       ),
       distance = distance[nace_level == level_rank][1],
-      similarity_score = 1 / (1e-6 + distance),
       .groups = "drop"
+    ) %>%
+    # Score adouci : la mediane des 5 plus petites distances est ajoutee au
+    # denominateur, pour ne pas donner presque tout le poids au pays le plus proche.
+    mutate(
+      softening = median(head(sort(distance), 5)),
+      softening = if_else(is.finite(softening) & softening > 0, softening, 1e-6),
+      similarity_score = 1 / (distance + softening)
     ) %>%
     arrange(desc(similarity_score)) %>%
     select(country, similarity_score)
 }
 
+# Methode de repli : pays donneurs les plus proches selon trois criteres
+#   - share       : part de la branche dans le PIB (FIGARO) ;
+#   - structure   : structure globale de l'economie, distance entre les parts de
+#                   production de l'ensemble des branches (0 a 1) ;
+#   - development : niveau de developpement (log du PIB par habitant en PPA,
+#                   Banque mondiale).
+# Chaque distance est rapportee a sa mediane parmi les pays candidats, puis les
+# distances sont ponderees (weights). Un critere indisponible est ignore et les
+# poids restants sont renormalises.
 get_similar_countries_figaro <- function(
   country_i,
   industry_i,
   candidate_countries,
-  figaro_main_aggregates_data
+  figaro_main_aggregates_data,
+  gdp_per_capita_data = NULL,
+  structure_distance_data = NULL,
+  weights = c(share = 1/3, structure = 1/3, development = 1/3)
 ) {
   figaro_gdp_shares <- figaro_main_aggregates_data %>%
     group_by(year, country) %>%
@@ -607,26 +670,116 @@ get_similar_countries_figaro <- function(
     ) %>%
     select(year, country, gdp_share)
 
+  # Niveau de developpement par pays et annee (derniere valeur connue reconduite)
+  if (!is.null(gdp_per_capita_data)) {
+    figaro_gdp_shares <- figaro_gdp_shares %>%
+      left_join(gdp_per_capita_data, by = c("year", "country")) %>%
+      group_by(country) %>%
+      arrange(year, .by_group = TRUE) %>%
+      fill(log_gdp_per_capita, .direction = "downup") %>%
+      ungroup()
+  } else {
+    figaro_gdp_shares <- figaro_gdp_shares %>%
+      mutate(log_gdp_per_capita = NA_real_)
+  }
+
   ref_industry_gdp_share <- figaro_gdp_shares %>%
     filter(country == country_i) %>%
-    select(year, target_gdp_share = gdp_share)
+    select(year, target_gdp_share = gdp_share, target_log_gdp_per_capita = log_gdp_per_capita)
 
-  figaro_gdp_shares %>%
+  distances <- figaro_gdp_shares %>%
     filter(country %in% candidate_countries) %>%
     merge(ref_industry_gdp_share, by = "year") %>%
     mutate(
-      distance = abs(gdp_share - target_gdp_share)
+      share_distance = abs(gdp_share - target_gdp_share),
+      development_distance = abs(log_gdp_per_capita - target_log_gdp_per_capita)
     ) %>%
     group_by(country) %>%
     summarise(
-      distance = mean(distance, na.rm = TRUE),
+      share_distance = mean(share_distance, na.rm = TRUE),
+      development_distance = mean(development_distance, na.rm = TRUE),
       n_years = n(),
       .groups = "drop"
     ) %>%
-    filter(is.finite(distance), n_years > 0) %>%
+    filter(is.finite(share_distance), n_years > 0)
+
+  # Structure globale de l'economie (distances precalculees entre pays)
+  if (!is.null(structure_distance_data)) {
+    distances <- distances %>%
+      left_join(
+        structure_distance_data %>%
+          filter(country == country_i) %>%
+          select(country = country_candidate, structure_distance),
+        by = "country"
+      )
+  } else {
+    distances <- distances %>% mutate(structure_distance = NA_real_)
+  }
+
+  # Normalisation par la mediane des candidats
+  normalize <- function(x) {
+    scale <- median(x, na.rm = TRUE)
+    x / if (isTRUE(scale > 0)) scale else 1
+  }
+
+  distances %>%
     mutate(
-      similarity_score = 1 / (1e-6 + distance)
+      share_distance = normalize(share_distance),
+      structure_distance = normalize(structure_distance),
+      development_distance = normalize(development_distance),
+      # Moyenne ponderee des criteres disponibles
+      weighted_sum = weights[["share"]] * share_distance +
+        weights[["structure"]] * coalesce(structure_distance, 0) +
+        weights[["development"]] * coalesce(development_distance, 0),
+      weight_total = weights[["share"]] +
+        weights[["structure"]] * is.finite(structure_distance) +
+        weights[["development"]] * is.finite(development_distance),
+      distance = weighted_sum / weight_total,
+      # Score adouci (voir get_similar_countries_sbs)
+      softening = median(head(sort(distance), 5)),
+      softening = if_else(is.finite(softening) & softening > 0, softening, 1e-6),
+      similarity_score = 1 / (distance + softening)
     ) %>%
     arrange(desc(similarity_score)) %>%
     select(country, similarity_score)
+}
+
+# PIB par habitant en PPA (dollars internationaux constants), Banque mondiale,
+# indicateur NY.GDP.PCAP.PP.KD. Le reste du monde FIGARO (FIGW1) prend la valeur
+# de l'agregat "pays a revenu faible et intermediaire" (LMY).
+# Retourne year, country (ISO2 FIGARO), log_gdp_per_capita.
+load_worldbank_gdp_per_capita_ppp <- function(
+  use_temp_data = TRUE,
+  allow_download = TRUE
+) {
+  raw_dir <- if (exists("download_dir", inherits = TRUE)) download_dir else "data_raw"
+
+  raw_data <- read_accounts_source_cache(
+    file.path(raw_dir, "WB_NY.GDP.PCAP.PP.KD.csv"),
+    function() {
+      json <- jsonlite::fromJSON(paste0(
+        "https://api.worldbank.org/v2/country/all/indicator/NY.GDP.PCAP.PP.KD",
+        "?format=json&per_page=20000&date=2000:2030"
+      ))
+      data <- json[[2]]
+      data.frame(
+        country = data$country$id,
+        iso3 = data$countryiso3code,
+        year = data$date,
+        value = data$value
+      )
+    },
+    c("country", "iso3", "year", "value"),
+    use_temp_data,
+    allow_download
+  )
+
+  raw_data %>%
+    filter(!is.na(value), value > 0) %>%
+    mutate(
+      country = if_else(iso3 == "LMY", "FIGW1", country),
+      year = as.character(year),
+      log_gdp_per_capita = log(value)
+    ) %>%
+    select(year, country, log_gdp_per_capita)
 }

@@ -242,6 +242,20 @@ L'extension conserve son perimetre actuel, limite a 2024. Le chargeur OCDE
 reutilise le cache de production `oecd_aea_<debut>_<fin>.csv`, y compris pour un
 controle portant sur une partie de sa periode, ou l'ancien `DSD_AEA_GHG.csv`.
 
+L'imputation par similarite (`proxy_missing_value_by_similarity()`) rapporte les
+indicateurs d'intensite (GHG, HAZ, MAT, NRG, WAS, WAT) a la production des pays
+donneurs, puis applique l'intensite a la production du pays a completer. Les
+taux et indices restent imputes en valeur. Lorsque les statistiques structurelles
+d'entreprises de l'OCDE ne permettent pas de choisir les pays donneurs, la
+methode de repli combine trois criteres, ponderes a parts egales : la part de la
+branche dans le PIB, la structure globale de l'economie (ecart entre les parts
+de production de toutes les branches) et le niveau de developpement (log du PIB
+par habitant en PPA, Banque mondiale, cache `WB_NY.GDP.PCAP.PP.KD.csv`; `FIGW1`
+prend l'agregat des pays a revenu faible et intermediaire). Chaque distance est
+rapportee a sa mediane parmi les candidats. Le score de similarite est adouci
+(`1 / (distance + mediane des 5 plus petites distances)`), pour les deux methodes
+de choix des donneurs, afin de ne pas concentrer le poids sur un seul pays.
+
 ## Comptes tendanciels
 
 La fonction principale est:
