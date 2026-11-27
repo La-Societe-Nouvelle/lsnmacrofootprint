@@ -325,6 +325,35 @@ Pour les comptes SOC observes, une masse salariale totale nulle ou negative
 donne une part ESS de zero.
 
 Les comptes WAT observes sont exprimes en milliers de metres cubes (`THS_M3`).
+La consommation d'eau correspond a l'eau qui n'est pas restituee sans
+alteration au milieu de prelevement. Les prelevements propres des sections OCDE
+(hors distribution publique, section E) sont donc consommes en totalite, sauf
+pour D35 (refroidissement des centrales) : 3 %, valeur francaise (environ 12 %
+des 4,1 Md m3 consommes, SDES/MTE 2010-2019, rapportes aux prelevements; 97 %
+restitues selon EDF) appliquee a tous les pays. `coefficients_consommation.csv`
+(facteurs de consommation de France Strategie, 2024) est conserve comme archive
+et n'est plus lu.
+L'eau prelevee pour la distribution publique (section E) est repartie : 20,8 %
+de pertes affectees a E36 (SISPEA, rapport 2024, rendement de 79,2 %), 20 %
+fournis aux activites economiques (France Strategie, 2024, note n° 136) et
+repartis entre branches au prorata de leurs achats de E36 national (entrees
+intermediaires FIGARO, hors achats de E36), le reste (menages) hors comptes de
+branches. Ces parts francaises s'appliquent a tous les pays.
+Pour les pays absents des donnees OCDE sur toute la periode (Chine, Inde,
+Indonesie, `FIGW1`, etc.), les prelevements viennent d'AQUASTAT (FAO, via l'API de la Banque
+mondiale, cache `WB_AQUASTAT_WATER_WITHDRAWAL.csv`) : agriculture -> section A,
+39 % des prelevements industriels -> sections B, C et F (part mediane hors
+energie des pays OCDE, 2015-2019 ; les prelevements industriels AQUASTAT
+incluent le refroidissement des centrales), usages municipaux -> reseau de
+distribution. La consommation de D35 y est estimee a 1 m3 par MWh thermique
+(charbon, gaz, autres fossiles, nucleaire, bioenergie ; Ember, cache
+`ember_generation_yearly.csv`), valeur francaise coherente avec le coefficient
+de 3 %. Les services (GTU) n'ont pas de prelevements propres dans ce cas.
+`FIGW1` est calcule en residu (monde - pays FIGARO). Ces valeurs sont signalees
+`e`. Les valeurs AQUASTAT sont souvent prolongees a l'identique d'une annee a
+l'autre. Les pays presents dans l'OCDE pour une partie des annees seulement
+(Etats-Unis : 2010, 2015, 2020) restent sur l'OCDE, completee par
+interpolation et extrapolation.
 `estimate_ghg_from_edgar()` retourne des milliers de tonnes equivalent CO2
 (`THS_TCO2E`); le builder GHG multiplie ces valeurs par 1 000 pour produire les
 comptes observes en tonnes equivalent CO2 (`TCO2E`).
